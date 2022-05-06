@@ -295,6 +295,15 @@ clean:
 #===============================================
 #===============================================
 #
+#===============================================
+#================ create OBJ directory =========
+.PHONY: obj
+obj:
+	@echo "=> obj directory: $(obj_dir)"
+	@mkdir -p $(DIROBJ)
+#===============================================
+#===============================================
+#
 #
 ##################################################################################
 ### dnSVM objects
@@ -344,5 +353,6 @@ $(DIROBJ)/dnS_m.o:        $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/dnPoly_m.o:     $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/dnMat_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/diago_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/diago_m.o:      $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/NumParameters_m.o: obj
 #
 ############################################################################
