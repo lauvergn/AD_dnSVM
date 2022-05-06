@@ -1,0 +1,24 @@
+name = "AD_dnSVM"
+version = "0.0.0"
+license = "LGPL-3.0-or-later"
+author = "David Lauvergnat"
+maintainer = "david.lauvergnat@universite-paris-saclay.fr"
+copyright = "2021 David Lauvergnat"
+
+[library]
+source-dir="SRC"
+
+[[ test ]]
+name="dnS"
+source-dir="Tests"
+main="TEST_dnS.f90"
+
+[[ test ]]
+name="dnPoly"
+source-dir="Tests"
+main="TEST_dnPoly.f90"
+
+[[ executable ]]
+name="Exa_dnS"
+source-dir="APP"
+main="Example_dnS.f90"

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "=========================================="
+echo " TESTING the dnPoly module"
+
+fpm test dnPoly --flag "-Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer" > res_dnPoly
+
+grep "Number of error" res_dnPoly
+
+echo "=========================================="

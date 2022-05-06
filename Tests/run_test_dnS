@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "=========================================="
+echo " TESTING the dnS module"
+
+fpm test dnS --flag "-Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer" > res_dnS
+
+grep "Number of error" res_dnS
+
+echo "=========================================="

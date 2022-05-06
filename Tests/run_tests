@@ -1,0 +1,45 @@
+#!/bin/bash
+
+./clean
+
+here=`pwd`
+
+
+#for ExternalF90 in gfortran ifort pgf90 nagfor
+for ExternalF90 in gfortran
+do
+  export ExternalF90
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  echo $ExternalF90
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  for ExternalOPT in 0 1
+  do
+    export ExternalOPT
+
+    for ExternalOMP in 0 1
+    do
+      export ExternalOMP
+
+      echo OPT: $ExternalOPT OpenMP: $ExternalOMP
+
+      cd ..
+        XRES="Xres_dnS_dnPoly_"$ExternalF90"_Opt"$ExternalOPT"_OMP"$ExternalOMP
+        XLOG="comp_"$ExternalF90"_Opt"$ExternalOPT"_OMP"$ExternalOMP".log"
+        make clean > $here/$XLOG 2>&1
+        make all > $here/$XLOG 2>&1
+        make ut > $here/$XRES
+      cd  $here
+      grep "Number of error" $XRES
+
+    done
+  done
+
+done
+
+for XRES in Xres*
+do
+  RES=`echo $XRES | sed "s/X//"`
+  mv $XRES $RES
+done
