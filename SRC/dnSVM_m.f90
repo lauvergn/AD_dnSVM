@@ -32,7 +32,7 @@
 !! @author David Lauvergnat
 !! @date 06/02/2022
 !!
-MODULE ADdnSVM_dnSVM_m
+MODULE ADdnSVM_m
   USE ADLib_NumParameters_m
   USE ADLib_Util_m
   USE ADdnSVM_dnS_m
@@ -41,4 +41,4 @@ MODULE ADdnSVM_dnSVM_m
 
   IMPLICIT NONE
 
-END MODULE ADdnSVM_dnSVM_m
+END MODULE ADdnSVM_m

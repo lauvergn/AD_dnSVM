@@ -25,7 +25,7 @@ See the APP/Example_dnS.f90 file.
 ### 1a) Variables need to be initialized, for instance the variables, X, Y, Z:
 
 ```
-  USE ADdnSVM_dnSVM_m
+  USE ADdnSVM_m
   IMPLICIT NONE
   !....
 
@@ -67,7 +67,7 @@ gives:
 ### 1b) Initialization with a vector and Jacobian matrix
 
 ```
-  USE ADdnSVM_dnSVM_m
+  USE ADdnSVM_m
   IMPLICIT NONE
   !....
 

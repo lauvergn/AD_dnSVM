@@ -308,8 +308,8 @@ obj:
 ##################################################################################
 ### dnSVM objects
 #
-$(DIROBJ)/dnSVM_m.o:$(DIRdnSVM)/dnSVM_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRdnSVM)/dnSVM_m.f90
+$(DIROBJ)/dnSVM_m.o:$(DIRSRC)/dnSVM_m.f90
+	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRSRC)/dnSVM_m.f90
 #
 ### dnS, dnPoly, dnMat objects
 #

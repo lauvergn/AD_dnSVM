@@ -28,8 +28,7 @@
 !===============================================================================
 !!
 PROGRAM TEST_dnS
-  USE ADdnSVM_dnSVM_m
-  USE ADLib_Test_m
+  USE ADdnSVM_m
   USE ADLib_Test_m
   IMPLICIT NONE
 

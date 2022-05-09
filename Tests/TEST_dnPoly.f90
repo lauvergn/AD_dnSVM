@@ -54,7 +54,7 @@
 !! @date 03/08/2017
 !!
 PROGRAM TEST_dnPoly
-  USE ADdnSVM_dnSVM_m
+  USE ADdnSVM_m
   USE ADLib_Test_m
   IMPLICIT NONE
 
