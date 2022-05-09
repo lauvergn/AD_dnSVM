@@ -101,14 +101,83 @@ MODULE ADdnSVM_dnS_m
     PROCEDURE, PRIVATE :: AD_set_dnS_TO_R
     GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnS_TO_R,AD_set_dnS_TO_I
 
+    PROCEDURE, PRIVATE :: AD_dnS_EXP_R
+    PROCEDURE, PRIVATE :: AD_dnS_EXP_I
+    GENERIC,   PUBLIC  :: operator (**) => AD_dnS_EXP_R,AD_dnS_EXP_I
+
+    PROCEDURE, PRIVATE :: AD_dnS2_PLUS_dnS1
+    PROCEDURE, PRIVATE :: AD_PLUS_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_PLUS_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_PLUS_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_PLUS_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_PLUS_dnS
+    GENERIC,   PUBLIC  :: operator (+) => AD_dnS2_PLUS_dnS1,AD_PLUS_dnS,        &
+                        AD_dnS_PLUS_R,AD_R_PLUS_dnS,AD_dnS_PLUS_I,AD_I_PLUS_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS2_MINUS_dnS1
+    PROCEDURE, PRIVATE :: AD_MINUS_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_MINUS_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_MINUS_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_MINUS_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_MINUS_dnS
+    GENERIC,   PUBLIC  :: operator (-) => AD_dnS2_MINUS_dnS1,AD_MINUS_dnS,      &
+                     AD_dnS_MINUS_R,AD_R_MINUS_dnS,AD_dnS_MINUS_I,AD_I_MINUS_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS2_TIME_dnS1
+    PROCEDURE, PRIVATE :: AD_dnS_TIME_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_TIME_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_TIME_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_TIME_dnS
+    GENERIC,   PUBLIC  :: operator (*) => AD_dnS2_TIME_dnS1,AD_dnS_TIME_R,      &
+                                       AD_R_TIME_dnS,AD_dnS_TIME_I,AD_I_TIME_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS2_OVER_dnS1
+    PROCEDURE, PRIVATE :: AD_dnS_OVER_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_OVER_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_OVER_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_OVER_dnS
+    GENERIC,   PUBLIC  :: operator (/) => AD_dnS2_OVER_dnS1,AD_dnS_OVER_R,      &
+                                       AD_R_OVER_dnS,AD_dnS_OVER_I,AD_I_OVER_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_EQ_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_EQ_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_EQ_dnS
+    GENERIC,   PUBLIC  :: operator (==) => AD_dnS_EQ_dnS,AD_dnS_EQ_R,AD_R_EQ_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_NEQ_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_NEQ_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_NEQ_dnS
+    GENERIC,   PUBLIC  :: operator (/=) => AD_dnS_NEQ_dnS,AD_dnS_NEQ_R,AD_R_NEQ_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_LE_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_LE_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_LE_dnS
+    GENERIC,   PUBLIC  :: operator (<=) => AD_dnS_LE_dnS,AD_dnS_LE_R,AD_R_LE_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_LT_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_LT_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_LT_dnS
+    GENERIC,   PUBLIC  :: operator (<) => AD_dnS_LT_dnS,AD_dnS_LT_R,AD_R_LT_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_GE_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_GE_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_GE_dnS
+    GENERIC,   PUBLIC  :: operator (>=) => AD_dnS_GE_dnS,AD_dnS_GE_R,AD_R_GE_dnS
+
+    PROCEDURE, PRIVATE :: AD_dnS_GT_dnS
+    PROCEDURE, PRIVATE :: AD_dnS_GT_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_GT_dnS
+    GENERIC,   PUBLIC  :: operator (>) => AD_dnS_GT_dnS,AD_dnS_GT_R,AD_R_GT_dnS
+
+    !PROCEDURE, PRIVATE :: AD_get_SQRT_dnS
+    !GENERIC,   PUBLIC  :: sqrt => AD_get_SQRT_dnS
+
   END TYPE dnS_t
 
   ! overloded operators, functions
-  ! Rk: the assignment(=) cannot be here, since it is bounded to the dnS type
-  PUBLIC :: operator (+),operator (-),operator (*),operator (/),operator (**)
-  PUBLIC :: operator (==),operator (/=),operator (<=),operator (>=),operator (<),operator (>)
   PUBLIC :: dot_product,product,sum
-  PUBLIC :: sqrt,exp,abs,log,log10
+  PUBLIC :: sqrt
+  PUBLIC :: exp,abs,log,log10
   PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh,atan2
 
   PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,Write_dnS
@@ -163,45 +232,6 @@ MODULE ADdnSVM_dnS_m
 
   INTERFACE ReduceDerivatives_dnS2_TO_dnS1
      MODULE PROCEDURE AD_ReduceDerivatives_dnS2_TO_dnS1
-  END INTERFACE
-
-  INTERFACE operator (+)
-     MODULE PROCEDURE AD_dnS2_PLUS_dnS1,AD_PLUS_dnS,                            &
-                      AD_dnS_PLUS_R,AD_R_PLUS_dnS,AD_dnS_PLUS_I,AD_I_PLUS_dnS
-  END INTERFACE
-  INTERFACE operator (-)
-     MODULE PROCEDURE AD_dnS2_MINUS_dnS1,AD_MINUS_dnS,                          &
-                      AD_dnS_MINUS_R,AD_R_MINUS_dnS,AD_dnS_MINUS_I,AD_I_MINUS_dnS
-  END INTERFACE
-  INTERFACE operator (*)
-     MODULE PROCEDURE AD_dnS2_TIME_dnS1,AD_dnS_TIME_R,AD_R_TIME_dnS,            &
-                      AD_dnS_TIME_I,AD_I_TIME_dnS
-  END INTERFACE
-  INTERFACE operator (/)
-     MODULE PROCEDURE AD_dnS2_OVER_dnS1,AD_dnS_OVER_R,AD_R_OVER_dnS,            &
-                      AD_dnS_OVER_I,AD_I_OVER_dnS
-  END INTERFACE
-  INTERFACE operator (**)
-     MODULE PROCEDURE AD_dnS_EXP_R,AD_dnS_EXP_I
-  END INTERFACE
-
-  INTERFACE operator (==)
-     MODULE PROCEDURE AD_dnS_EQ_dnS,AD_dnS_EQ_R,AD_R_EQ_dnS
-  END INTERFACE
-  INTERFACE operator (/=)
-     MODULE PROCEDURE AD_dnS_NEQ_dnS,AD_dnS_NEQ_R,AD_R_NEQ_dnS
-  END INTERFACE
-  INTERFACE operator (<=)
-     MODULE PROCEDURE AD_dnS_LE_dnS,AD_dnS_LE_R,AD_R_LE_dnS
-  END INTERFACE
-  INTERFACE operator (<)
-     MODULE PROCEDURE AD_dnS_LT_dnS,AD_dnS_LT_R,AD_R_LT_dnS
-  END INTERFACE
-  INTERFACE operator (>=)
-     MODULE PROCEDURE AD_dnS_GE_dnS,AD_dnS_GE_R,AD_R_GE_dnS
-  END INTERFACE
-  INTERFACE operator (>)
-     MODULE PROCEDURE AD_dnS_GT_dnS,AD_dnS_GT_R,AD_R_GT_dnS
   END INTERFACE
 
   INTERFACE sqrt
@@ -269,6 +299,7 @@ MODULE ADdnSVM_dnS_m
   INTERFACE sum
      MODULE PROCEDURE AD_sum_VecOFdnS
   END INTERFACE
+
 CONTAINS
 !> @brief Public subroutine which allocates a derived type dnS.
 !!
@@ -1078,7 +1109,8 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     logical                     :: lres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS_EQ_dnS'
@@ -1093,7 +1125,7 @@ CONTAINS
   ELEMENTAL FUNCTION AD_dnS_EQ_R(S1,R) RESULT(lres)
 
     logical                            :: lres
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),       intent(in)    :: S1
     real (kind=Rkind),   intent(in)    :: R
 
     integer :: err_dnS_loc
@@ -1102,17 +1134,17 @@ CONTAINS
     lres = (S1%d0 == R)
 
   END FUNCTION AD_dnS_EQ_R
-  ELEMENTAL FUNCTION AD_R_EQ_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_EQ_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
     logical                            :: lres
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_R_EQ_dnS'
 
-    lres = (R == S1%d0)
+    lres = (R == S%d0)
 
   END FUNCTION AD_R_EQ_dnS
 
@@ -1120,7 +1152,8 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     logical                     :: lres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS_NEQ_dnS'
@@ -1133,8 +1166,9 @@ CONTAINS
 
   END FUNCTION AD_dnS_NEQ_dnS
   ELEMENTAL FUNCTION AD_dnS_NEQ_R(S1,R) RESULT(lres)
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
+
     logical                   :: lres
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS_NEQ_R'
@@ -1142,24 +1176,26 @@ CONTAINS
     lres = (S1%d0 /= R)
 
   END FUNCTION AD_dnS_NEQ_R
-  ELEMENTAL FUNCTION AD_R_NEQ_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_NEQ_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_R_NEQ_dnS'
 
-    lres = (R /= S1%d0)
+    lres = (R /= S%d0)
 
   END FUNCTION AD_R_NEQ_dnS
 
   ELEMENTAL FUNCTION AD_dnS_LE_dnS(S1,S2) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t), intent(in)    :: S1,S2
-    logical                   :: lres
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
+    logical                     :: lres
+
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS_LE_dnS'
 
@@ -1169,34 +1205,35 @@ CONTAINS
   ELEMENTAL FUNCTION AD_dnS_LE_R(S1,R) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
-    logical                   :: lres
-    integer :: err_dnS_loc
+    logical                          :: lres
+
     character (len=*), parameter :: name_sub='AD_dnS_LE_R'
 
     lres = (S1%d0 <= R)
 
   END FUNCTION AD_dnS_LE_R
-  ELEMENTAL FUNCTION AD_R_LE_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_LE_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_R_LE_dnS'
 
-    lres = (R <= S1%d0)
+    lres = (R <= S%d0)
 
   END FUNCTION AD_R_LE_dnS
 
   ELEMENTAL FUNCTION AD_dnS_LT_dnS(S1,S2) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t), intent(in)    :: S1,S2
-    logical                   :: lres
-    integer :: err_dnS_loc
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
+    logical                     :: lres
+
     character (len=*), parameter :: name_sub='AD_dnS_LT_dnS'
 
     lres = (S1%d0 < S2%d0)
@@ -1205,34 +1242,35 @@ CONTAINS
   ELEMENTAL FUNCTION AD_dnS_LT_R(S1,R) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_dnS_LT_R'
 
     lres = (S1%d0 < R)
 
   END FUNCTION AD_dnS_LT_R
-  ELEMENTAL FUNCTION AD_R_LT_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_LT_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_R_LT_dnS'
 
-    lres = (R < S1%d0)
+    lres = (R < S%d0)
 
   END FUNCTION AD_R_LT_dnS
 
   ELEMENTAL FUNCTION AD_dnS_GE_dnS(S1,S2) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
     logical                   :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_dnS_GE_dnS'
 
     lres = (S1%d0 >= S2%d0)
@@ -1241,32 +1279,33 @@ CONTAINS
   ELEMENTAL FUNCTION AD_dnS_GE_R(S1,R) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_dnS_GE_R'
 
     lres = (S1%d0 >= R)
 
   END FUNCTION AD_dnS_GE_R
-  ELEMENTAL FUNCTION AD_R_GE_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_GE_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
-    logical                   :: lres
-    integer :: err_dnS_loc
+    logical                          :: lres
+
     character (len=*), parameter :: name_sub='AD_R_GE_dnS'
 
-    lres = (R >= S1%d0)
+    lres = (R >= S%d0)
 
   END FUNCTION AD_R_GE_dnS
 
   ELEMENTAL FUNCTION AD_dnS_GT_dnS(S1,S2) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
     logical                   :: lres
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS_GT_dnS'
@@ -1277,25 +1316,25 @@ CONTAINS
   ELEMENTAL FUNCTION AD_dnS_GT_R(S1,R) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
     logical                   :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_dnS_GT_R'
 
     lres = (S1%d0 > R)
 
   END FUNCTION AD_dnS_GT_R
-  ELEMENTAL FUNCTION AD_R_GT_dnS(R,S1) RESULT(lres)
+  ELEMENTAL FUNCTION AD_R_GT_dnS(R,S) RESULT(lres)
     USE ADLib_NumParameters_m
 
-    TYPE (dnS_t),        intent(in)    :: S1
+    CLASS (dnS_t),        intent(in)   :: S
     real (kind=Rkind),   intent(in)    :: R
     logical                            :: lres
-    integer :: err_dnS_loc
+
     character (len=*), parameter :: name_sub='AD_R_GT_dnS'
 
-    lres = (R > S1%d0)
+    lres = (R > S%d0)
 
   END FUNCTION AD_R_GT_dnS
 !=========================================================
@@ -1304,7 +1343,7 @@ CONTAINS
   ELEMENTAL SUBROUTINE AD_sub_dnS2_TO_dnS1(S1,S2) ! not used anymore
     USE ADLib_NumParameters_m
     CLASS (dnS_t), intent(inout) :: S1
-    CLASS (dnS_t), intent(in)    :: S2
+    TYPE (dnS_t),  intent(in)    :: S2
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_sub_dnS2_TO_dnS1'
@@ -1367,7 +1406,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                :: Sres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1,S2
 
     character (len=*), parameter :: name_sub='AD_dnS2_PLUS_dnS1'
 
@@ -1407,7 +1446,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1421,7 +1460,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1435,7 +1474,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1449,7 +1488,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1463,7 +1502,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
 
 
     character (len=*), parameter :: name_sub='AD_PLUS_dnS'
@@ -1475,7 +1514,8 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                :: Sres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_dnS2_MINUS_dnS1'
@@ -1504,7 +1544,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1518,7 +1558,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1535,7 +1575,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1549,7 +1589,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1566,7 +1606,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
 
 
     character (len=*), parameter :: name_sub='AD_MINUS_dnS'
@@ -1587,7 +1627,8 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                :: Sres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
 
     integer :: id,jd,kd
     character (len=*), parameter :: name_sub='AD_dnS2_TIME_dnS1'
@@ -1641,7 +1682,6 @@ CONTAINS
 
   END FUNCTION AD_dnS2_TIME_dnS1
   ELEMENTAL FUNCTION AD_d0S_TIME_R(S,R) RESULT(Sres)
-   !FUNCTION AD_d0S_TIME_R(S,R) RESULT(Sres)
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                         :: Sres
@@ -1663,7 +1703,7 @@ CONTAINS
     USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1685,7 +1725,7 @@ CONTAINS
     USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1708,7 +1748,7 @@ CONTAINS
     USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1723,7 +1763,7 @@ CONTAINS
     USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1738,7 +1778,8 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                :: Sres
-    TYPE (dnS_t), intent(in)    :: S1,S2
+    CLASS (dnS_t), intent(in)   :: S1
+    TYPE (dnS_t),  intent(in)   :: S2
 
     character (len=*), parameter :: name_sub='AD_dnS2_OVER_dnS1'
 
@@ -1750,7 +1791,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1765,7 +1806,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
 
@@ -1781,7 +1822,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1796,7 +1837,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
 
@@ -1862,7 +1903,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     real (kind=Rkind),   intent(in)    :: R
 
     real(kind=Rkind) :: d0f,d1f,d2f,d3f
@@ -1889,7 +1930,7 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
     integer,             intent(in)    :: I
 
     real (kind=Rkind) :: d0f,d1f,d2f,d3f
@@ -1917,10 +1958,9 @@ CONTAINS
     USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S
+    CLASS (dnS_t),       intent(in)    :: S
 
 
-    integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_get_SQRT_dnS'
 
     Sres = S**HALF
@@ -1934,7 +1974,6 @@ CONTAINS
     TYPE (dnS_t),        intent(in)    :: S
 
 
-    integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_get_ABS_dnS'
 
     Sres = (S*S)**HALF
