@@ -38,7 +38,9 @@ PROGRAM TEST_dnS
     TYPE (test_t)                    :: test_var
     logical                          :: val_test,res_test
 
-    real (kind=Rkind)                :: x,y,z,err,maxdiff,maxdnS
+    real (kind=Rkind)                :: x,y,z,r,th,err,maxdiff,maxdnS
+    real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
+
     integer                          :: nderiv,nio_test
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
 
@@ -394,6 +396,48 @@ PROGRAM TEST_dnS
     CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX*dnZ (3D)')
   END IF
 
+  nderiv = 2
+  x = 0.5_Rkind
+  z = 2.0_Rkind
+  Vec_dnS = Variable([x,ZERO,z],nderiv=nderiv)
+
+  Sana    = Vec_dnS(1)*Vec_dnS(3) ! It is equivalent to a 3D function f(x,y,z) = x*z
+  CALL set_dnS(dnXZ,d0=     x*z,                             &
+                    d1=        [z,   ZERO,x],                &
+                    d2=reshape([ZERO,ZERO,ONE,               &
+                                ZERO,ZERO,ZERO,              &
+                                ONE, ZERO,ZERO],shape=[3,3]))
+
+  res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
+  CALL test_logical(test_var,test1=res_test,info='Vec_dnS(1)*Vec_dnS(3)-dnS_Result==0?')
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Vec_dnS(1),test_var%test_log_file_unit,info='Vec_dnS(1)')
+    CALL Write_dnS(Vec_dnS(3),test_var%test_log_file_unit,info='Vec_dnS(3)')
+    CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX*dnZ (3D)')
+  END IF
+
+  write(out_unitp,'(a)') "============================================"
+  write(out_unitp,'(a)') "Jacobian(inew,iold): 2D, nderiv=2"
+  write(out_unitp,'(a)') "Polar transformation"
+  write(out_unitp,'(a)') "============================================"
+
+  r  = TWO
+  th = Pi/3
+  Vec_dnS = Variable([r,th], nderiv=2 ) ! Vec(1) : r, Vec(2) : th
+
+  JacNewOld     = get_Jacobian( Vec_dnS(1)*[cos(Vec_dnS(2)),sin(Vec_dnS(2))] ) ! Jacobian of a polar transformation
+  JacNewOld_ana = reshape([cos(th),sin(th),-r*sin(th),r*cos(th)],shape(JacNewOld))
+
+  res_test = ( maxval(abs(JacNewOld-JacNewOld_ana)) < dnSerr_test )
+  CALL test_logical(test_var,test1=res_test,info='Jacobian-Jacobian_ana     ==0?')
+
+  IF (print_level > 0) THEN
+    write(test_var%test_log_file_unit,*) 'Jac(inew,iold)=[ dQinew/dQiold ]:'
+    CALL Write_RMat(JacNewOld,test_var%test_log_file_unit,5)
+    write(test_var%test_log_file_unit,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
+    write(test_var%test_log_file_unit,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
+  END IF
+
   write(out_unitp,'(a)') "============================================"
   write(out_unitp,'(a)') "new tests : Vec_OF_dnS(1:3), 2D, nderiv=2"
   write(out_unitp,'(a)') "============================================"
@@ -404,8 +448,7 @@ PROGRAM TEST_dnS
   dnX     = Variable(x  ,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
   dnY     = Variable(y  ,nVar=2,nderiv=nderiv,iVar=2) ! to set up the derivatives
 
-  allocate(Vec_dnS(3))
-  Vec_dnS(:) = [dnX,dnY,dnX+dnY]
+  Vec_dnS = [dnX,dnY,dnX+dnY]
   Sana = dot_product(Vec_dnS,Vec_dnS) ! 2*(dnX**2+dnY**2+dnX*dnY)
   dnXZ = TWO*(dnX**2+dnY**2+dnX*dnY)
   res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)

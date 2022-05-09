@@ -57,8 +57,10 @@ PROGRAM Example_dnS
   USE ADdnSVM_dnSVM_m
   IMPLICIT NONE
 
-  TYPE (dnS_t)                :: X,Y,Z,f,r,th
-  TYPE (dnS_t), allocatable   :: Vec_dnS(:)
+  TYPE (dnS_t)                  :: X,Y,Z,f,r,th
+  TYPE (dnS_t),     allocatable :: Vec(:),VecXY(:)
+  real(kind=Rkind), allocatable :: JacNewOld(:,:) ! JacNewOld(iN,iO). iN and iO are the index of the new and old coordinates
+
   integer                     :: i
   integer                     :: nderiv = 1
 
@@ -67,16 +69,14 @@ PROGRAM Example_dnS
 
   write(out_unitp,'(a)') "== Example_dnS =="
 
-  X = Variable( Val=HALF, nVar=3, iVar=1, nderiv=1 )
-  Y = Variable( Val=ONE,  nVar=3, iVar=2, nderiv=1 )
-  Z = Variable( Val=TWO,  nVar=3, iVar=3, nderiv=1 )
-
-  CALL Write_dnS(X,info='X: 1st variable. Value: 0.5')
-  CALL Write_dnS(Y,info='Y: 2d  variable. Value: 1.0')
-  CALL Write_dnS(Z,info='Z: 3d  variable. Value: 2.0')
+  Vec = Variable([HALF,ONE,TWO], nderiv=1 )
 
 
-  f = ONE + cos(X)**2 + sin(Y*Z)
+  CALL Write_dnS(Vec(1),info='X: 1st variable. Value: 0.5')
+  CALL Write_dnS(Vec(2),info='Y: 2d  variable. Value: 1.0')
+  CALL Write_dnS(Vec(3),info='Z: 3d  variable. Value: 2.0')
+
+  f = ONE + cos(Vec(1))**2 + sin(Vec(2)*Vec(3))
 
   CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945')
 
@@ -89,15 +89,26 @@ PROGRAM Example_dnS
   write(out_unitp,*) '[dx/dr, dx/dth]:',get_d1(x)
   write(out_unitp,*) '[dy/dr, dy/dth]:',get_d1(y)
 
+  Vec   = Variable([TWO,Pi/3], nderiv=1 ) ! Vec(1) : r, Vec(2) : th
+  VecXY = Vec(1)*[cos(Vec(2)),sin(Vec(2))] ! polar transformation
+
+
+  write(out_unitp,*) 'Jac(inew,iold)=[ dQinew/dQiold ]:'
+  JacNewOld = get_Jacobian( VecXY )
+  CALL Write_RMat(JacNewOld,out_unitp,5)
+
   write(out_unitp,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
   write(out_unitp,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
 
+
   write(out_unitp,*) '== Box(x,i) [0,Pi] =='
   write(out_unitp,*) ' [sin(x)/sqrt(pi/2), sin(2x)/sqrt(pi/2), sin(3x)/sqrt(pi/2) ...]'
+  write(out_unitp,*) ' x = 0.5'
 
-  Vec_dnS = dnBox(X,[1,2,3,4,5,6])
-  DO i=1,size(Vec_dnS)
-    CALL Write_dnS(Vec_dnS(i),out_unitp,info='dnBox_' // int_TO_char(i))
+  X   = Variable(Val=HALF, nderiv=1 )
+  Vec = dnBox(X,[1,2,3,4,5,6])
+  DO i=1,size(Vec)
+    CALL Write_dnS(Vec(i),out_unitp,info='dnBox_' // int_TO_char(i))
   END DO
 
 END PROGRAM Example_dnS

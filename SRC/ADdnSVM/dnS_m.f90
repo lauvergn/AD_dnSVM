@@ -114,13 +114,13 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,Write_dnS
 
   PUBLIC :: get_nderiv,get_nVar
-  PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3
+  PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
   PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
 
   INTERFACE Variable
-     MODULE PROCEDURE AD_init_dnS
+     MODULE PROCEDURE AD_init_dnS, AD_init_Tab_OF_dnS
   END INTERFACE
   INTERFACE alloc_dnS
      MODULE PROCEDURE AD_alloc_dnS
@@ -149,6 +149,11 @@ MODULE ADdnSVM_dnS_m
   INTERFACE get_d1
      MODULE PROCEDURE AD_get_d1_FROM_dnS
   END INTERFACE
+
+  INTERFACE get_Jacobian
+     MODULE PROCEDURE AD_get_Jacobian_FROM_Vec_OF_dnS
+  END INTERFACE
+
   INTERFACE get_d2
      MODULE PROCEDURE AD_get_d2_FROM_dnS
   END INTERFACE
@@ -461,6 +466,56 @@ CONTAINS
     IF (nderiv_loc > 0) Sres%d1(iVar_loc) = ONE
 
   END FUNCTION AD_init_dnS
+  !> @brief Public function which initializes a derived type dnS.
+  !!
+  !> @author David Lauvergnat
+  !! @date 03/08/2017
+  !!
+  !! @param Sres               TYPE (dnS_t) (result):    derived type which deals with the derivatives of a scalar functions.
+  !! @param Val                 real:                  Value of Sres%d0.
+  !! @param nVar               integer (optional):    number of variables (coordiantes) for the derivatives.
+  !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
+  !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
+    FUNCTION AD_init_Tab_OF_dnS(TabVal,nderiv) RESULT(TabdnS)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t), ALLOCATABLE        :: TabdnS(:)
+      real (kind=Rkind), intent(in)    :: TabVal(:)
+      integer, optional, intent(in)    :: nderiv
+
+      integer :: err_dnS_loc
+      character (len=*), parameter :: name_sub='AD_init_Tab_OF_dnS'
+
+      integer :: nVar,iVar,nderiv_loc,i
+
+
+      nVar = size(TabVal)
+      IF (nVar < 1) RETURN
+
+      ! test nderiv
+      IF (present(nderiv)) THEN
+        nderiv_loc = max(0,nderiv)
+      ELSE
+        nderiv_loc = 0
+      END IF
+
+      allocate(TabdnS(nVar))
+
+      DO iVar=1,nVar
+        CALL AD_alloc_dnS(TabdnS(iVar),nVar,nderiv_loc,err_dnS_loc)
+        IF (err_dnS_loc /= 0) THEN
+          write(out_unitp,*) ' ERROR in ',name_sub
+          write(out_unitp,*) ' Problem in alloc_dnS CALL'
+          STOP 'Problem Problem in AD_alloc_dnS CALL in AD_init_Tab_OF_dnS'
+        END IF
+
+        TabdnS(iVar) = ZERO
+
+        TabdnS(iVar)%d0 = TabVal(iVar)
+        IF (nderiv_loc > 0) TabdnS(iVar)%d1(iVar) = ONE
+      END DO
+
+    END FUNCTION AD_init_Tab_OF_dnS
 !> @brief Public subroutine which initializes a derived type dnS.
 !!
 !> @author David Lauvergnat
@@ -587,6 +642,46 @@ CONTAINS
     IF (allocated(S%d1)) d1 = S%d1
 
   END FUNCTION AD_get_d1_FROM_dnS
+  FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnS(Vec) RESULT(Jac)
+    USE ADLib_NumParameters_m
+
+    real (kind=Rkind), allocatable     :: Jac(:,:)
+    TYPE (dnS_t),        intent(in)    :: Vec(:)
+
+    integer :: iVar,nVarNew,NvarOld
+    character (len=*), parameter :: name_sub='AD_get_Jacobian_FROM_Vec_OF_dnS'
+
+    nVarNew = size(Vec)
+    IF (nVarNew < 1) RETURN
+
+    nVarOld = 0
+
+    DO iVar=1,nVarNew
+      IF (get_nderiv(Vec(iVar)) < 1) CYCLE
+      IF (nVarOld == 0) nVarOld = get_nVar(Vec(iVar))
+
+      IF (nVarOld /= get_nVar(Vec(iVar))) THEN
+        write(out_unitp,*) ' ERROR in ',name_sub
+        write(out_unitp,*) '  The nVarOld from Vec(:) are different'
+        write(out_unitp,*) '  iVar',iVar
+        write(out_unitp,*) '  nVar from Vec_OF_dnS(iVar)',get_nVar(Vec(iVar))
+        write(out_unitp,*) '  nVarOld',nVarOld
+        STOP 'ERROR in AD_get_Jacobian_FROM_Vec_OF_dnS: incomptiple nVar from Vec(:)'
+      END IF
+
+    END DO
+    IF (nVarOld > 0) THEN
+      allocate(Jac(nVarNew,nVarOld))
+      Jac(:,:) = ZERO
+      DO iVar=1,nVarNew
+
+        IF (get_nderiv(Vec(iVar)) < 1) CYCLE
+
+        Jac(iVar,:) = get_d1(Vec(iVar))
+      END DO
+    END IF
+
+  END FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnS
   !> @brief Public function to get d2 from a derived type dnS.
   !!
   !> @author David Lauvergnat

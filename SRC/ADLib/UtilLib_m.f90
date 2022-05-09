@@ -270,14 +270,16 @@ CONTAINS
   USE ADLib_NumParameters_m
   IMPLICIT NONE
 
+    integer,          intent(in) :: nio,nbcol1
+    real(kind=Rkind), intent(in) :: f(:,:)
+
      character (len=*), optional :: Rformat
      character (len=*), optional :: name_info
 
-     integer, intent(in)         :: nio,nbcol1
-     real(kind=Rkind), intent(in) :: f(:,:)
+
 
      integer         :: nl,nc
-     integer i,j,nb,nbblocs,nfin,nbcol
+     integer         :: i,j,nb,nbblocs,nfin,nbcol
      character (len=:), allocatable :: wformat
 
      nl = size(f,dim=1)
