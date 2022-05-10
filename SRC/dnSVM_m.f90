@@ -33,8 +33,6 @@
 !! @date 06/02/2022
 !!
 MODULE ADdnSVM_m
-  USE ADLib_NumParameters_m
-  USE ADLib_Util_m
   USE ADdnSVM_dnS_m
   USE ADdnSVM_dnPoly_m
   USE ADdnSVM_dnMat_m

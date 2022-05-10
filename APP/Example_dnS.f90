@@ -54,6 +54,8 @@
 !! @date 03/08/2017
 !!
 PROGRAM Example_dnS
+  USE ADLib_NumParameters_m
+  USE ADLib_Util_m
   USE ADdnSVM_m
   IMPLICIT NONE
 
