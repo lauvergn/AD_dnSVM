@@ -74,12 +74,12 @@ MODULE ADdnSVM_dnMat_m
                                            AD_set_dnMat_FROM_MatOFdnS
   END TYPE dnMat_t
 
-  PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,Write_dnMat,AD_Check_NotAlloc_dnMat
+  PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,Write_dnMat,Check_NotAlloc_dnMat
   PUBLIC :: transpose,matmul,operator (*),operator (**),operator (+),operator (-)
   PUBLIC :: DIAG_dnMat,SYM_dnMat
   PUBLIC :: submatrix_dnMat2_TO_dnMat1,dnS_TO_dnMat,dnMat_TO_dnS
   PUBLIC :: Mat_wADDTO_dnMat2_ider
-  PUBLIC :: AD_Check_dnMat_IS_ZERO,AD_get_maxval_OF_dnMat
+  PUBLIC :: Check_dnMat_IS_ZERO,get_maxval_OF_dnMat
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
 
 
@@ -137,15 +137,15 @@ MODULE ADdnSVM_dnMat_m
 
 
 
-  !INTERFACE AD_Check_dnMat_IS_ZERO
-  !  MODULE PROCEDURE AD_Check_dnMat_IS_ZERO
-  !END INTERFACE
-  !INTERFACE get_maxval
-  !  MODULE PROCEDURE AD_get_maxval_OF_dnMat
-  !END INTERFACE
-  !INTERFACE AD_Check_NotAlloc_dnMat
-  !  MODULE PROCEDURE AD_Check_NotAlloc_dnMat
-  !END INTERFACE
+  INTERFACE Check_dnMat_IS_ZERO
+    MODULE PROCEDURE AD_Check_dnMat_IS_ZERO
+  END INTERFACE
+  INTERFACE get_maxval_OF_dnMat
+    MODULE PROCEDURE AD_get_maxval_OF_dnMat
+  END INTERFACE
+  INTERFACE Check_NotAlloc_dnMat
+    MODULE PROCEDURE AD_Check_NotAlloc_dnMat
+  END INTERFACE
 
   INTERFACE get_nderiv
     MODULE PROCEDURE AD_get_nderiv_FROM_dnMat
