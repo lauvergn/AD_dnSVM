@@ -55,6 +55,7 @@
 MODULE ADdnSVM_dnMat_m
   USE ADLib_NumParameters_m
   IMPLICIT NONE
+  PRIVATE
 
   TYPE dnMat_t
      integer                        :: nderiv = -1
@@ -73,33 +74,89 @@ MODULE ADdnSVM_dnMat_m
                                            AD_set_dnMat_FROM_MatOFdnS
   END TYPE dnMat_t
 
-  PRIVATE :: AD_sub_dnMat2_TO_dnMat1,AD_set_dnMat_TO_R,AD_set_dnMat_FROM_MatOFdnS
-  PRIVATE :: AD_TRANSPOSE_dnMat,AD_MATMUL_dnMat1_dnMat2,              &
-             AD_MATMUL_dnMat1_Mat2,AD_MATMUL_Mat1_dnMat2
+  PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,Write_dnMat,AD_Check_NotAlloc_dnMat
+  PUBLIC :: transpose,matmul,operator (*),operator (**),operator (+),operator (-)
+  PUBLIC :: DIAG_dnMat,SYM_dnMat
+  PUBLIC :: submatrix_dnMat2_TO_dnMat1,dnS_TO_dnMat,dnMat_TO_dnS
+  PUBLIC :: Mat_wADDTO_dnMat2_ider
+  PUBLIC :: AD_Check_dnMat_IS_ZERO,AD_get_maxval_OF_dnMat
+  PUBLIC :: get_nderiv,get_nVar,get_nsurf
 
-   INTERFACE transpose
-      MODULE PROCEDURE AD_TRANSPOSE_dnMat
-   END INTERFACE
-   INTERFACE matmul
-      MODULE PROCEDURE AD_MATMUL_dnMat1_dnMat2,AD_MATMUL_dnMat1_Mat2, &
-                       AD_MATMUL_Mat1_dnMat2
-   END INTERFACE
 
-   INTERFACE operator (*)
-      MODULE PROCEDURE AD_sub_dnMat_TIME_R,AD_sub_R_TIME_dnMat
-   END INTERFACE
+  INTERFACE transpose
+    MODULE PROCEDURE AD_TRANSPOSE_dnMat
+  END INTERFACE
+  INTERFACE matmul
+    MODULE PROCEDURE AD_MATMUL_dnMat1_dnMat2,AD_MATMUL_dnMat1_Mat2, &
+                     AD_MATMUL_Mat1_dnMat2
+  END INTERFACE
+  INTERFACE operator (*)
+    MODULE PROCEDURE AD_sub_dnMat_TIME_R,AD_sub_R_TIME_dnMat
+  END INTERFACE
+  INTERFACE operator (**)
+    MODULE PROCEDURE AD_sub_dnMat_EXP_R
+  END INTERFACE
+  INTERFACE operator (+)
+    MODULE PROCEDURE AD_dnMat2_PLUS_dnMat1,AD_sub_dnMat_PLUS_R,AD_sub_R_PLUS_dnMat
+  END INTERFACE
+  INTERFACE operator (-)
+    MODULE PROCEDURE AD_dnMat2_MINUS_dnMat1,AD_sub_dnMat_MINUS_R,AD_sub_R_MINUS_dnMat
+  END INTERFACE
 
-   INTERFACE operator (**)
-      MODULE PROCEDURE AD_sub_dnMat_EXP_R
-   END INTERFACE
+  INTERFACE alloc_dnMat
+    MODULE PROCEDURE AD_alloc_dnMat
+  END INTERFACE
 
-   INTERFACE operator (+)
-      MODULE PROCEDURE AD_dnMat2_PLUS_dnMat1,AD_sub_dnMat_PLUS_R,AD_sub_R_PLUS_dnMat
-   END INTERFACE
+  INTERFACE dealloc_dnMat
+    MODULE PROCEDURE AD_dealloc_dnMat
+  END INTERFACE
 
-   INTERFACE operator (-)
-      MODULE PROCEDURE AD_dnMat2_MINUS_dnMat1,AD_sub_dnMat_MINUS_R,AD_sub_R_MINUS_dnMat
-   END INTERFACE
+  INTERFACE Write_dnMat
+    MODULE PROCEDURE AD_Write_dnMat
+  END INTERFACE
+
+  INTERFACE DIAG_dnMat
+    MODULE PROCEDURE AD_DIAG_dnMat
+  END INTERFACE
+  INTERFACE SYM_dnMat
+    MODULE PROCEDURE AD_SYM_dnMat
+  END INTERFACE
+
+  INTERFACE submatrix_dnMat2_TO_dnMat1
+    MODULE PROCEDURE AD_sub_Reduced_dnMat2_TO_dnMat1
+  END INTERFACE
+  INTERFACE dnS_TO_dnMat
+    MODULE PROCEDURE AD_sub_dnS_TO_dnMat
+  END INTERFACE
+  INTERFACE dnMat_TO_dnS
+    MODULE PROCEDURE AD_sub_dnMat_TO_dnS
+  END INTERFACE
+  INTERFACE Mat_wADDTO_dnMat2_ider
+    MODULE PROCEDURE AD_Mat_wADDTO_dnMat2_ider
+  END INTERFACE
+
+
+
+  !INTERFACE AD_Check_dnMat_IS_ZERO
+  !  MODULE PROCEDURE AD_Check_dnMat_IS_ZERO
+  !END INTERFACE
+  !INTERFACE get_maxval
+  !  MODULE PROCEDURE AD_get_maxval_OF_dnMat
+  !END INTERFACE
+  !INTERFACE AD_Check_NotAlloc_dnMat
+  !  MODULE PROCEDURE AD_Check_NotAlloc_dnMat
+  !END INTERFACE
+
+  INTERFACE get_nderiv
+    MODULE PROCEDURE AD_get_nderiv_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_nVar
+    MODULE PROCEDURE AD_get_nVar_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_nsurf
+    MODULE PROCEDURE AD_get_nsurf_FROM_dnMat
+  END INTERFACE
+
 
 CONTAINS
 !> @brief Public subroutine which allocates a derived type dnMat.
