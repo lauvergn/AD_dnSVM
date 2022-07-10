@@ -216,7 +216,9 @@ OBJ_testdnS    = $(DIROBJ)/TEST_dnS.o
 OBJ_testdnPoly = $(DIROBJ)/TEST_dnPoly.o
 
 
-OBJ_lib        = $(DIROBJ)/dnSVM_m.o $(DIROBJ)/dnMat_m.o $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o \
+OBJ_lib        = $(DIROBJ)/dnSVM_m.o $(DIROBJ)/dnMat_m.o \
+                 $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnPoly_m.o \
+                 $(DIROBJ)/dnS_Op_m.o $(DIROBJ)/dnS_m.o \
                  $(DIROBJ)/UtilLib_m.o $(DIROBJ)/diago_m.o \
                  $(DIROBJ)/Test_m.o \
                  $(DIROBJ)/NumParameters_m.o
@@ -317,6 +319,10 @@ $(DIROBJ)/dnS_m.o:$(DIRdnSVM)/dnS_m.f90
 	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRdnSVM)/dnS_m.f90
 $(DIROBJ)/dnPoly_m.o:$(DIRdnSVM)/dnPoly_m.f90
 	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnPoly_m.f90
+$(DIROBJ)/dnFunc_m.o:$(DIRdnSVM)/dnFunc_m.f90
+	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnFunc_m.f90
+$(DIROBJ)/dnS_Op_m.o:$(DIRdnSVM)/dnS_Op_m.f90
+	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnS_Op_m.f90
 $(DIROBJ)/dnMat_m.o:$(DIRdnSVM)/dnMat_m.f90
 	cd $(DIROBJ) ; $(F90_FLAGS)   -c $(DIRdnSVM)/dnMat_m.f90
 ##################################################################################
@@ -340,17 +346,20 @@ $(DIROBJ)/NumParameters_m.o:$(DIRLib)/NumParameters_m.f90
 ##################################################################################
 ### dependencies
 #
-$(DIROBJ)/Example_dnS.o: $(LIBAD).a
-$(DIROBJ)/TEST_dnS.o:    $(LIBAD).a
-$(DIROBJ)/TEST_dnPoly.o: $(LIBAD).a
-$(LIBAD).a:              $(OBJ_lib)
+$(DIROBJ)/Example_dnS.o:  $(LIBAD).a
+$(DIROBJ)/TEST_dnS.o:     $(LIBAD).a
+$(DIROBJ)/TEST_dnPoly.o:  $(LIBAD).a
+$(LIBAD).a:               $(OBJ_lib)
 #
-$(DIROBJ)/dnSVM_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnMat_m.o
+$(DIROBJ)/dnSVM_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o \
+                          $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnS_Op_m.o \
+                          $(DIROBJ)/dnMat_m.o
 #
 $(DIROBJ)/UtilLib_m.o:    $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/Test_m.o:       $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/dnS_m.o:        $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/dnPoly_m.o:     $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/dnFunc_m.o:     $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/dnMat_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/diago_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/diago_m.o:      $(DIROBJ)/NumParameters_m.o
 $(DIROBJ)/NumParameters_m.o: obj

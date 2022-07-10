@@ -169,13 +169,9 @@ MODULE ADdnSVM_dnS_m
     PROCEDURE, PRIVATE, PASS(S) :: AD_R_GT_dnS
     GENERIC,   PUBLIC  :: operator (>) => AD_dnS_GT_dnS,AD_dnS_GT_R,AD_R_GT_dnS
 
-    !PROCEDURE, PRIVATE :: AD_get_SQRT_dnS
-    !GENERIC,   PUBLIC  :: sqrt => AD_get_SQRT_dnS
-
   END TYPE dnS_t
 
   ! overloded operators, functions
-  PUBLIC :: dot_product,product,sum
   PUBLIC :: sqrt
   PUBLIC :: exp,abs,log,log10
   PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh,atan2
@@ -287,17 +283,6 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
   INTERFACE atanh
      MODULE PROCEDURE AD_get_ATANH_dnS
-  END INTERFACE
-
-
-  INTERFACE dot_product
-     MODULE PROCEDURE AD_dot_product_VecOFdnS,AD_dot_product_Vec_VecOFdnS,AD_dot_product_VecOFdnS_Vec
-  END INTERFACE
-  INTERFACE product
-     MODULE PROCEDURE AD_product_VecOFdnS
-  END INTERFACE
-  INTERFACE sum
-     MODULE PROCEDURE AD_sum_VecOFdnS
   END INTERFACE
 
 CONTAINS
@@ -475,7 +460,7 @@ CONTAINS
       iVar_loc = 1
     END IF
 
-    IF (iVar_loc < 1 .OR. iVar_loc > nVar_loc) THEN
+    IF (iVar_loc < 0 .OR. iVar_loc > nVar_loc) THEN
       write(out_unitp,*) ' ERROR in ',name_sub
       write(out_unitp,*) ' the iVar value (',iVar_loc,') is out of range: [1:',nVar_loc,']'
       STOP 'Problem with the iVar value in init_dnS'
@@ -800,17 +785,19 @@ CONTAINS
 !! @param info               character (optional): when present, write info
 !! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnS)
 !! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnS_FOR_test)
-  SUBROUTINE AD_Write_dnS(S,nio,info,all_type,FOR_test)
+  SUBROUTINE AD_Write_dnS(S,nio,info,all_type,FOR_test,Rfmt)
     USE ADLib_Util_m
 
     TYPE (dnS_t),     intent(in)           :: S
     integer,          intent(in), optional :: nio
     character(len=*), intent(in), optional :: info
     logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
 
     integer :: i,j,k,nio_loc,nVar
     logical :: all_type_loc,FOR_test_loc
-    character (len=50) :: fformat
+    !character (len=50) :: fformat
+    character (len=:), allocatable :: fformat,Rfmt_loc
 
     IF (present(nio)) THEN
       nio_loc = nio
@@ -874,27 +861,35 @@ CONTAINS
 
       write(nio_loc,'(a,i0,a)') 'END_TEST #',AD_dnS_test,' dnSca'
     ELSE ! normal writing
+      IF (present(Rfmt)) THEN
+        Rfmt_loc = Rfmt
+      ELSE
+        Rfmt_loc = 'e12.3'
+      END IF
       IF (present(info)) write(nio_loc,*) info
 
       nVar = 0
       IF (allocated(S%d1)) nVar = size(S%d1)
 
-      write(nio_loc,'(a,3(3x),1x,sp,e12.3)') ' 0   derivative',S%d0
+      fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
+      write(nio_loc,fformat) ' 0   derivative',S%d0
+
       IF (allocated(S%d1)) THEN
         IF (nVar > 99) THEN
-          fformat = '(a,(1x,i0),1x,sp,e12.3)'
+          fformat = '(a,(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
-          fformat = '(a,(1x,i2),2(3x),1x,sp,e12.3)'
+          fformat = '(a,(1x,i2),2(3x),1x,sp,' // Rfmt_loc // ')'
         END IF
+
         DO i=1,ubound(S%d1,dim=1)
           write(nio_loc,fformat) ' 1st derivative',i,S%d1(i)
         END DO
       END IF
       IF (allocated(S%d2)) THEN
         IF (nVar > 99) THEN
-          fformat = '(a,2(1x,i0),1x,sp,e12.3)'
+          fformat = '(a,2(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
-          fformat = '(a,2(1x,i2),1(3x),1x,sp,e12.3)'
+          fformat = '(a,2(1x,i2),1(3x),1x,sp,' // Rfmt_loc // ')'
         END IF
         DO i=1,ubound(S%d2,dim=2)
         DO j=1,ubound(S%d2,dim=1)
@@ -904,9 +899,9 @@ CONTAINS
       END IF
       IF (allocated(S%d3)) THEN
         IF (nVar > 99) THEN
-          fformat = '(a,3(1x,i0),1x,sp,e12.3)'
+          fformat = '(a,3(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
-          fformat = '(a,3(1x,i2),1x,sp,e12.3)'
+          fformat = '(a,3(1x,i2),1x,sp,' // Rfmt_loc // ')'
         END IF
         DO i=1,ubound(S%d3,dim=3)
         DO j=1,ubound(S%d3,dim=2)
@@ -2283,138 +2278,4 @@ CONTAINS
 
   END FUNCTION AD_get_ATANH_dnS
 
-  FUNCTION AD_dot_product_VecOFdnS(VecA,VecB) RESULT(Sres)
-    USE ADLib_NumParameters_m
-
-    TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: VecA(:),VecB(:)
-
-    integer :: i
-    integer :: err_dnS_loc
-    real(kind=Rkind) :: d0f,d1f,d2f,d3f
-    character (len=*), parameter :: name_sub='AD_dot_product_VecOFdnS'
-
-
-    IF (size(VecA) /= size(VecB)) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are different'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in dot_product_VecOFdnS'
-    END IF
-
-    IF (size(VecA) < 1) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are < 1'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in dot_product_VecOFdnS'
-    END IF
-
-    Sres = VecA(lbound(VecA,dim=1)) ! for the initialization
-    Sres = ZERO
-    DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-      Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
-    END DO
-
-  END FUNCTION AD_dot_product_VecOFdnS
-  FUNCTION AD_dot_product_VecOFdnS_Vec(VecA,VecB) RESULT(Sres)
-    USE ADLib_NumParameters_m
-
-    TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: VecA(:)
-    real(kind=Rkind),    intent(in)    :: VecB(:)
-
-    integer :: i
-    integer :: err_dnS_loc
-    real(kind=Rkind) :: d0f,d1f,d2f,d3f
-    character (len=*), parameter :: name_sub='AD_dot_product_VecOFdnS_Vec'
-
-
-    IF (size(VecA) /= size(VecB)) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are different'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in AD_dot_product_VecOFdnS_Vec'
-    END IF
-
-    IF (size(VecA) < 1) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are < 1'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in AD_dot_product_VecOFdnS_Vec'
-    END IF
-
-
-    Sres = VecA(lbound(VecA,dim=1)) ! for the initialization
-    Sres = ZERO
-    DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-      Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
-    END DO
-
-  END FUNCTION AD_dot_product_VecOFdnS_Vec
-  FUNCTION AD_dot_product_Vec_VecOFdnS(VecA,VecB) RESULT(Sres)
-    USE ADLib_NumParameters_m
-
-    TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: VecB(:)
-    real(kind=Rkind),    intent(in)    :: VecA(:)
-
-    integer :: i
-    integer :: err_dnS_loc
-    real(kind=Rkind) :: d0f,d1f,d2f,d3f
-    character (len=*), parameter :: name_sub='AD_dot_product_Vec_VecOFdnS'
-
-
-    IF (size(VecA) /= size(VecB)) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are different'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in AD_dot_product_Vec_VecOFdnS'
-    END IF
-
-    IF (size(VecA) < 1) THEN
-       write(out_unitp,*) ' ERROR in ',name_sub
-       write(out_unitp,*) '  size of both vectors are < 1'
-       write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-       STOP 'Problem in AD_dot_product_Vec_VecOFdnS'
-    END IF
-
-    Sres = VecB(lbound(VecB,dim=1)) ! for the initialization
-    Sres = ZERO
-    DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-      Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
-    END DO
-
-  END FUNCTION AD_dot_product_Vec_VecOFdnS
-  FUNCTION AD_product_VecOFdnS(Vec) RESULT(Sres)
-    USE ADLib_NumParameters_m
-
-    TYPE (dnS_t)                              :: Sres
-    TYPE (dnS_t),        intent(in)           :: Vec(:)
-
-    integer :: i
-    character (len=*), parameter :: name_sub='AD_product_VecOFdnS'
-
-    Sres = Vec(lbound(Vec,dim=1)) ! for the initialization
-    Sres = ONE
-    DO i=lbound(Vec,dim=1),ubound(Vec,dim=1)
-      Sres = Sres * Vec(i)
-    END DO
-
-  END FUNCTION AD_product_VecOFdnS
-  FUNCTION AD_SUM_VecOFdnS(Vec) RESULT(Sres)
-    USE ADLib_NumParameters_m
-
-    TYPE (dnS_t)                              :: Sres
-    TYPE (dnS_t),        intent(in)           :: Vec(:)
-
-    integer :: i
-    character (len=*), parameter :: name_sub='AD_SUM_VecOFdnS'
-
-    !Sres = Vec(lbound(Vec,dim=1)) ! for the initialization
-    Sres = ZERO
-    DO i=lbound(Vec,dim=1),ubound(Vec,dim=1)
-      Sres = Sres + Vec(i)
-    END DO
-
-  END FUNCTION AD_SUM_VecOFdnS
 END MODULE ADdnSVM_dnS_m

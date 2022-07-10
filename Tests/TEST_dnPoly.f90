@@ -60,11 +60,10 @@ PROGRAM TEST_dnPoly
   USE ADLib_Test_m
   IMPLICIT NONE
 
-  TYPE (dnS_t)                        :: dnX,Sana,Sres
+  TYPE (dnS_t)                        :: dnX,dnTh,dnPhi,Sana,Sres
   TYPE (dnS_t), allocatable           :: Vec_dnS(:)
 
   integer                             :: i,nderiv
-  integer                             :: nb_Err,nb_OK,nb_Test
   real(kind=Rkind)                    :: Norm,x,xx
   character (len=*), parameter        :: name_sub='TEST_dnPoly'
   logical                             :: prlev
@@ -79,11 +78,6 @@ PROGRAM TEST_dnPoly
 
   nderiv = 1
   write(out_unitp,'(a,i2)') "== TESTING dnPoly module with nderiv=",nderiv
-  nb_Test = 0
-  nb_OK   = 0
-  nb_Err  = 0
-
-
 
   x       = HALF
   dnX     = Variable(x,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
@@ -116,8 +110,16 @@ PROGRAM TEST_dnPoly
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnFourier(x,2)')
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
 
+  Sana  = dnFourier2(dnX,-2) ! sin(2x)/sqrt(pi)
+  Norm  = ONE/sqrt(pi)
+  CALL set_dnS(Sres,d0=sin(2*x)*Norm,d1=[2*cos(2*x)*Norm]) ! sin(x)/sqrt(pi)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Fourier2(x,-2)  = sin(2x)/sqrt(pi)           ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnFourier2(x,-2)')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
 
-  Sana  = dnLegendre0(dnX,2) ! sin(x)/sqrt(pi)
+  Sana  = dnLegendre0(dnX,2)
   Norm  = ONE/sqrt(TWO/(TWO*2+ONE))
   CALL set_dnS(Sres,d0=(THREE*x**2-ONE)/TWO*Norm,d1=[THREE*x*Norm]) ! (3x**2-1)/2/norm
   CALL test_logical(test_var,                                                 &
@@ -126,17 +128,39 @@ PROGRAM TEST_dnPoly
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnLegendre0(x,2)')
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
 
+  Sana  = dnLegendre(dnX,2,0)
+  Sres  = dnLegendre0(dnX,2)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Legendre(x,2,0) = Legendre0(x,2)             ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnLegendre(x,2,0)')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
+
+  Sana  = dnLegendre(dnX,1,1,ReNorm=.FALSE.)
+  Sres  = -sqrt(ONE-dnX**2)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Legendre(x,1,1) = -sqrt(ONE-x**2)            ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnLegendre(x,1,1)',Rfmt='f15.11')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna',Rfmt='f15.11')
+
+  Sana  = dnLegendre(dnX,1,1)
+  Sres  = -sqrt(ONE-dnX**2)/sqrt(FOUR/THREE)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Legendre(x,1,1) = -sqrt(ONE-x**2)/sqrt(4/3)  ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnLegendre(x,1,1)',Rfmt='f15.11')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna',Rfmt='f15.11')
 
   ! Jacobi(x,2,1,1) = 3 + 15(x-1)/2 +  15((x-1)/2)**2
   xx    = (x-1)/2
   Sana  = dnJacobi(dnX,n=2,alpha=1,beta=1,ReNorm=.FALSE.) ! Jacobi(x,2,1,1)
-  nb_Test = nb_Test + 1
   CALL set_dnS(Sres,d0=3+15*xx+15*xx**2,d1=[15*HALF + 15*xx])
   CALL test_logical(test_var,                                                 &
                     test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
                     info='Jacobi(x,2,1,1) = 3+15(xx+xx**2); xx=(x-1)/2 ')
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnJacobi(x,2,1,1)')
-  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
 
 
   Sana  = dnHermite(dnX,2) ! Hermite(x,2) = 4*x**2-2
@@ -146,7 +170,7 @@ PROGRAM TEST_dnPoly
                     test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
                     info='Hermite(x,2)    = (4*x**2-2)/Norm            ')
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnHermite(x,2)')
-  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
 
 
   Sana  = dnExpHermite(dnX,2) ! Exp(-x**2/2)Hermite(x,2)
@@ -156,9 +180,43 @@ PROGRAM TEST_dnPoly
                     test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
                     info='ExpHermite(x,2) = Exp(-x**2/2)(4*x**2-2)/Norm')
   IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnExpHermite(x,2)')
-  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='dnAna')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
 
+  ! Real Spherical Harmonics
+  dnTh  = dnX
+  dnPhi = dnX
+  Sana  = RSphericalHarmonics2(dnTh,dnPhi,0,0)
+  Sres  = ONE/sqrt(4*pi)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Y00(th,phi) ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='Y00(th,phi)')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
 
+  Sana  = RSphericalHarmonics2(dnTh,dnPhi,1,0)
+  Sres  = cos(dnTh)/sqrt(TWO/THREE)/ONE/sqrt(2*pi)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Y10(th,phi) ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='Y10(th,phi)')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
+
+  Sana  = RSphericalHarmonics2(dnTh,dnPhi,1,-1)
+  Sres  = -sin(dnTh)*sin(dnPhi)/sqrt(FOUR/THREE)/ONE/sqrt(pi)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Y1-1(th,phi) ')
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='Y1-1(th,phi)')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
+
+  Sana  = RSphericalHarmonics2(dnTh,dnPhi,1,1)
+  Sres  = -sin(dnTh)*cos(dnPhi)/sqrt(FOUR/THREE)/ONE/sqrt(pi)
+  CALL test_logical(test_var,                                                 &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-Sres,ONETENTH**10),       &
+                    info='Y11(th,phi) ')
+
+  IF (prlev) CALL Write_dnS(Sana,nio=test_var%test_log_file_unit,info='Y11(th,phi)')
+  IF (prlev) CALL Write_dnS(Sres,nio=test_var%test_log_file_unit,info='dnAna')
 
   CALL test_finalize(test_var)
 

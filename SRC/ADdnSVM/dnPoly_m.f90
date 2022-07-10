@@ -28,43 +28,7 @@
 !===============================================================================
 !> @brief Module which deals with derivatives of a scalar functions.
 !!
-!! This module deals with operations or functions of a scalar function and its derivatives, dnS.
-!!
-!! There is a mapping between the saclar function S, its derivatives and the dnS derived type components:
-!!
-!! @li S                 => S%d0
-!! @li dS/dQ_i           => S%d1(i)
-!! @li d^2S/dQ_idQ_j     => S%d2(i,j)
-!! @li d^3S/dQ_idQ_jdQ_k => S%d3(i,j,k)
-!!
-!! with S defined as:
-!!  TYPE (dnS_t) :: S
-!!
-!!
-!! All standard fortran operators (= + - * / **) are overloaded:
-!!
-!! For instance the sum (+) of two dnS variables, S1 and S2 corresponds to:
-!! @li (S1+S2)                 => S1%d0    + S2%d0
-!! @li d(S1+S2)/dQ_i           => S1%d1(i) + S2%d1(i)
-!! @li ....
-!!
-!! The product (*) of two dnS variables, S1 and S2 correspond to:
-!! @li (S1*S2)                 => S1%d0 * S1%d0
-!! @li d(S1*S2)/dQ_i           => S1%d0 * S2%d1(i) + S1%d1(i) * S2%d0    (derivative of a product)
-!! @li ....
-!!
-!! All standard fortran functions (exp, sqrt, log ... sin ... sinh) are overloaded
-!!
-!! For instance the function, f, of dnS variables, S, corresponds to:
-!! @li f(S)                    =>           f(S%d0)
-!! @li d(f(S))/dQ_i            => S%d1(i) * f'(S%d0)
-!! @li ....
-!!
-!! All fortran comparison operators (== /= > >= < <=) and (.EQ. .LT. ....) are overloaded, as well.
-!! The comparison are done on the zero-order component:
-!! S1 == S2                   =>   S1%d0 == S2%d0
-!! S1 > S2                    =>   S1%d0  > S2%d0
-!!
+!! This module deals with polynomila of dnS_t
 !!
 !! @author David Lauvergnat
 !! @date 26/04/2020
@@ -76,7 +40,9 @@ MODULE ADdnSVM_dnPoly_m
 
   PRIVATE
 
-  PUBLIC :: dnMonomial,dnBox,dnFourier,dnLegendre0,dnJacobi,dnHermite,dnExpHermite
+  PUBLIC :: dnMonomial,dnBox,dnJacobi,dnHermite,dnExpHermite
+  PUBLIC :: dnLegendre0,dnLegendre
+  PUBLIC :: dnFourier,dnFourier2
 
   INTERFACE dnMonomial
      MODULE PROCEDURE AD_dnMonomial
@@ -89,9 +55,15 @@ MODULE ADdnSVM_dnPoly_m
   INTERFACE dnFourier
      MODULE PROCEDURE AD_dnFourier
   END INTERFACE
+  INTERFACE dnFourier2
+     MODULE PROCEDURE AD_dnFourier2
+  END INTERFACE
 
   INTERFACE dnLegendre0
      MODULE PROCEDURE AD_dnLegendre0
+  END INTERFACE
+  INTERFACE dnLegendre
+     MODULE PROCEDURE AD_dnLegendre
   END INTERFACE
 
   INTERFACE dnJacobi
@@ -167,6 +139,7 @@ CONTAINS
     xx = x*real(ii,kind=Rkind)
 
     IF (ii == 0) THEN
+      Sres = x ! initialisation
       Sres = ONE
       Rnorm = sq2pi
     ELSE IF (mod(i,2) == 0) THEN
@@ -187,6 +160,49 @@ CONTAINS
     END IF
 
   END FUNCTION AD_dnFourier
+  ELEMENTAL FUNCTION AD_dnFourier2(x,i,ReNorm) RESULT(Sres)
+    USE ADLib_NumParameters_m
+
+    TYPE (dnS_t)                       :: Sres
+    TYPE (dnS_t),        intent(in)    :: x
+    integer,             intent(in)    :: i
+    logical,   optional, intent(in)    :: ReNorm
+
+    real(kind=Rkind), parameter :: sqpi  = ONE/sqrt(pi)
+    real(kind=Rkind), parameter :: sq2pi = ONE/sqrt(pi+pi)
+
+    integer           :: ii
+    TYPE (dnS_t)      :: xx
+    real (kind=Rkind) :: Rnorm
+
+    character (len=*), parameter :: name_sub='AD_dnFourier2'
+
+
+    ii = abs(i)
+    xx = x*real(ii,kind=Rkind)
+
+    IF (ii == 0) THEN
+      Sres = x ! initialisation
+      Sres = ONE
+      Rnorm = sq2pi
+    ELSE IF (i < 0) THEN
+      Sres = sin(xx)
+      Rnorm = sqpi
+    ELSE ! i > 0
+      Sres = cos(xx)
+      Rnorm = sqpi
+    END IF
+
+
+    IF (present(ReNorm)) THEN
+      IF (ReNorm) THEN
+        Sres = Sres * Rnorm
+      END IF
+    ELSE
+      Sres = Sres * Rnorm
+    END IF
+
+  END FUNCTION AD_dnFourier2
   ELEMENTAL FUNCTION AD_dnLegendre0(x,i,ReNorm) RESULT(Sres)
     USE ADLib_NumParameters_m
 
@@ -201,7 +217,9 @@ CONTAINS
 
     character (len=*), parameter :: name_sub='AD_dnLegendre0'
 
+
     IF ( i<= 0) THEN
+      Sres = x ! initialisation
       Sres = ONE
     ELSE IF ( i== 1) THEN
       Sres = x
@@ -227,6 +245,77 @@ CONTAINS
     END IF
 
   END FUNCTION AD_dnLegendre0
+  ELEMENTAL FUNCTION AD_dnLegendre(x,l,m,ReNorm) RESULT(Sres)
+    USE ADLib_NumParameters_m
+
+    TYPE (dnS_t)                       :: Sres
+    TYPE (dnS_t),        intent(in)    :: x
+    integer,             intent(in)    :: l,m
+    logical,   optional, intent(in)    :: ReNorm
+
+    TYPE (dnS_t)     :: pmm,pll,pmmp1,somx2,poly
+    integer          :: i,ll
+    real(kind=Rkind) :: fact,Pnorm2
+    logical          :: ReNorm_loc
+
+    character (len=*), parameter :: name_sub='AD_dnLegendre'
+
+    ! IF (m < 0 .OR. l < 0 .OR. abs(x) > ONE) THEN
+    !   write(out_unitp,*) 'mauvais arguments dans poly_legendre :'
+    !   write(out_unitp,*) ' m l : ',m,l,' et x = ',x
+    !   STOP
+    ! END IF
+
+    IF (present(ReNorm)) THEN
+      ReNorm_loc = ReNorm
+    ELSE
+      ReNorm_loc = .TRUE.
+    END IF
+
+    Sres = x ! initialisation
+
+    IF (m > l .OR. l < 0 .OR. m < 0) THEN
+      Sres = ZERO
+      RETURN
+    END IF
+
+    pmm = ONE
+
+    IF (m > 0) THEN
+      somx2 = sqrt(ONE - x*x)
+      fact = ONE
+      DO i=1,m
+        pmm = -pmm*fact*somx2
+        fact = fact+TWO
+      END DO
+    END IF
+
+
+    IF (m == l) THEN
+      Sres = pmm
+    ELSE
+      pmmp1 = x*(2*m+1)*pmm
+      IF (l == m+1) THEN
+        Sres = pmmp1
+      ELSE
+        DO ll=m+2,l
+          pll   = ( x*(2*ll-1)*pmmp1 - (ll+m-1)*pmm ) / (ll-m)
+          pmm   = pmmp1
+          pmmp1 = pll
+        END DO
+        Sres = pll
+      END IF
+    END IF
+
+    IF (ReNorm_loc) THEN
+      Pnorm2 = TWO/(2*l+1)
+      DO i=l-m+1,l+m
+       Pnorm2 = Pnorm2 * i
+      END DO
+      Sres = Sres/sqrt(Pnorm2)
+    END IF
+
+  END FUNCTION AD_dnLegendre
 
   ELEMENTAL FUNCTION AD_dnJacobi(x,n,alpha,beta,ReNorm) RESULT(Sres)
     !USE ADLib_NumParameters_m
@@ -256,6 +345,7 @@ CONTAINS
 
 
     IF ( n <= 0) THEN
+      Sres = x ! initialisation
       Sres = ONE
     ELSE IF ( n == 1) THEN
       Sres = (alpha+1)+(alpha+beta+2)*(x-ONE)*HALF
@@ -301,27 +391,29 @@ CONTAINS
     real (kind=Rkind) :: Rnorm
     integer           :: i
 
+
     IF (l == 0) THEN
-       Sres = ONE
-       Rnorm = ONE/sqrt(sqrt(pi))
+      Sres = x ! initialisation
+      Sres = ONE
+      Rnorm = ONE/sqrt(sqrt(pi))
     ELSE IF (l == 1) THEN
-       Sres = TWO*x
-       Rnorm = ONE/sqrt(TWO*sqrt(pi))
+      Sres = TWO*x
+      Rnorm = ONE/sqrt(TWO*sqrt(pi))
     ELSE
 
-     pl2   = ONE
-     pl1   = TWO*x
-     Rnorm = sqrt(pi)*TWO
+      pl2   = ONE
+      pl1   = TWO*x
+      Rnorm = sqrt(pi)*TWO
 
-     DO i=2,l
-       Rnorm = Rnorm*TWO*i
-       pl0  = TWO*( x*pl1 - real(i-1,kind=Rkind)*pl2 )
-       pl2   = pl1
-       pl1   = pl0
-     END DO
-     Sres  = pl0
-     Rnorm = ONE/sqrt(Rnorm)
-   END IF
+      DO i=2,l
+        Rnorm = Rnorm*TWO*i
+        pl0  = TWO*( x*pl1 - real(i-1,kind=Rkind)*pl2 )
+        pl2   = pl1
+        pl1   = pl0
+      END DO
+      Sres  = pl0
+      Rnorm = ONE/sqrt(Rnorm)
+    END IF
 
     IF (present(ReNorm)) THEN
       IF (ReNorm) THEN
@@ -330,7 +422,6 @@ CONTAINS
     ELSE
       Sres = Sres * Rnorm
     END IF
-
 
   END FUNCTION AD_dnHermite
 !===================================================
