@@ -47,7 +47,7 @@ IMPLICIT NONE
 
   END TYPE test_t
 
-  PUBLIC :: test_logical,test_finalize,test_initialyze
+  PUBLIC :: test_logical,test_finalize,test_initialize
 
   INTERFACE test_logical
     MODULE PROCEDURE AD_test_logical
@@ -55,8 +55,8 @@ IMPLICIT NONE
   INTERFACE test_finalize
     MODULE PROCEDURE AD_test_finalize
   END INTERFACE
-  INTERFACE test_initialyze
-    MODULE PROCEDURE AD_test_initialyze
+  INTERFACE test_initialize
+    MODULE PROCEDURE AD_test_initialize
   END INTERFACE
 
 CONTAINS
@@ -131,7 +131,7 @@ CONTAINS
 
  END SUBROUTINE AD_test_finalize
 
- SUBROUTINE AD_test_initialyze(test_var,test_name,log_file_name)
+ SUBROUTINE AD_test_initialize(test_var,test_name,log_file_name)
  IMPLICIT NONE
 
   TYPE (test_t),      intent(inout)          :: test_var
@@ -158,6 +158,6 @@ CONTAINS
   write(out_unitp,*) "== TESTING ",test_var%test_name," module ===="
   write(test_var%test_log_file_unit,*) "== TESTING ",test_var%test_name," module ===="
 
-END SUBROUTINE AD_test_initialyze
+END SUBROUTINE AD_test_initialize
 
 END MODULE ADLib_Test_m

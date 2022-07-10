@@ -54,7 +54,7 @@ PROGRAM TEST_dnS
     character (len=*), parameter :: name_sub='TEST_dnS'
 
 
-    CALL test_initialyze(test_var,test_name='dnS')
+    CALL test_initialize(test_var,test_name='dnS')
 
     nderiv = 3
     write(out_unitp,'(a,i2)') "== TESTING dnS module with nderiv=",nderiv

@@ -73,7 +73,7 @@ PROGRAM TEST_dnPoly
   CALL read_arg()
   prlev = (print_level > 0)
 
-  CALL test_initialyze(test_var,test_name='dnPoly')
+  CALL test_initialize(test_var,test_name='dnPoly')
 
 
   nderiv = 1
