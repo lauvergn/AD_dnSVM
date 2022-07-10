@@ -197,7 +197,7 @@ MODULE ADdnSVM_dnS_m
      MODULE PROCEDURE AD_set_dnS
   END INTERFACE
   INTERFACE Write_dnS
-     MODULE PROCEDURE AD_Write_dnS
+     MODULE PROCEDURE AD_Write_dnS_file,AD_Write_dnS_string
   END INTERFACE
   INTERFACE get_nderiv
      MODULE PROCEDURE AD_get_nderiv_FROM_dnS
@@ -785,7 +785,7 @@ CONTAINS
 !! @param info               character (optional): when present, write info
 !! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnS)
 !! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnS_FOR_test)
-  SUBROUTINE AD_Write_dnS(S,nio,info,all_type,FOR_test,Rfmt)
+  SUBROUTINE AD_Write_dnS_file(S,nio,info,all_type,FOR_test,Rfmt)
     USE ADLib_Util_m
 
     TYPE (dnS_t),     intent(in)           :: S
@@ -893,7 +893,7 @@ CONTAINS
         END IF
         DO i=1,ubound(S%d2,dim=2)
         DO j=1,ubound(S%d2,dim=1)
-          write(nio_loc,fformat) ' 2d  derivative',i,j,S%d2(j,i)
+          write(nio_loc,fformat) ' 2d  derivative',j,i,S%d2(j,i)
         END DO
         END DO
       END IF
@@ -906,14 +906,119 @@ CONTAINS
         DO i=1,ubound(S%d3,dim=3)
         DO j=1,ubound(S%d3,dim=2)
         DO k=1,ubound(S%d3,dim=1)
-          write(nio_loc,fformat) ' 3d  derivative',i,j,k,S%d3(k,j,i)
+          write(nio_loc,fformat) ' 3d  derivative',k,j,i,S%d3(k,j,i)
         END DO
         END DO
         END DO
       END IF
     END IF
 
-  END SUBROUTINE AD_Write_dnS
+  END SUBROUTINE AD_Write_dnS_file
+  SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt)
+    USE ADLib_Util_m
+
+    TYPE (dnS_t),     intent(in)           :: S
+    character (len=:), allocatable         :: string
+    character(len=*), intent(in), optional :: info
+    logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
+
+    integer :: i,j,k
+    logical :: all_type_loc,FOR_test_loc
+    !character (len=50) :: fformat
+    character (len=:), allocatable :: fformat,Rfmt_loc
+
+
+    all_type_loc = .FALSE.
+    IF (present(all_type)) all_type_loc = all_type
+    FOR_test_loc = .FALSE.
+    IF (present(FOR_test)) FOR_test_loc = FOR_test
+
+    IF (all_type_loc) THEN ! write all variables
+      IF (present(info)) string = string // info // new_line('a')
+      string = string // '-------------------------------------------' // new_line('a') // &
+         'Write_dnS (all)' // new_line('a') //                                  &
+         'nderiv' // int_TO_char(S%nderiv) // new_line('a') //                  &
+         'S%d0' // real_TO_char(S%d0) // new_line('a')
+      IF (allocated(S%d1)) THEN
+        string = string // 'S%d1:'
+        DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
+          string = string // ' ' // real_TO_char(S%d1(i))
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d1: not allocated' // new_line('a')
+      END IF
+      IF (allocated(S%d2)) THEN
+        string = string // 'S%d2:'
+        DO j=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
+        DO i=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
+          string = string // ' ' // real_TO_char(S%d2(i,j))
+        END DO
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d2: not allocated' // new_line('a')
+      END IF
+      IF (allocated(S%d3)) THEN
+        string = string // 'S%d3:'
+        DO k=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
+        DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
+        DO i=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
+          string = string // ' ' // real_TO_char(S%d3(i,j,k))
+        END DO
+        END DO
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d3: not allocated' // new_line('a')
+      END IF
+      string = string // 'END Write_dnS (all)' // new_line('a') //              &
+            '-------------------------------------------' // new_line('a')
+    ELSE ! normal writing
+      IF (present(Rfmt)) THEN
+        Rfmt_loc = Rfmt
+      ELSE
+        Rfmt_loc = 'e12.3'
+      END IF
+      IF (present(info)) string = string // info // new_line('a')
+
+
+      fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
+
+      string = string // ' 0   derivative       ' //                            &
+          real_TO_char(S%d0,Rformat=Rfmt_loc) // new_line('a')
+
+
+      IF (allocated(S%d1)) THEN
+        DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
+          string = string // ' 1st derivative     ' // int_TO_char(i) // ' ' // &
+                        real_TO_char(S%d1(i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+      END IF
+      IF (allocated(S%d2)) THEN
+        DO i=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
+        DO j=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
+          string = string // ' 2d  derivative   ' // int_TO_char(j) // ' ' //   &
+                        int_TO_char(i) // ' ' //                                &
+                        real_TO_char(S%d2(j,i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+        END DO
+      END IF
+      IF (allocated(S%d3)) THEN
+        DO i=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
+        DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
+        DO k=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
+          string = string // ' 3d  derivative ' // int_TO_char(k) // ' ' //     &
+                         int_TO_char(j) // ' ' // int_TO_char(i) // ' ' //      &
+                        real_TO_char(S%d3(k,j,i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+        END DO
+        END DO
+      END IF
+    END IF
+
+  END SUBROUTINE AD_Write_dnS_string
 !> @brief Public function to get nderiv from a derived type dnS.
 !!
 !> @author David Lauvergnat

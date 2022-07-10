@@ -54,328 +54,335 @@ PROGRAM TEST_dnS
     character (len=*), parameter :: name_sub='TEST_dnS'
 
 
-    CALL test_initialize(test_var,test_name='dnS')
+  CALL Initialize_Test(test_var,test_name='dnS')
 
-    nderiv = 3
-    write(out_unitp,'(a,i2)') "== TESTING dnS module with nderiv=",nderiv
+  nderiv = 3
+  CALL Append_Test(test_var,'== TESTING dnS module with nderiv= ' // int_TO_char(nderiv))
 
-    x       = 0.5_Rkind
-    dnX     = variable(x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
-    dn2X    = variable(x+x,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
+  x       = 0.5_Rkind
+  dnX     = variable(x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
+  dn2X    = variable(x+x,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
 
-    IF (print_level > 0) THEN
-      CALL Write_dnS(dnX,test_var%test_log_file_unit,info='dnX')
-      CALL Write_dnS(dn2X,test_var%test_log_file_unit,info='dn2X')
-    END IF
+  IF (print_level > 0) THEN
+    CALL Write_dnS(dnX,  string=test_var%test_log,info='dnX')
+    CALL Write_dnS(dn2X, string=test_var%test_log,info='dn2X')
+  END IF
+  CALL Flush_Test(test_var)
 
-
-
-   write(out_unitp,'(a)') "============================================"
-   write(out_unitp,'(a)') "operators: == /= > >= < <="
-   write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'operators: == /= > >= < <=')
+  CALL Append_Test(test_var,'============================================')
 
   res_test = (dnX == dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX == dnX:   T ? ' // logical_TO_char(res_test) )
   res_test = (dnX == dn2X)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX == dn2X:  F ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX /= dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX /= dnX:   F ? ' // logical_TO_char(res_test) )
   res_test = (dnX /= dn2X)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX /= dn2X:  T ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX > dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX  > dnX:   F ? ' // logical_TO_char(res_test) )
   res_test = (dnX  > dn2X)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX  > dn2X:  F ? ' // logical_TO_char(res_test) )
   res_test = (dn2X > dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dn2X > dnX:   T ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX >= dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX  >= dnX:  T ? ' // logical_TO_char(res_test) )
   res_test = (dnX  >= dn2X)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX  >= dn2X: F ? ' // logical_TO_char(res_test) )
   res_test = (dn2X >= dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dn2X >= dnX:  T ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX  < dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dnX  < dnX:   F ? ' // logical_TO_char(res_test) )
   res_test = (dnX  < dn2X)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX  < dn2X:  T ? ' // logical_TO_char(res_test) )
   res_test = (dn2X < dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dn2X < dnX:   F ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX  <= dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX  <= dnX:  T ? ' // logical_TO_char(res_test) )
   res_test = (dnX  <= dn2X)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                    info='dnX  <= dn2X: T ? ' // logical_TO_char(res_test) )
   res_test = (dn2X <= dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                    info='dn2X <= dnX:  F ? ' // logical_TO_char(res_test) )
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "operators: .EQ. .NE. .GT. .GE. .LT. .LE."
-  write(out_unitp,'(a)') "============================================"
+  CALL Flush_Test(test_var)
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'operators: .EQ. .NE. .GT. .GE. .LT. .LE.')
+  CALL Append_Test(test_var,'============================================')
+
   res_test = (dnX .EQ. dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                   info='dnX .EQ. dnX:   T ? ' // logical_TO_char(res_test) )
   res_test = (dnX .NE. dn2X)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                   info='dnX .NE.dn2X:   T ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX .GT. dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                   info='dnX .GT. dnX:   F ? ' // logical_TO_char(res_test) )
   res_test = (dnX .GE. dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                   info='dnX .GE. dnX:   T ? ' // logical_TO_char(res_test) )
 
   res_test = (dnX .LT. dnX)
-  CALL test_logical(test_var,test1=res_test,test2=.FALSE.,                      &
+  CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,                      &
                   info='dnX .LT. dnX:   F ? ' // logical_TO_char(res_test) )
   res_test = (dnX .LE. dnX)
-  CALL test_logical(test_var,test1=res_test,                                    &
+  CALL Logical_Test(test_var,test1=res_test,                                    &
                   info='dnX .LE. dnX:   T ? ' // logical_TO_char(res_test) )
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "operators: + - * / **"
-  write(out_unitp,'(a)') "============================================"
+  CALL Flush_Test(test_var)
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'operators: + - * / **')
+  CALL Append_Test(test_var,'============================================')
 
   Sana = 0.5_Rkind
   Sana = Sana + dnX
   Snum = AD_get_Num_dnS_FROM_f_x(x,faplusx,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='a+dnX:         (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='0.5 + dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='a+dnX:         (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='0.5 + dnX')
 
   Sana = dnX + 0.5_Rkind
   Snum = AD_get_Num_dnS_FROM_f_x(x,faplusx,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX+a:         (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX + 0.5')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX+a:         (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX + 0.5')
 
   Sana = dnX + dnX
   Snum = AD_get_Num_dnS_FROM_f_x(x,fatimex,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX+dnX=2*dnX: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX + dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX+dnX=2*dnX: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX + dnX')
 
   Sana = +(0.5_Rkind - dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,faminusx,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='+(a-dnX):      (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='+(0.5 - dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='+(a-dnX):      (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='+(0.5 - dnX)')
 
   Sana = -(dnX - 0.5_Rkind)
   Snum = AD_get_Num_dnS_FROM_f_x(x,faminusx,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='-(dnX-a):      (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='-(dnX - 0.5)')
+  CALL Logical_Test(test_var,test1=res_test,info='-(dnX-a):      (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='-(dnX - 0.5)')
 
   Sana = dnX - dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX-dnX                   ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX - dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX-dnX                   ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX - dnX')
 
   Sana = 2._Rkind * dnX
   Snum = AD_get_Num_dnS_FROM_f_x(x,fatimex,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='a*dnX:         (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='2. * dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='a*dnX:         (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='2. * dnX')
 
   Sana =  dnX * 2._Rkind
   Snum = AD_get_Num_dnS_FROM_f_x(x,fatimex,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX*a:         (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX * 2.')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX*a:         (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX * 2.')
 
   Sana =  dnX * dnX - dnX**(2._Rkind)
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX*dnX-dnX**2.           ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX * dnX - dnX**(2.)')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX*dnX-dnX**2.           ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX * dnX - dnX**(2.)')
 
   Sana =  dnX / 0.5_Rkind -dnX*2._Rkind
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX/0.5-dnX*2             ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX/0.5 -dnX*2.')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX/0.5-dnX*2             ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX/0.5 -dnX*2.')
 
   Sana =  0.5_Rkind / dnX - 0.5_Rkind*dnX**(-1)
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='0.5/dnX-0.5.dnX*^-1       ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='0.5 / dnX - 0.5*dnX**(-1)')
+  CALL Logical_Test(test_var,test1=res_test,info='0.5/dnX-0.5.dnX*^-1       ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='0.5 / dnX - 0.5*dnX**(-1)')
 
   Sana =  dnX / dnX - 1._Rkind
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX/dnX-1.                ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX / dnX - 1.')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX/dnX-1.                ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX / dnX - 1.')
 
   Sana =  dnX**0.5_Rkind - sqrt(dnX)
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**0.5-sqrt(dnX)        ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**0.5-sqrt(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**0.5-sqrt(dnX)        ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**0.5-sqrt(dnX)')
 
   Sana =  dnX**3 - dnX*dnX*dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX        ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**3 - dnX*dnX*dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX        ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**3 - dnX*dnX*dnX')
 
+  CALL Flush_Test(test_var)
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "functions: sqrt, exp, log, ... sin, asin, ... acosh ..."
-  write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'functions: sqrt, exp, log, ... sin, asin, ... acosh ...')
+  CALL Append_Test(test_var,'============================================')
 
   Sana = sqrt(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,SQRT_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='sqrt: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='sqrt(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='sqrt: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sqrt(dnX)')
 
   Sana = abs(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,ABS_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='abs:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='abs(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='abs:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='abs(dnX)')
 
   Sana = exp(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,EXP_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='exp:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='exp(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='exp:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='exp(dnX)')
 
   Sana = log(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,log_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='log:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='log(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='log:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='log(dnX)')
 
   Sana = log10(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,log10_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='log10:(Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='log10(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='log10:(Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='log10(dnX)')
 
   Sana = sin(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,sin_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='sin:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='sin(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='sin:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sin(dnX)')
 
   Sana = asin(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,asin_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='asin: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='asin(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='asin: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='asin(dnX)')
 
   Sana = cos(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,cos_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='cos:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='cos(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='cos:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='cos(dnX)')
 
   Sana = acos(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,acos_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='acos: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='acos(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='acos: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='acos(dnX)')
 
   Sana = tan(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,tan_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='tan:  (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='tan(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='tan:  (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='tan(dnX)')
 
   Sana = atan(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,atan_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='atan: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='atan(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='atan: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='atan(dnX)')
 
   Sana = sinh(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,sinh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='sinh: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='sinh(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='sinh: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sinh(dnX)')
 
   Sana = asinh(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,asinh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='asinh:(Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='asinh(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='asinh:(Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='asinh(dnX)')
 
   Sana = cosh(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,cosh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='cosh: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='cosh(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='cosh: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='cosh(dnX)')
 
   dnY = Variable(FOUR*x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
   Sana = acosh(dnY)
   Snum = AD_get_Num_dnS_FROM_f_x(FOUR*x,acosh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='acosh:(Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='acosh(dnY)')
+  CALL Logical_Test(test_var,test1=res_test,info='acosh:(Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='acosh(dnY)')
 
   Sana = tanh(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,tanh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='tanh: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='tanh(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='tanh: (Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='tanh(dnX)')
 
   Sana = atanh(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,atanh_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='atanh:(Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='atanh(dnX)')
+  CALL Logical_Test(test_var,test1=res_test,info='atanh:(Sana-Snum)==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='atanh(dnX)')
 
+  CALL Flush_Test(test_var)
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "new tests: **, composition"
-  write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests: **, composition')
+  CALL Append_Test(test_var,'============================================')
 
   Sana =  dnX**0 - ONE
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**0-ONE                ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**0-ONE')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**0-ONE                ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**0-ONE')
 
   Sana =  dnX**1 - dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**1-dnX                ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**1-dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**1-dnX                ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**1-dnX')
 
   Sana =  dnX**2 - dnX*dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**2-dnX*dnX            ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**2-dnX*dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**2-dnX*dnX            ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**2-dnX*dnX')
 
   Sana =  dnX**3 - dnX*dnX*dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX        ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX**3-dnX*dnX*dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX        ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**3-dnX*dnX*dnX')
 
   Sana =  sqrt(dnX**2) - dnX
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='sqrt(dnX**2) - dnX        ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='sqrt(dnX**2) - dnX')
+  CALL Logical_Test(test_var,test1=res_test,info='sqrt(dnX**2) - dnX        ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sqrt(dnX**2) - dnX')
 
+  CALL Flush_Test(test_var)
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "new tests: 3D, nderiv=2"
-  write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests: 3D, nderiv=2')
+  CALL Append_Test(test_var,'============================================')
   nderiv = 2
   x = 0.5_Rkind
   z = 2.0_Rkind
@@ -390,11 +397,11 @@ PROGRAM TEST_dnS
                                 ONE, ZERO,ZERO],shape=[3,3]))
 
   res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dnX*dnZ -dnS_Result       ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='dnX*dnZ -dnS_Result       ==0?')
   IF (print_level > 0) THEN
-    CALL Write_dnS(dnX,test_var%test_log_file_unit,info='dnX')
-    CALL Write_dnS(dnZ,test_var%test_log_file_unit,info='dnZ')
-    CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX*dnZ (3D)')
+    CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
+    CALL Write_dnS(dnZ,string=test_var%test_log,info='dnZ')
+    CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
   END IF
 
   nderiv = 2
@@ -410,17 +417,19 @@ PROGRAM TEST_dnS
                                 ONE, ZERO,ZERO],shape=[3,3]))
 
   res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='Vec_dnS(1)*Vec_dnS(3)-dnS_Result==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='Vec_dnS(1)*Vec_dnS(3)-dnS_Result==0?')
   IF (print_level > 0) THEN
-    CALL Write_dnS(Vec_dnS(1),test_var%test_log_file_unit,info='Vec_dnS(1)')
-    CALL Write_dnS(Vec_dnS(3),test_var%test_log_file_unit,info='Vec_dnS(3)')
-    CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dnX*dnZ (3D)')
+    CALL Write_dnS(Vec_dnS(1),string=test_var%test_log,info='Vec_dnS(1)')
+    CALL Write_dnS(Vec_dnS(3),string=test_var%test_log,info='Vec_dnS(3)')
+    CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
   END IF
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "Jacobian(inew,iold): 2D, nderiv=2"
-  write(out_unitp,'(a)') "Polar transformation"
-  write(out_unitp,'(a)') "============================================"
+  CALL Flush_Test(test_var)
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'Jacobian(inew,iold): 2D, nderiv=2')
+  CALL Append_Test(test_var,'Polar transformation')
+  CALL Append_Test(test_var,'============================================')
 
   r  = TWO
   th = Pi/3
@@ -430,18 +439,19 @@ PROGRAM TEST_dnS
   JacNewOld_ana = reshape([cos(th),sin(th),-r*sin(th),r*cos(th)],shape(JacNewOld))
 
   res_test = ( maxval(abs(JacNewOld-JacNewOld_ana)) < dnSerr_test )
-  CALL test_logical(test_var,test1=res_test,info='Jacobian-Jacobian_ana     ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='Jacobian-Jacobian_ana     ==0?')
 
   IF (print_level > 0) THEN
-    write(test_var%test_log_file_unit,*) 'Jac(inew,iold)=[ dQinew/dQiold ]:'
-    CALL Write_RMat(JacNewOld,test_var%test_log_file_unit,5)
-    write(test_var%test_log_file_unit,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
-    write(test_var%test_log_file_unit,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
+    CALL Append_Test(test_var,'Jac(inew,iold)=[ dQinew/dQiold ]:',Print_res=.FALSE.)
+    CALL Write_RMat(JacNewOld,string=test_var%test_log,nbcol1=5)
+    CALL Append_Test(test_var,'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]',Print_res=.FALSE.)
+    CALL Append_Test(test_var,'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]',Print_res=.FALSE.)
   END IF
+  CALL Flush_Test(test_var)
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "new tests : Vec_OF_dnS(1:3), 2D, nderiv=2"
-  write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : Vec_OF_dnS(1:3), 2D, nderiv=2')
+  CALL Append_Test(test_var,'============================================')
 
   nderiv = 2
   x=0.5_Rkind
@@ -453,14 +463,14 @@ PROGRAM TEST_dnS
   Sana = dot_product(Vec_dnS,Vec_dnS) ! 2*(dnX**2+dnY**2+dnX*dnY)
   dnXZ = TWO*(dnX**2+dnY**2+dnX*dnY)
   res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='dot_product - dnS_Result  ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='dot_product (2D)')
+  CALL Logical_Test(test_var,test1=res_test,info='dot_product - dnS_Result  ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dot_product (2D)')
 
   Vec_dnS(:) = [-dnX,-dnY,dnX+dnY]
   Sana = sum(Vec_dnS) ! ZERO
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='sum                       ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='sum (2D)')
+  CALL Logical_Test(test_var,test1=res_test,info='sum                       ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sum (2D)')
 
 
   CALL dealloc_dnS(dnZ)
@@ -468,13 +478,15 @@ PROGRAM TEST_dnS
   Vec_dnS(:) = [dnX**2,ONE/dnX,ONE/dnX]
   Sana = product(Vec_dnS) ! ONE
   res_test = AD_Check_dnS_IS_ZERO(Sana-dnZ,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='product - 1               ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='product - 1 (2D)')
+  CALL Logical_Test(test_var,test1=res_test,info='product - 1               ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='product - 1 (2D)')
+  CALL Flush_Test(test_var)
 
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "new tests : two-argument fuction, 2D, nderiv=2"
-  write(out_unitp,'(a)') "============================================"
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : two-argument fuction, 2D, nderiv=2')
+  CALL Append_Test(test_var,'============================================')
+
   nderiv = 2
   x = -0.5_Rkind
   y = -1.0_Rkind
@@ -483,75 +495,79 @@ PROGRAM TEST_dnS
   Sana = atan2(dnY,dnX)
   Snum = atan(dnY/dnX)-pi
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='atan2 - atan              ==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='atan2 (2D)')
-  IF (print_level > 0) CALL Write_dnS(Snum,test_var%test_log_file_unit,info='atan (2D)')
+  CALL Logical_Test(test_var,test1=res_test,info='atan2 - atan              ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='atan2 (2D)')
+  IF (print_level > 0) CALL Write_dnS(Snum,string=test_var%test_log,info='atan (2D)')
+  CALL Flush_Test(test_var)
 
-  write(out_unitp,'(a)') "============================================"
-  write(out_unitp,'(a)') "new tests : init const, 2D, nderiv=2"
-  write(out_unitp,'(a)') "============================================"
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : init const, 2D, nderiv=2')
+  CALL Append_Test(test_var,'============================================')
+
   nderiv = 2
   x = 0.5_Rkind
   y = 1.0_Rkind
   dnX     = Variable(x  ,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
 
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL dealloc_dnS(Sana)
   CALL dealloc_dnS(Snum)
   Sana    = x ! here, Sana%nderiv = -1
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='x, constant')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='x, constant')
   Sana    = Sana + dnX ! here, Sana%nderiv = dnX%nderiv
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='(x+dnX)')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='(x+dnX)')
   Snum    = dnX + x    ! here, Snum%nderiv = dnX%nderiv
-  IF (print_level > 0) CALL Write_dnS(Snum,test_var%test_log_file_unit,info='(dnX+x)')
+  IF (print_level > 0) CALL Write_dnS(Snum,string=test_var%test_log,info='(dnX+x)')
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='(x+dnX) - (dnX+x)         ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='(x+dnX) - (dnX+x)         ==0?')
 
-
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL dealloc_dnS(Sana)
   CALL dealloc_dnS(Snum)
   Sana    = x ! here, Sana%nderiv = -1
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='x, constant')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='x, constant')
   Sana    = Sana * dnX ! here, Sana%nderiv = dnX%nderiv
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='(x*dnX)')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='(x*dnX)')
   Snum    = dnX * x    ! here, Snum%nderiv = dnX%nderiv
-  IF (print_level > 0) CALL Write_dnS(Snum,test_var%test_log_file_unit,info='(dnX*x)')
+  IF (print_level > 0) CALL Write_dnS(Snum,string=test_var%test_log,info='(dnX*x)')
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='(x*dnX) - (dnX*x)         ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='(x*dnX) - (dnX*x)         ==0?')
 
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL dealloc_dnS(Sana)
   CALL dealloc_dnS(Snum)
   Sana    = x ! here, Sana%nderiv = -1
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='x, constant')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='x, constant')
   Sana    = Sana / dnX ! here, Sana%nderiv = dnX%nderiv
-  IF (print_level > 0)CALL Write_dnS(Sana,test_var%test_log_file_unit,info='(x/dnX)')
+  IF (print_level > 0)CALL Write_dnS(Sana,string=test_var%test_log,info='(x/dnX)')
   Snum    = dnX**(-1) * x    ! here, Snum%nderiv = dnX%nderiv
-  IF (print_level > 0)CALL Write_dnS(Snum,test_var%test_log_file_unit,info='(dnX**(-1)*x)')
+  IF (print_level > 0)CALL Write_dnS(Snum,string=test_var%test_log,info='(dnX**(-1)*x)')
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='(x/dnX) - (dnX**(-1)*x)   ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='(x/dnX) - (dnX**(-1)*x)   ==0?')
 
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
-  write(test_var%test_log_file_unit,'(a)') "------------------------------------------------------"
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL dealloc_dnS(Sana)
   CALL dealloc_dnS(Snum)
   Sana    = x ! here, Sana%nderiv = -1
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='x, constant')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='x, constant')
   Sana    = sin(Sana) ! here, Sana%nderiv = -1
-  IF (print_level > 0) CALL Write_dnS(Sana,test_var%test_log_file_unit,info='(sin(x)')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='(sin(x)')
   Snum    = dnX ; Snum = ZERO
   Snum    = sin(x)    ! here, Snum%nderiv = dnX%nderiv
-  IF (print_level > 0) CALL Write_dnS(Snum,test_var%test_log_file_unit,info='(sin(x))')
+  IF (print_level > 0) CALL Write_dnS(Snum,string=test_var%test_log,info='(sin(x))')
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
-  CALL test_logical(test_var,test1=res_test,info='(sin(x)) - (sin(x))       ==0?')
+  CALL Logical_Test(test_var,test1=res_test,info='(sin(x)) - (sin(x))       ==0?')
+
+  CALL Flush_Test(test_var)
 
   ! end the normal tests
 
@@ -559,7 +575,7 @@ PROGRAM TEST_dnS
 
 
   ! finalize the tests
-  CALL test_finalize(test_var)
+  CALL Finalize_Test(test_var)
 
 
 
@@ -621,30 +637,28 @@ CONTAINS
       character (len=*), parameter :: name_sub='TEST_EXCEPTION'
 
       nderiv = 3
-      write(out_unitp,'(a)') "============================================"
-      write(out_unitp,'(a,i2)') "== TESTING EXCEPTION dnS module with nderiv=",nderiv
-      write(out_unitp,'(a)') "============================================"
-
-      write(test_var%test_log_file_unit,'(a,i2)') "== TESTING EXCEPTION dnS module with nderiv=",nderiv
+      CALL Append_Test(test_var,'============================================')
+      CALL Append_Test(test_var,'== TESTING EXCEPTION dnS module with nderiv= ' // int_TO_char(nderiv))
+      CALL Append_Test(test_var,'============================================')
 
       x   = -ONE
       dnX = Variable(x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
-      IF (print_level > 0) CALL Write_dnS(dnX,test_var%test_log_file_unit,info='dnX')
+      IF (print_level > 0) CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
 
       CALL ieee_set_halting_mode(ieee_invalid, .FALSE.)
 
       dnY = log(dnX)
       CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
-      CALL test_logical(test_var,test1=flag_NAN,              info='log(-1.)            =>    NAN')
-      IF (print_level > 0) CALL Write_dnS(dnY,test_var%test_log_file_unit,info='log(-1.)')
+      CALL Logical_Test(test_var,test1=flag_NAN,              info='log(-1.)            =>    NAN')
+      IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='log(-1.)')
 
       ! reset the NAN exception
       CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
 
       dnY = cos(dnX)
       CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
-      CALL test_logical(test_var,test1=flag_NAN,test2=.FALSE.,info='cos(-1.)            => no NAN')
-      IF (print_level > 0) CALL Write_dnS(dnY,test_var%test_log_file_unit,info='cos(-1.)')
+      CALL Logical_Test(test_var,test1=flag_NAN,test2=.FALSE.,info='cos(-1.)            => no NAN')
+      IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='cos(-1.)')
 
       ! reset the NAN exception
       CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
@@ -652,16 +666,19 @@ CONTAINS
       dnY = log(dnX)
       dnY = cos(dnX)
       CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
-      CALL test_logical(test_var,test1=flag_NAN,              info='cos(-1.) ; log(-1.) =>    NAN')
+      CALL Logical_Test(test_var,test1=flag_NAN,              info='cos(-1.) ; log(-1.) =>    NAN')
 
       ! reset the NAN exception
       CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
       dnX = Variable(ZERO  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
-      !IF (print_level > 0) CALL Write_dnS(dnX,test_var%test_log_file_unit,info='dnX')
+      !IF (print_level > 0) CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
       dnY = sqrt(dnX)
       CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
-      CALL test_logical(test_var,test1=flag_NAN,              info='sqrt(0.0)           =>    NAN')
-      IF (print_level > 0) CALL Write_dnS(dnY,test_var%test_log_file_unit,info='sqrt(0.0)')
+      CALL Logical_Test(test_var,test1=flag_NAN,              info='sqrt(0.0)           =>    NAN')
+      IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='sqrt(0.0)')
+
+      CALL Flush_Test(test_var)
+
 
   END SUBROUTINE TEST_EXCEPTION
 

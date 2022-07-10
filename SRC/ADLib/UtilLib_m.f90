@@ -36,7 +36,7 @@ IMPLICIT NONE
   character (len=Line_len), public :: File_path = ''
 
   PUBLIC :: string_uppercase_TO_lowercase,strdup,string_IS_empty,               &
-            int_TO_char,logical_TO_char,sub_Format_OF_Line
+            int_TO_char,logical_TO_char,real_TO_char,sub_Format_OF_Line
   PUBLIC :: Write_RMat,Write_RVec,Read_RMat,Read_RVec,Init_IdMat
   PUBLIC :: gamma_perso
   PUBLIC :: time_perso
@@ -48,13 +48,17 @@ END INTERFACE
 INTERFACE strdup
   MODULE PROCEDURE AD_strdup
 END INTERFACE
+
 INTERFACE int_TO_char
   MODULE PROCEDURE AD_int_TO_char
 END INTERFACE
-
 INTERFACE logical_TO_char
   MODULE PROCEDURE AD_logical_TO_char
 END INTERFACE
+INTERFACE real_TO_char
+  MODULE PROCEDURE AD_real_TO_char
+END INTERFACE
+
 
 INTERFACE string_IS_empty
   MODULE PROCEDURE AD_string_IS_empty
@@ -64,7 +68,7 @@ INTERFACE sub_Format_OF_Line
 END INTERFACE
 
 INTERFACE Write_RMat
-  MODULE PROCEDURE AD_Write_RMat
+  MODULE PROCEDURE AD_Write_RMat,AD_Write_RMat_string
 END INTERFACE
 INTERFACE Write_RVec
   MODULE PROCEDURE AD_Write_RVec
@@ -192,6 +196,50 @@ CONTAINS
     deallocate(name_int)
 
   END FUNCTION AD_int_TO_char
+
+  FUNCTION AD_real_TO_char(r,Rformat) RESULT(string)
+    character (len=:), allocatable           :: string
+    real (kind=Rkind), intent(in)            :: r
+    character (len=*), intent(in), optional  :: Rformat
+
+    character(len=Line_len) :: name_real
+    integer :: clen,i
+
+!$OMP  CRITICAL (AD_real_TO_char_CRIT)
+
+    IF (allocated(string)) deallocate(string)
+
+
+    IF (present(Rformat)) THEN
+      write(name_real,'(' // Rformat // ')') r
+
+      clen = len_trim(adjustl(name_real))
+      allocate(character(len=clen) :: string)
+
+      string = trim(adjustl(name_real))
+
+    ELSE
+      write(name_real,*) r
+
+      clen = len_trim(adjustl(name_real))
+      allocate(character(len=clen) :: string)
+
+      string = trim(adjustl(name_real))
+
+      DO i=len(string),2,-1
+        IF (string(i:i) == '0') THEN
+          string(i:i) = ' '
+        ELSE
+          EXIT
+        END IF
+      END DO
+      string = strdup(string)
+    END IF
+
+!$OMP  END CRITICAL (AD_real_TO_char_CRIT)
+
+END FUNCTION AD_real_TO_char
+
   FUNCTION AD_string_IS_empty(String)
     logical                          :: AD_string_IS_empty
     character(len=*), intent(in)     :: String
@@ -315,6 +363,65 @@ CONTAINS
      flush(nio)
 
   END SUBROUTINE AD_Write_RMat
+  SUBROUTINE AD_Write_RMat_string(f,string,nbcol1,Rformat,name_info)
+  USE ADLib_NumParameters_m
+  IMPLICIT NONE
+
+    integer,                        intent(in)    :: nbcol1
+    character (len=:), allocatable, intent(inout) :: string
+    real(kind=Rkind),               intent(in)    :: f(:,:)
+
+     character (len=*), optional,   intent(in)    :: Rformat
+     character (len=*), optional,   intent(in)    :: name_info
+
+
+
+     integer         :: nl,nc
+     integer         :: i,j,nb,nbblocs,nfin,nbcol
+     character (len=:), allocatable :: BeginString
+     character (len=:), allocatable :: Rf
+
+     nl = size(f,dim=1)
+     nc = size(f,dim=2)
+     !write(out_unitp,*) 'nl,nc,nbcol',nl,nc,nbcol
+     nbcol = nbcol1
+     IF (nbcol > 10) nbcol=10
+     nbblocs=int(nc/nbcol)
+     IF (nbblocs*nbcol == nc) nbblocs=nbblocs-1
+
+
+     IF (present(name_info)) THEN
+       BeginString = trim(name_info) // ' '
+     ELSE
+       BeginString = ' '
+     END IF
+     IF (present(Rformat)) THEN
+       Rf = trim(Rformat)
+     ELSE
+       Rf = 'f18.9'
+     END IF
+
+     DO nb=0,nbblocs-1
+       DO j=1,nl
+         string = string // BeginString // int_TO_char(j)
+         DO i=1,nbcol
+           string = string // ' ' // real_TO_char(f(j,i+nb*nbcol),rformat=Rf)
+         END DO
+         string = string // new_line('a')
+       END DO
+       IF (nl > 1 ) string = string // new_line('a')
+     END DO
+
+     DO j=1,nl
+       nfin=nc-nbcol*nbblocs
+       string = string // BeginString // int_TO_char(j)
+       DO i=1,nfin
+         string = string // ' ' // real_TO_char(f(j,i+nbcol*nbblocs),rformat=Rf)
+       END DO
+       string = string // new_line('a')
+     END DO
+
+  END SUBROUTINE AD_Write_RMat_string
   SUBROUTINE AD_Write_RVec(l,nio,nbcol1,Rformat,name_info)
   USE ADLib_NumParameters_m
   IMPLICIT NONE
@@ -619,7 +726,6 @@ CONTAINS
         AD_make_FileName = trim(adjustl(File_path)) // '/' // trim(adjustl(FileName))
       END IF
     END IF
-    !write(666,*) 'AD_make_FileName: ',AD_make_FileName
     !stop
   END FUNCTION AD_make_FileName
   SUBROUTINE AD_file_open2(name_file,iunit,lformatted,append,old,err_file)
