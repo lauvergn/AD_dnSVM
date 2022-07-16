@@ -35,7 +35,9 @@ PROGRAM TEST_dnS
   IMPLICIT NONE
 
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
-    TYPE (dnS_t), allocatable        :: Vec_dnS(:)
+    TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
+    TYPE (dnS_t), allocatable        :: Mat_dnS(:,:)
+
     TYPE (test_t)                    :: test_var
     logical                          :: val_test,res_test
 
@@ -447,6 +449,31 @@ PROGRAM TEST_dnS
     CALL Append_Test(test_var,'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]',Print_res=.FALSE.)
     CALL Append_Test(test_var,'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]',Print_res=.FALSE.)
   END IF
+  CALL Flush_Test(test_var)
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'Matmul: 2D, nderiv=2')
+  CALL Append_Test(test_var,'============================================')
+
+  x = ONE
+  y = TWO
+  dnX = Variable(x,nVar=2,iVar=1,nderiv=2)
+  dnY = Variable(y,nVar=2,iVar=2,nderiv=2)
+  Vec_dnS = [dnX,dnY]
+
+  allocate(Mat_dnS(0:1,2:3))
+  Mat_dnS(:,2) = [dnX**2,dnX*dnY]
+  Mat_dnS(:,3) = [dnX*dnY,dnY**2]
+
+  Vres_dnS = matmul(Mat_dnS,Vec_dnS)
+
+  Vana_dnS = [dnX**3+dnX*dnY**2,dnX**2*dnY+dnY**3]
+
+  res_test = AD_Check_dnS_IS_ZERO(Vana_dnS(1)-Vres_dnS(1),dnSerr_test)
+  res_test = res_test .AND. AD_Check_dnS_IS_ZERO(Vana_dnS(2)-Vres_dnS(2),dnSerr_test)
+
+  CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
+
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')

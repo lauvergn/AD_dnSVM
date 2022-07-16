@@ -40,7 +40,7 @@ MODULE ADdnSVM_dnS_Op_m
 
   PRIVATE
 
-  PUBLIC :: dot_product,product,sum
+  PUBLIC :: dot_product,product,sum,matmul
 
 
     INTERFACE dot_product
@@ -53,9 +53,10 @@ MODULE ADdnSVM_dnS_Op_m
        MODULE PROCEDURE AD_sum_VecOFdnS
     END INTERFACE
 
-    !INTERFACE matmul
-    !   MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS,AD_matmul_MatOFdnS_Vec,AD_matmul_Mat_VecOFdnS
-    !END INTERFACE
+    INTERFACE matmul
+       !MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS,AD_matmul_MatOFdnS_Vec,AD_matmul_Mat_VecOFdnS
+       MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS
+    END INTERFACE
 
 
 CONTAINS
@@ -195,5 +196,30 @@ CONTAINS
 
     END FUNCTION AD_SUM_VecOFdnS
 
+    FUNCTION AD_matmul_MatOFdnS_VecOFdnS(Mat,Vec) RESULT(Vres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t),        intent(in)           :: Vec(:)
+      TYPE (dnS_t),        intent(in)           :: Mat(:,:)
+
+      TYPE (dnS_t)                              :: Vres(size(Mat,dim=1))
+
+      integer :: i,im
+      character (len=*), parameter :: name_sub='AD_matmul_MatOFdnS_VecOFdnS'
+
+
+      IF (size(Vec) /= size(Mat,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  size of Vec(:) and Mat(.,:) are different'
+         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         STOP 'Problem in AD_matmul_MatOFdnS_VecOFdnS'
+      END IF
+
+      DO i=lbound(Vres,dim=1),ubound(Vres,dim=1)
+        im = i - lbound(Vres,dim=1) + lbound(Mat,dim=1)
+        Vres(i) = dot_product(Mat(im,:),Vec)
+      END DO
+
+    END FUNCTION AD_matmul_MatOFdnS_VecOFdnS
 
 END MODULE ADdnSVM_dnS_Op_m
