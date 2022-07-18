@@ -668,7 +668,7 @@ CONTAINS
     character (len=*), parameter :: name_sub='AD_get_Jacobian_FROM_Vec_OF_dnS'
 
     nVarNew = size(Vec)
-    IF (nVarNew < 1) RETURN
+    IF (nVarNew < 1 .OR. get_nderiv(Vec(1)) < 1) RETURN
 
     nVarOld = 0
 

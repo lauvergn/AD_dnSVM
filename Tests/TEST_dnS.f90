@@ -35,8 +35,10 @@ PROGRAM TEST_dnS
   IMPLICIT NONE
 
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
+    TYPE (dnS_t)                     :: dnA,dnB,dnDiff
+
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
-    TYPE (dnS_t), allocatable        :: Mat_dnS(:,:)
+    TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
 
     TYPE (test_t)                    :: test_var
     logical                          :: val_test,res_test
@@ -452,7 +454,7 @@ PROGRAM TEST_dnS
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')
-  CALL Append_Test(test_var,'Matmul: 2D, nderiv=2')
+  CALL Append_Test(test_var,'Matmul, transpose: 2D, nderiv=2')
   CALL Append_Test(test_var,'============================================')
 
   x = ONE
@@ -469,11 +471,50 @@ PROGRAM TEST_dnS
 
   Vana_dnS = [dnX**3+dnX*dnY**2,dnX**2*dnY+dnY**3]
 
-  res_test = AD_Check_dnS_IS_ZERO(Vana_dnS(1)-Vres_dnS(1),dnSerr_test)
-  res_test = res_test .AND. AD_Check_dnS_IS_ZERO(Vana_dnS(2)-Vres_dnS(2),dnSerr_test)
+  dnDiff = sum(abs(Vres_dnS-Vana_dnS))
 
+  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
+  CALL Flush_Test(test_var)
 
+  dnA = ZERO
+  dnB = ONE
+  allocate(MatA_dnS(2:3,0:2))
+  MatA_dnS(2,:) = [dnX,dnA,dnX]
+  MatA_dnS(3,:) = [dnY,dnB,dnY]
+
+  allocate(MatB_dnS(-1:1,0:3))
+  MatB_dnS(:,0) = [dnA,dnA,dnA]
+  MatB_dnS(:,1) = [dnA,dnA,dnA]
+  MatB_dnS(:,2) = [dnX,dnA,dnX]
+  MatB_dnS(:,3) = [dnY,dnB,dnY]
+
+
+  Mat_dnS = matmul(MatA_dnS,MatB_dnS)
+
+  allocate(Mana_dnS(2,4))
+  Mana_dnS(1,:) = [dnA,dnA,2*dnX**2,2*dnX*dnY]
+  Mana_dnS(2,:) = [dnA,dnA,2*dnX*dnY,1+2*dnY**2]
+
+
+  dnDiff = sum(abs(Mat_dnS-Mana_dnS))
+  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
+  CALL Flush_Test(test_var)
+
+
+  !transpose
+  Mat_dnS = transpose(MatA_dnS)
+
+  Mana_dnS = reshape([dnX,dnA,dnX , dnY,dnB,dnY],shape=[3,2])
+  !deallocate(Mana_dnS)
+  !allocate(Mana_dnS(3,2:3))
+  !Mana_dnS(:,2) = [dnX,dnA,dnX]
+  !Mana_dnS(:,3) = [dnY,dnB,dnY]
+
+  dnDiff = sum(abs(Mat_dnS-Mana_dnS))
+  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')
@@ -661,7 +702,7 @@ CONTAINS
       logical                          :: flag_NAN
 
 
-      character (len=*), parameter :: name_sub='TEST_EXCEPTION'
+      character (len=*), parameter :: name_sub_loc='TEST_EXCEPTION'
 
       nderiv = 3
       CALL Append_Test(test_var,'============================================')

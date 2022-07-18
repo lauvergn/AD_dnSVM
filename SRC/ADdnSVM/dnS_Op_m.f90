@@ -40,23 +40,25 @@ MODULE ADdnSVM_dnS_Op_m
 
   PRIVATE
 
-  PUBLIC :: dot_product,product,sum,matmul
+  PUBLIC :: dot_product,product,sum,matmul,transpose
 
 
-    INTERFACE dot_product
-       MODULE PROCEDURE AD_dot_product_VecOFdnS,AD_dot_product_Vec_VecOFdnS,AD_dot_product_VecOFdnS_Vec
-    END INTERFACE
-    INTERFACE product
-       MODULE PROCEDURE AD_product_VecOFdnS
-    END INTERFACE
-    INTERFACE sum
-       MODULE PROCEDURE AD_sum_VecOFdnS
-    END INTERFACE
-
-    INTERFACE matmul
-       !MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS,AD_matmul_MatOFdnS_Vec,AD_matmul_Mat_VecOFdnS
-       MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS
-    END INTERFACE
+  INTERFACE dot_product
+    MODULE PROCEDURE AD_dot_product_VecOFdnS,AD_dot_product_Vec_VecOFdnS,AD_dot_product_VecOFdnS_Vec
+  END INTERFACE
+  INTERFACE product
+    MODULE PROCEDURE AD_product_VecOFdnS
+  END INTERFACE
+  INTERFACE sum
+    MODULE PROCEDURE AD_sum_VecOFdnS,AD_SUM_MatOFdnS
+  END INTERFACE
+  INTERFACE transpose
+    MODULE PROCEDURE AD_transpose_MatOFdnS
+  END INTERFACE
+  INTERFACE matmul
+    MODULE PROCEDURE AD_matmul_MatOFdnS_VecOFdnS,AD_matmul_MatOFdnS_Vec,AD_matmul_Mat_VecOFdnS
+    MODULE PROCEDURE AD_matmul_MatOFdnS_MatOFdnS
+  END INTERFACE
 
 
 CONTAINS
@@ -67,7 +69,7 @@ CONTAINS
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecA(:),VecB(:)
 
-      integer :: i
+      integer :: i,iv
       integer :: err_dnS_loc
       real(kind=Rkind) :: d0f,d1f,d2f,d3f
       character (len=*), parameter :: name_sub='AD_dot_product_VecOFdnS'
@@ -75,22 +77,22 @@ CONTAINS
 
       IF (size(VecA) /= size(VecB)) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are different'
+         write(out_unitp,*) '  sizes of both vectors are incompatible'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in dot_product_VecOFdnS'
+         STOP 'ERROR in AD_dot_product_VecOFdnS: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are < 1'
+         write(out_unitp,*) '  sizes of both vectors are < 1'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in dot_product_VecOFdnS'
+         STOP 'ERROR in AD_dot_product_VecOFdnS: sizes are < 1'
       END IF
 
-      !Sres = VecA(lbound(VecA,dim=1)) ! for the initialization
       Sres = ZERO
       DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-        Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
+        iv   = i - lbound(VecA,dim=1) + lbound(VecB,dim=1)
+        Sres = Sres + VecA(i) * VecB(iv)
       END DO
 
     END FUNCTION AD_dot_product_VecOFdnS
@@ -101,7 +103,7 @@ CONTAINS
       TYPE (dnS_t),        intent(in)    :: VecA(:)
       real(kind=Rkind),    intent(in)    :: VecB(:)
 
-      integer :: i
+      integer :: i,iv
       integer :: err_dnS_loc
       real(kind=Rkind) :: d0f,d1f,d2f,d3f
       character (len=*), parameter :: name_sub='AD_dot_product_VecOFdnS_Vec'
@@ -109,23 +111,23 @@ CONTAINS
 
       IF (size(VecA) /= size(VecB)) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are different'
+         write(out_unitp,*) '  sizes of both vectors are incompatible'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in AD_dot_product_VecOFdnS_Vec'
+         STOP 'ERROR in AD_dot_product_VecOFdnS_Vec: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are < 1'
+         write(out_unitp,*) '  sizes of both vectors are < 1'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in AD_dot_product_VecOFdnS_Vec'
+         STOP 'ERROR in AD_dot_product_VecOFdnS_Vec: sizes are < 1'
       END IF
 
 
-      !Sres = VecA(lbound(VecA,dim=1)) ! for the initialization
       Sres = ZERO
       DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-        Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
+        iv   = i - lbound(VecA,dim=1) + lbound(VecB,dim=1)
+        Sres = Sres + VecA(i) * VecB(iv)
       END DO
 
     END FUNCTION AD_dot_product_VecOFdnS_Vec
@@ -136,7 +138,7 @@ CONTAINS
       TYPE (dnS_t),        intent(in)    :: VecB(:)
       real(kind=Rkind),    intent(in)    :: VecA(:)
 
-      integer :: i
+      integer :: i,iv
       integer :: err_dnS_loc
       real(kind=Rkind) :: d0f,d1f,d2f,d3f
       character (len=*), parameter :: name_sub='AD_dot_product_Vec_VecOFdnS'
@@ -144,22 +146,22 @@ CONTAINS
 
       IF (size(VecA) /= size(VecB)) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are different'
+         write(out_unitp,*) '  sizes of both vectors are incompatible'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in AD_dot_product_Vec_VecOFdnS'
+         STOP 'ERROR in AD_dot_product_Vec_VecOFdnS: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of both vectors are < 1'
+         write(out_unitp,*) '  sizes of both vectors are < 1'
          write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
-         STOP 'Problem in AD_dot_product_Vec_VecOFdnS'
+         STOP 'ERROR in AD_dot_product_Vec_VecOFdnS: sizes are < 1'
       END IF
 
-      !Sres = VecB(lbound(VecB,dim=1)) ! for the initialization
       Sres = ZERO
       DO i=lbound(VecA,dim=1),ubound(VecA,dim=1)
-        Sres = Sres + VecA(i) * VecB(lbound(VecB,dim=1)+i-1)
+        iv   = i - lbound(VecA,dim=1) + lbound(VecB,dim=1)
+        Sres = Sres + VecA(i) * VecB(iv)
       END DO
 
     END FUNCTION AD_dot_product_Vec_VecOFdnS
@@ -172,7 +174,6 @@ CONTAINS
       integer :: i
       character (len=*), parameter :: name_sub='AD_product_VecOFdnS'
 
-      !Sres = Vec(lbound(Vec,dim=1)) ! for the initialization
       Sres = ONE
       DO i=lbound(Vec,dim=1),ubound(Vec,dim=1)
         Sres = Sres * Vec(i)
@@ -188,13 +189,52 @@ CONTAINS
       integer :: i
       character (len=*), parameter :: name_sub='AD_SUM_VecOFdnS'
 
-      !Sres = Vec(lbound(Vec,dim=1)) ! for the initialization
       Sres = ZERO
       DO i=lbound(Vec,dim=1),ubound(Vec,dim=1)
         Sres = Sres + Vec(i)
       END DO
 
     END FUNCTION AD_SUM_VecOFdnS
+
+    FUNCTION AD_SUM_MatOFdnS(Mat) RESULT(Sres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t)                              :: Sres
+      TYPE (dnS_t),        intent(in)           :: Mat(:,:)
+
+      integer :: i,j
+      character (len=*), parameter :: name_sub='AD_SUM_MatOFdnS'
+
+      Sres = ZERO
+      DO i=lbound(Mat,dim=2),ubound(Mat,dim=2)
+      DO j=lbound(Mat,dim=1),ubound(Mat,dim=1)
+        Sres = Sres + Mat(j,i)
+      END DO
+      END DO
+
+
+    END FUNCTION AD_SUM_MatOFdnS
+
+    FUNCTION AD_transpose_MatOFdnS(Mat) RESULT(Mres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t),        intent(in)           :: Mat(:,:)
+
+      TYPE (dnS_t)                              :: Mres(size(Mat,dim=2),size(Mat,dim=1))
+
+      integer :: i,j,im,jm
+      character (len=*), parameter :: name_sub='AD_transpose_MatOFdnS'
+
+
+      DO i=lbound(Mres,dim=2),ubound(Mres,dim=2)
+      DO j=lbound(Mres,dim=1),ubound(Mres,dim=1)
+        jm = j - lbound(Mres,dim=1) + lbound(Mat,dim=1)
+        im = i - lbound(Mres,dim=2) + lbound(Mat,dim=2)
+        Mres(j,i) = Mat(im,jm)
+      END DO
+      END DO
+
+    END FUNCTION AD_transpose_MatOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_VecOFdnS(Mat,Vec) RESULT(Vres)
       USE ADLib_NumParameters_m
@@ -210,9 +250,9 @@ CONTAINS
 
       IF (size(Vec) /= size(Mat,dim=2)) THEN
          write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  size of Vec(:) and Mat(.,:) are different'
+         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
          write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
-         STOP 'Problem in AD_matmul_MatOFdnS_VecOFdnS'
+         STOP 'ERROR in AD_matmul_MatOFdnS_VecOFdnS: sizes are incomptible'
       END IF
 
       DO i=lbound(Vres,dim=1),ubound(Vres,dim=1)
@@ -221,5 +261,149 @@ CONTAINS
       END DO
 
     END FUNCTION AD_matmul_MatOFdnS_VecOFdnS
+
+    FUNCTION AD_matmul_MatOFdnS_Vec(Mat,Vec) RESULT(Vres)
+      USE ADLib_NumParameters_m
+
+      real(kind=Rkind),    intent(in)           :: Vec(:)
+      TYPE (dnS_t),        intent(in)           :: Mat(:,:)
+
+      TYPE (dnS_t)                              :: Vres(size(Mat,dim=1))
+
+      integer :: i,im
+      character (len=*), parameter :: name_sub='AD_matmul_MatOFdnS_Vec'
+
+
+      IF (size(Vec) /= size(Mat,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
+         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         STOP 'ERROR in AD_matmul_MatOFdnS_Vec: sizes are incomptible'
+      END IF
+
+      DO i=lbound(Vres,dim=1),ubound(Vres,dim=1)
+        im = i - lbound(Vres,dim=1) + lbound(Mat,dim=1)
+        Vres(i) = dot_product(Mat(im,:),Vec)
+      END DO
+
+    END FUNCTION AD_matmul_MatOFdnS_Vec
+
+    FUNCTION AD_matmul_Mat_VecOFdnS(Mat,Vec) RESULT(Vres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t),        intent(in)           :: Vec(:)
+      real(kind=Rkind),    intent(in)           :: Mat(:,:)
+
+      TYPE (dnS_t)                              :: Vres(size(Mat,dim=1))
+
+      integer :: i,im
+      character (len=*), parameter :: name_sub='AD_matmul_Mat_VecOFdnS'
+
+
+      IF (size(Vec) /= size(Mat,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
+         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         STOP 'ERROR in AD_matmul_Mat_VecOFdnS: sizes are incomptible'
+
+      END IF
+
+      DO i=lbound(Vres,dim=1),ubound(Vres,dim=1)
+        im = i - lbound(Vres,dim=1) + lbound(Mat,dim=1)
+        Vres(i) = dot_product(Mat(im,:),Vec)
+      END DO
+
+    END FUNCTION AD_matmul_Mat_VecOFdnS
+
+
+    FUNCTION AD_matmul_MatOFdnS_MatOFdnS(MatA,MatB) RESULT(Mres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t),        intent(in)           :: MatA(:,:)
+      TYPE (dnS_t),        intent(in)           :: MatB(:,:)
+
+      TYPE (dnS_t)                              :: Mres(size(MatA,dim=1),size(MatB,dim=2))
+
+      integer :: i,j,im,jm
+      character (len=*), parameter :: name_sub='AD_matmul_MatOFdnS_MatOFdnS'
+
+
+      IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         STOP 'ERROR in AD_matmul_MatOFdnS_MatOFdnS: sizes are incomptible'
+
+      END IF
+
+      DO i=lbound(Mres,dim=2),ubound(Mres,dim=2)
+      DO j=lbound(Mres,dim=1),ubound(Mres,dim=1)
+        jm = j - lbound(Mres,dim=1) + lbound(MatA,dim=1)
+        im = i - lbound(Mres,dim=2) + lbound(MatB,dim=2)
+        Mres(j,i) = dot_product(MatA(jm,:),MatB(:,im))
+      END DO
+      END DO
+
+    END FUNCTION AD_matmul_MatOFdnS_MatOFdnS
+
+    FUNCTION AD_matmul_Mat_MatOFdnS(MatA,MatB) RESULT(Mres)
+      USE ADLib_NumParameters_m
+
+      real(kind=Rkind),    intent(in)           :: MatA(:,:)
+      TYPE (dnS_t),        intent(in)           :: MatB(:,:)
+
+      TYPE (dnS_t)                              :: Mres(size(MatA,dim=1),size(MatB,dim=2))
+
+      integer :: i,j,im,jm
+      character (len=*), parameter :: name_sub='AD_matmul_Mat_MatOFdnS'
+
+
+      IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         STOP 'ERROR in AD_matmul_Mat_MatOFdnS: sizes are incomptible'
+
+      END IF
+
+      DO i=lbound(Mres,dim=2),ubound(Mres,dim=2)
+      DO j=lbound(Mres,dim=1),ubound(Mres,dim=1)
+        jm = j - lbound(Mres,dim=1) + lbound(MatA,dim=1)
+        im = i - lbound(Mres,dim=2) + lbound(MatB,dim=2)
+        Mres(j,i) = dot_product(MatA(jm,:),MatB(:,im))
+      END DO
+      END DO
+
+    END FUNCTION AD_matmul_Mat_MatOFdnS
+
+    FUNCTION AD_matmul_MatOFdnS_Mat(MatA,MatB) RESULT(Mres)
+      USE ADLib_NumParameters_m
+
+      TYPE (dnS_t),        intent(in)           :: MatA(:,:)
+      real(kind=Rkind),    intent(in)           :: MatB(:,:)
+
+      TYPE (dnS_t)                              :: Mres(size(MatA,dim=1),size(MatB,dim=2))
+
+      integer :: i,j,im,jm
+      character (len=*), parameter :: name_sub='AD_matmul_MatOFdnS_Mat'
+
+
+      IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
+         write(out_unitp,*) ' ERROR in ',name_sub
+         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         STOP 'ERROR in AD_matmul_MatOFdnS_Mat: sizes are incomptible'
+
+      END IF
+
+      DO i=lbound(Mres,dim=2),ubound(Mres,dim=2)
+      DO j=lbound(Mres,dim=1),ubound(Mres,dim=1)
+        jm = j - lbound(Mres,dim=1) + lbound(MatA,dim=1)
+        im = i - lbound(Mres,dim=2) + lbound(MatB,dim=2)
+        Mres(j,i) = dot_product(MatA(jm,:),MatB(:,im))
+      END DO
+      END DO
+
+    END FUNCTION AD_matmul_MatOFdnS_Mat
 
 END MODULE ADdnSVM_dnS_Op_m
