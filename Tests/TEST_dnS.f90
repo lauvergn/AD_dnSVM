@@ -48,6 +48,7 @@ PROGRAM TEST_dnS
 
     integer                          :: nderiv,nio_test
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
+    integer                          :: i,j
 
 
     real (kind=Rkind), external  :: faplusx,faminusx,fatimex,faoverx
@@ -434,6 +435,7 @@ PROGRAM TEST_dnS
   CALL Append_Test(test_var,'Jacobian(inew,iold): 2D, nderiv=2')
   CALL Append_Test(test_var,'Polar transformation')
   CALL Append_Test(test_var,'============================================')
+  CALL Flush_Test(test_var)
 
   r  = TWO
   th = Pi/3
@@ -456,24 +458,44 @@ PROGRAM TEST_dnS
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'Matmul, transpose: 2D, nderiv=2')
   CALL Append_Test(test_var,'============================================')
+  CALL Flush_Test(test_var)
 
   x = ONE
   y = TWO
   dnX = Variable(x,nVar=2,iVar=1,nderiv=2)
   dnY = Variable(y,nVar=2,iVar=2,nderiv=2)
+
   Vec_dnS = [dnX,dnY]
+
+
 
   allocate(Mat_dnS(0:1,2:3))
   Mat_dnS(:,2) = [dnX**2,dnX*dnY]
   Mat_dnS(:,3) = [dnX*dnY,dnY**2]
 
-  Vres_dnS = matmul(Mat_dnS,Vec_dnS)
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Vec_dnS(1),info='Vec_dnS(1)')
+    CALL Write_dnS(Vec_dnS(2),info='Vec_dnS(2)')
+    DO i=0,1
+      DO j=2,3
+        write(out_unitp,*) 'Mat_dnS',i,j
+        CALL Write_dnS(Mat_dnS(i,j))
+      END DO
+    END DO
+  END IF
 
+  Vres_dnS = matmul(Mat_dnS,Vec_dnS)
   Vana_dnS = [dnX**3+dnX*dnY**2,dnX**2*dnY+dnY**3]
 
-  dnDiff = sum(abs(Vres_dnS-Vana_dnS))
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Vres_dnS(1),info='Vres_dnS(1)')
+    CALL Write_dnS(Vres_dnS(2),info='Vres_dnS(2)')
 
-  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
+    CALL Write_dnS(Vana_dnS(1),info='Vana_dnS(1)')
+    CALL Write_dnS(Vana_dnS(2),info='Vana_dnS(2)')
+  END IF
+
+  res_test = all(AD_Check_dnS_IS_ZERO(Vres_dnS-Vana_dnS,dnSerr_test))
   CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
   CALL Flush_Test(test_var)
 
@@ -496,9 +518,8 @@ PROGRAM TEST_dnS
   Mana_dnS(1,:) = [dnA,dnA,2*dnX**2,2*dnX*dnY]
   Mana_dnS(2,:) = [dnA,dnA,2*dnX*dnY,1+2*dnY**2]
 
+  res_test = all(AD_Check_dnS_IS_ZERO(Mat_dnS-Mana_dnS,dnSerr_test))
 
-  dnDiff = sum(abs(Mat_dnS-Mana_dnS))
-  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
   CALL Flush_Test(test_var)
 
@@ -507,13 +528,9 @@ PROGRAM TEST_dnS
   Mat_dnS = transpose(MatA_dnS)
 
   Mana_dnS = reshape([dnX,dnA,dnX , dnY,dnB,dnY],shape=[3,2])
-  !deallocate(Mana_dnS)
-  !allocate(Mana_dnS(3,2:3))
-  !Mana_dnS(:,2) = [dnX,dnA,dnX]
-  !Mana_dnS(:,3) = [dnY,dnB,dnY]
 
-  dnDiff = sum(abs(Mat_dnS-Mana_dnS))
-  res_test = AD_Check_dnS_IS_ZERO(dnDiff,dnSerr_test)
+  res_test = all(AD_Check_dnS_IS_ZERO(Vres_dnS-Vana_dnS,dnSerr_test))
+
   CALL Logical_Test(test_var,test1=res_test,info='matmul     ==0?')
   CALL Flush_Test(test_var)
 
