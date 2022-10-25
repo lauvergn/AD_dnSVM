@@ -1906,8 +1906,8 @@ CONTAINS
     CALL diagonalization(dnMat%d0,Eig,Vec,nsurf,type_diag=type_diag_loc,sort=1,phase=.TRUE.)
 
     IF (present(dnVec0)) THEN
-       IF (debug) write(out_unitp,*) 'Change phase?'
-       flush(out_unitp)
+      IF (debug) write(out_unitp,*) 'Vec0 is present: the eigenvector phases are checked'
+      flush(out_unitp)
 
        DO i=1,nsurf
          IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
@@ -2011,37 +2011,9 @@ CONTAINS
          write(out_unitp,*) 'Vec0:'
          CALL Write_RMat(dnVec0%d0,nio=out_unitp,nbcol1=5)
        END IF
-
+    ELSE
+      IF (debug) write(out_unitp,*) 'Vec0 is absent: the eigenvector phases are not checked'
     END IF
-
-    !    old version
-    !    !For degenerated eigenvectors (works only with 2 vectors)
-    !    DO i=1,nsurf-1
-    !      IF ( abs(Eig(i)-Eig(i+1)) < epsi) THEN
-    !        j = i+1
-    !        IF (debug) write(out_unitp,*) 'degenerated vectors',i,j
-    !
-    !        aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
-    !        aji = dot_product(dnVec0%d0(:,j),Vec(:,i))
-    !        aij = dot_product(dnVec0%d0(:,i),Vec(:,j))
-    !        ajj = dot_product(dnVec0%d0(:,j),Vec(:,j))
-    !
-    !        th = ( atan2(aij,ajj) -atan2(aji,aii) ) * HALF
-    !        IF (debug) write(out_unitp,*) 'theta',th
-    !
-    !        cc = cos(th)
-    !        ss = sin(th)
-    !
-    !        DO k=1,nsurf
-    !          ai = Vec(k,i)
-    !          aj = Vec(k,j)
-    !          Vec(k,i) =  cc * ai + ss * aj
-    !          Vec(k,j) = -ss * ai + cc * aj
-    !        END DO
-    !      END IF
-    !    END DO
-    ! END IF
-
 
     tVec         = transpose(Vec)
     dnVec%d0     = matmul(tVec,Vec)                  ! Identity matrix
@@ -2162,7 +2134,6 @@ CONTAINS
       END DO
       END DO
       END DO
-
     END IF
 
 
