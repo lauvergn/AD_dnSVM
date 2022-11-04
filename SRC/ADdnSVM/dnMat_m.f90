@@ -1761,18 +1761,18 @@ CONTAINS
 !! @param Check_dnMat_IS_ZERO   logical  (result):   result of the comparison
 !! @param Mat                      TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
 !! @param epsi                     real (optional):     when present zero limit, otherwise 10^-10
-  FUNCTION AD_Check_dnMat_IS_ZERO(Mat,epsi) RESULT(Check_dnMat_IS_ZERO)
+  FUNCTION AD_Check_dnMat_IS_ZERO(Mat,epsi) RESULT(IS_ZERO)
     USE ADLib_NumParameters_m
 
-    logical                                  :: Check_dnMat_IS_ZERO
+    logical                                  :: IS_ZERO
     TYPE (dnMat_t),     intent(in)           :: Mat
     real(kind=Rkind),   intent(in), optional :: epsi
 
 
     IF (present(epsi)) THEN
-      Check_dnMat_IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= epsi
+      IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= epsi
     ELSE
-      Check_dnMat_IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= ONETENTH**10
+      IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= ONETENTH**10
     END IF
 
 
@@ -1784,10 +1784,10 @@ CONTAINS
 !!
 !! @param get_maxval_OF_dnMat   real  (result):      largest value (all components)
 !! @param Mat                      TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
-  FUNCTION AD_get_maxval_OF_dnMat(Mat,nderiv) RESULT(get_maxval_OF_dnMat)
+  FUNCTION AD_get_maxval_OF_dnMat(Mat,nderiv) RESULT(mval)
     USE ADLib_NumParameters_m
 
-    real(kind=Rkind)                     :: get_maxval_OF_dnMat
+    real(kind=Rkind)                     :: mval
     TYPE (dnMat_t), intent(in)           :: Mat
     integer,        intent(in), optional :: nderiv
 
@@ -1821,7 +1821,7 @@ CONTAINS
       e3 = ZERO
     END IF
 
-    get_maxval_OF_dnMat = max(e0,e1,e2,e3)
+    mval = max(e0,e1,e2,e3)
 
     END FUNCTION AD_get_maxval_OF_dnMat
 !! @brief Public subroutine which checks if the derived type dnMat is (correctly) allocated.
