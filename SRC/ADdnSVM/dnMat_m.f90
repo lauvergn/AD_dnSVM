@@ -81,6 +81,7 @@ MODULE ADdnSVM_dnMat_m
   PUBLIC :: Mat_wADDTO_dnMat2_ider
   PUBLIC :: Check_dnMat_IS_ZERO,get_maxval_OF_dnMat
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
+  PUBLIC :: get_d0,get_d1,get_d2,get_d3
 
 
   INTERFACE transpose
@@ -157,6 +158,18 @@ MODULE ADdnSVM_dnMat_m
     MODULE PROCEDURE AD_get_nsurf_FROM_dnMat
   END INTERFACE
 
+  INTERFACE get_d0
+     MODULE PROCEDURE AD_get_d0_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_d1
+     MODULE PROCEDURE AD_get_d1_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_d2
+     MODULE PROCEDURE AD_get_d2_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_d3
+     MODULE PROCEDURE AD_get_d3_FROM_dnMat
+  END INTERFACE
 
 CONTAINS
 !> @brief Public subroutine which allocates a derived type dnMat.
@@ -1753,6 +1766,66 @@ CONTAINS
     END IF
 
     END FUNCTION AD_get_nVar_FROM_dnMat
+!> @brief Public function to get d0(:,:) from a derived type dnMat.
+!!
+!> @author David Lauvergnat
+!! @date 07/11/2022
+!!
+!! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param AD_get_d0_FROM_dnMat      real  (result):      Mat%d0(:,:)
+    FUNCTION AD_get_d0_FROM_dnMat(Mat) RESULT(d0)
+
+      TYPE (dnMat_t), intent(in)         :: Mat
+      real (kind=Rkind),   allocatable   :: d0(:,:)
+
+      IF (allocated(Mat%d0)) d0 = Mat%d0
+  
+    END FUNCTION AD_get_d0_FROM_dnMat
+!> @brief Public function to get d1(:,:,:) from a derived type dnMat.
+!!
+!> @author David Lauvergnat
+!! @date 07/11/2022
+!!
+!! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param AD_get_d1_FROM_dnMat      real  (result):      Mat%d1(:,:,:)
+    FUNCTION AD_get_d1_FROM_dnMat(Mat) RESULT(d1)
+
+      TYPE (dnMat_t), intent(in)         :: Mat
+      real (kind=Rkind),   allocatable   :: d1(:,:,:)
+
+      IF (allocated(Mat%d1)) d1 = Mat%d1
+  
+    END FUNCTION AD_get_d1_FROM_dnMat
+!> @brief Public function to get d2(:,:,:,:) from a derived type dnMat.
+!!
+!> @author David Lauvergnat
+!! @date 07/11/2022
+!!
+!! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param AD_get_d2_FROM_dnMat      real  (result):      Mat%d2(:,:,:,:)
+    FUNCTION AD_get_d2_FROM_dnMat(Mat) RESULT(d2)
+
+      TYPE (dnMat_t),       intent(in)    :: Mat
+      real (kind=Rkind),    allocatable   :: d2(:,:,:,:)
+
+      IF (allocated(Mat%d2)) d2 = Mat%d2
+  
+    END FUNCTION AD_get_d2_FROM_dnMat
+!> @brief Public function to get d0(:,:) from a derived type dnMat.
+!!
+!> @author David Lauvergnat
+!! @date 07/11/2022
+!!
+!! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param AD_get_d3_FROM_dnMat      real  (result):      Mat%d3(:,:,:,:,:)
+    FUNCTION AD_get_d3_FROM_dnMat(Mat) RESULT(d3)
+
+      TYPE (dnMat_t),       intent(in)    :: Mat
+      real (kind=Rkind),    allocatable   :: d3(:,:,:,:,:)
+
+      IF (allocated(Mat%d3)) d3 = Mat%d3
+  
+    END FUNCTION AD_get_d3_FROM_dnMat
 !> @brief Public function which ckecks a derived type dnMat is zero (all components).
 !!
 !> @author David Lauvergnat
