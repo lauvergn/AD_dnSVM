@@ -204,7 +204,7 @@ CONTAINS
 
   END FUNCTION AD_dnFourier2
   ELEMENTAL FUNCTION AD_dnLegendre0(x,i,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+  USE ADLib_NumParameters_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -216,7 +216,6 @@ CONTAINS
     real(kind=Rkind) :: Pnorm2
 
     character (len=*), parameter :: name_sub='AD_dnLegendre0'
-
 
     IF ( i<= 0) THEN
       Sres = x ! initialisation
@@ -232,6 +231,9 @@ CONTAINS
         P1 = P2
       END DO
       Sres = P2
+      CALL dealloc_dnS(P0)
+      CALL dealloc_dnS(P1)
+      CALL dealloc_dnS(P2)
     END IF
 
     Pnorm2 = ONE/sqrt(TWO/(2*i+1))

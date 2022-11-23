@@ -2,9 +2,8 @@
 #=================================================================================
 # Compiler?
 #Possible values: (Empty: gfortran)
-#                ifort (version: 14.0.2, 16.0.3, 17.0.1 linux)
-#                gfortran (version: 6.3.0 linux and osx)
-#                pgf90 (version: 17.10-0, linux)
+#                ifort (version: 19. linux)
+#                gfortran (version: 9. linux and osx)
 #                nagfor (version 7.0, osx)
  F90 = gfortran
 #F90 = nagfor
@@ -45,6 +44,8 @@ endif
 ifeq  ($(strip $(OMP)),)
   OMP = 1
 endif
+ext_obj=_$(F90)_omp$(OMP)
+
 #=================================================================================
 
 # Operating system, OS? automatic using uname:
@@ -103,7 +104,8 @@ ifeq ($(F90),ifort)
    else
       F90FLAGS = -O0 $(OMPFLAG) -check all -g -traceback
    endif
-   F90LIB = -mkl -lpthread
+   F90LIB = -qmkl -lpthread
+
 
    F90_VER = $(shell $(F90) --version | head -1 )
 
@@ -188,6 +190,7 @@ $(info ***********OPTIMIZATION: $(OPT))
 $(info ***********OpenMP:       $(OMPFLAG))
 $(info ***********F90FLAGS:     $(F90FLAGS))
 $(info ***********F90LIB:       $(F90LIB))
+$(info ***********ext_obj:      $(ext_obj))
 $(info ***********************************************************************)
 
 
@@ -202,12 +205,15 @@ LYNK90 = $(F90_FLAGS)
 TEST_dnSEXE    = Test_dnS.x
 TEST_dnPolyEXE = Test_dnPoly.x
 EXA_dnSEXE     = Exa_dnS.x
-LIBAD          = libAD_dnSVM
+LIBADshort     = libAD_dnSVM
+LIBAD          = libAD_dnSVM$(ext_obj)
 
 DIR0     := $(shell pwd)
 DIRAPP    = $(DIR0)/APP
 DIRTEST   = $(DIR0)/Tests
-DIROBJ    = $(DIR0)/OBJ
+DIROBJ    = $(DIR0)/OBJ/obj$(ext_obj)
+$(shell [ -d $(DIROBJ) ] || mkdir -p $(DIROBJ))
+
 DIRSRC    = $(DIR0)/SRC
 DIRLib    = $(DIRSRC)/ADLib
 DIRdnSVM  = $(DIRSRC)/ADdnSVM
@@ -222,9 +228,6 @@ OBJ_lib        = $(DIROBJ)/dnSVM_m.o $(DIROBJ)/dnMat_m.o \
                  $(DIROBJ)/UtilLib_m.o $(DIROBJ)/diago_m.o \
                  $(DIROBJ)/Test_m.o \
                  $(DIROBJ)/NumParameters_m.o
-
-OBJ_all        = $(OBJ_lib)
-
 #===============================================
 #============= Main programs: tests + example ==
 #
@@ -276,10 +279,11 @@ ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE)
 #===============================================
 .PHONY: lib libad libAD
 lib libad libAD: $(LIBAD).a
-	@echo "  done Library: libAD_dnSVM.a"
 $(LIBAD).a: $(OBJ_lib)
 	ar -cr $(LIBAD).a $(OBJ_lib)
-	@echo "  done Library: libAD_dnSVM.a"
+	rm -f $(LIBADshort).a
+	ln -s  $(LIBAD).a $(LIBADshort).a
+	@echo "  done Library: "$(LIBAD).a
 #===============================================
 #===============================================
 
@@ -294,24 +298,20 @@ clean:
 	cd $(DIROBJ) ; rm -f *.o *.mod *.MOD
 	@cd Tests && ./clean
 	@echo "  done cleaning up the example directories"
+.PHONY: cleanall
+cleanall: clean
+	rm -f *.a
+	rm -rf OBJ
+	@echo "  done remove *.a libraries and OBJ directory"
 #===============================================
 #===============================================
-#
-#===============================================
-#================ create OBJ directory =========
-.PHONY: obj
-obj:
-	@echo "=> obj directory: $(obj_dir)"
-	@mkdir -p $(DIROBJ)
-#===============================================
-#===============================================
-#
 #
 ##################################################################################
 ### dnSVM objects
 #
 $(DIROBJ)/dnSVM_m.o:$(DIRSRC)/dnSVM_m.f90
 	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRSRC)/dnSVM_m.f90
+	@echo "make dnSVM_m.o"
 #
 ### dnS, dnPoly, dnMat objects
 #
@@ -346,22 +346,22 @@ $(DIROBJ)/NumParameters_m.o:$(DIRLib)/NumParameters_m.f90
 ##################################################################################
 ### dependencies
 #
-$(DIROBJ)/Example_dnS.o:  $(LIBAD).a
-$(DIROBJ)/TEST_dnS.o:     $(LIBAD).a
-$(DIROBJ)/TEST_dnPoly.o:  $(LIBAD).a
-$(LIBAD).a:               $(OBJ_lib)
+$(DIROBJ)/Example_dnS.o:      $(LIBAD).a
+$(DIROBJ)/TEST_dnS.o:         $(LIBAD).a
+$(DIROBJ)/TEST_dnPoly.o:      $(LIBAD).a
+$(LIBAD).a:                   $(OBJ_lib)
 #
-$(DIROBJ)/dnSVM_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o \
-                          $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnS_Op_m.o \
-                          $(DIROBJ)/dnMat_m.o
+$(DIROBJ)/dnSVM_m.o:          $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o \
+                              $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnS_Op_m.o \
+                              $(DIROBJ)/dnMat_m.o
 #
-$(DIROBJ)/UtilLib_m.o:    $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/Test_m.o:       $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnS_m.o:        $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnPoly_m.o:     $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnFunc_m.o:     $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnMat_m.o:      $(DIROBJ)/dnS_m.o $(DIROBJ)/diago_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/diago_m.o:      $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/NumParameters_m.o: obj
+$(DIROBJ)/UtilLib_m.o:        $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/Test_m.o:           $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/dnS_m.o:            $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/dnPoly_m.o:         $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/dnFunc_m.o:         $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/dnMat_m.o:          $(DIROBJ)/dnS_m.o $(DIROBJ)/diago_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
+$(DIROBJ)/diago_m.o:          $(DIROBJ)/NumParameters_m.o
+#$(DIROBJ)/NumParameters_m.o:  $(DIROBJ)
 #
 ############################################################################

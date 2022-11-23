@@ -6,5 +6,5 @@ Tests/*log
 Tests/res*
 *.x
 dnSca.txt
-libAD_dnSVM.a
+*.a
 *.log

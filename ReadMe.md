@@ -95,8 +95,16 @@ with a **makefile**:
 
 It will make the library, the executable tests and example.
 
-The library, **libAD_dnSVM.a**, is in the main directory.
-The .mod files are need. They are in the OBJ directory
+You can change the compiler and the OpenMP flag either in the makefire or with external variables:
+```
+    export ExternalF90=ifort # to change the compiller to ifort
+    export ExternalOMP=0     # 0/1 to turn off/on the OpenMP fortran flag.
+    export ExternalOPT=0     # 0/1 to turn off/on the fortran optimization.
+```
+
+The library, **libAD_dnSVM_YYY_OMPx.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
+Remarks : YYY is the compiller (gfortran, ifort ...) and x is 0 or 1 (OMP0 / OMP1: whitout/with OpenMP)
+The .mod files are need. They are in the OBJ/obj_YYY_ompx directory.
 
 ## 3) run the tests
 With **fpm**
@@ -105,11 +113,6 @@ With **fpm**
     fpm test dnPoly
     fpm test dnS
 ```
-with a **makefile**:
-```
-    make ut
-```
-
 or in the Tests directory, run the scripts:
 ```
     ./run_test_dnS
