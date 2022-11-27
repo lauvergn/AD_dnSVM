@@ -6,6 +6,7 @@
 #                gfortran (version: 9. linux and osx)
 #                nagfor (version 7.0, osx)
  F90 = gfortran
+#F90 = ifort
 #F90 = nagfor
 #
 # Optimize? Empty: default No optimization; 0: No Optimization; 1 Optimzation
@@ -16,40 +17,16 @@ OMP = 1
 LAPACK = 1
 #=================================================================================
 
-#=================================================================================
-# If ExternalF90 is empty, F90 is unchanged
-ifeq  ($(strip $(ExternalF90)),)
-else
-  F90 = $(ExternalF90)
-endif
-# If F90 is empty, F90=gfortran
-ifeq  ($(strip $(F90)),)
-  F90 = gfortran
-endif
-# If ExternalOPT is empty, OPT is unchanged
-ifeq  ($(strip $(ExternalOPT)),)
-else
-  OPT = $(ExternalOPT)
-endif
-# If OPT is empty, OPT=0
-ifeq  ($(strip $(OPT)),)
-  OPT = 0
-endif
-# If ExternalOMP is empty, OMP is unchanged
-ifeq  ($(strip $(ExternalOMP)),)
-else
-  OMP = $(ExternalOMP)
-endif
-# If OMP is empty, OMP=1
-ifeq  ($(strip $(OMP)),)
-  OMP = 1
-endif
-ext_obj=_$(F90)_omp$(OMP)
+
 
 #=================================================================================
-
+#
 # Operating system, OS? automatic using uname:
 OS=$(shell uname)
+
+# Extansion for the object directory and the library
+ext_obj=_$(F90)_omp$(OMP)
+#=================================================================================
 
 
 #=================================================================================
@@ -85,8 +62,6 @@ ifeq ($(F90),nagfor)
    F90_VER = $(shell $(F90) -V 3>&1 1>&2 2>&3 | head -1 )
 
 endif
-
-
 #=================================================================================
 #=================================================================================
 # ifort compillation v17 v18 with mkl
@@ -117,8 +92,6 @@ endif
 # pgf90 compillation v12 with mkl
 #=================================================================================
 ifeq ($(F90),pgf90)
-
-
    # omp management
    ifeq ($(OMP),0)
       OMPFLAG =
