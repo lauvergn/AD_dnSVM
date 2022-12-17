@@ -1,19 +1,17 @@
 # AD_dnSVM
 
- **AD_dnSVM** is a Fortran Automatic Differentiation library using forward mode for scalars.
- Its features are:
+**AD_dnSVM** is a Fortran Automatic Differentiation library using forward mode for scalars.
+Its features are:
 
 - no limit in terms of the number of independent variables (this number is defined at runtime)
 - up to third derivatives
 
 It is similar to Auto_Deriv fortran module:
-      <http://www.autodiff.org/?module=Tools&tool=AUTO_DERIV>
+  <http://www.autodiff.org/?module=Tools&tool=AUTO_DERIV>
 
 date: 17/12/2022
 
-    Copyright 2021 David Lauvergnat [1]
-
-[1]: Institut de Chimie Physique, UMR 8000, CNRS-Université Paris-Saclay, France
+  Copyright 2021 David Lauvergnat [1]
 
 *Originally, it has been developed for Quantum Model Lib (QML):* <https://github.com/lauvergn/QuantumModelLib>
 
@@ -22,7 +20,9 @@ date: 17/12/2022
 This library enables to get the derivatives (up to third order) of a function of several variables (type(dnS_t)).
 See the APP/Example_dnS.f90 file.
 
-### 1a) Variables need to be initialized, for instance the variables, X, Y, Z
+### 1a) Variable initializations
+
+Variables need to be initialized. For instance the variables, X, Y, Z
 
 ```Fortran
   USE ADdnSVM_m
@@ -46,14 +46,14 @@ Remark: for Y, it value is ONE, the three 1st derivatives are [ZERO,ONE,ZERO] an
 Operations with X, Y and Z:
 
 ```Fortran
-f = ONE + cos(X)**2 + sin(Y*Z)
-````
+    f = ONE + cos(X)**2 + sin(Y*Z)
+```
 
 ```Text
  f value   : 1. + cos(0.5)**2 + sin(2.) = 2.679448580
  f gradient: [-2. * sin(0.5)*cos(0.5), 2. * cos(2.),   cos(2.)] =
              [-0.8414709848,          -0.8322936731, -0.4161468365]
-````
+```
 
 ```Fortran
 CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945')
@@ -69,7 +69,9 @@ gives:
  1st derivative  3         -0.416E+00
  ```
 
-### 1b) Initialization with a vector and Jacobian matrix
+### 1b) Vector !nitialization and Jacobian matrix
+
+Instead of several variable initializations, one can initialize a vector:
 
 ```Fortran
   USE ADdnSVM_m
@@ -87,24 +89,25 @@ gives:
 ```
 
 ## 2) Installation
+
 With **fpm**
 
 ```bash
-    fpm build
+fpm build
 ```
 
 with a **makefile**:
 
 ```bash
-    make all
+make all
 ```
 
 It will make the library, the executable tests and example.
 
-You can change the compiler and the OpenMP flag either in the makefire or with external variables:
+You can change the compiler and the OpenMP flag either in the makefile or with external variables:
 
 ```bash
-    export ExternalF90=ifort # to change the compiller to ifort
+  export ExternalF90=ifort # to change the compiller to ifort
     export ExternalOMP=0     # 0/1 to turn off/on the OpenMP fortran flag.
     export ExternalOPT=0     # 0/1 to turn off/on the fortran optimization.
 ```
