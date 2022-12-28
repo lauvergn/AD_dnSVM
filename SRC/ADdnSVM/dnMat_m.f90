@@ -53,7 +53,7 @@
 !! @date 09/08/2017
 !!
 MODULE ADdnSVM_dnMat_m
-  USE ADLib_NumParameters_m
+  USE QDUtil_m, ONLY : Rkind
   IMPLICIT NONE
   PRIVATE
 
@@ -82,7 +82,6 @@ MODULE ADdnSVM_dnMat_m
   PUBLIC :: Check_dnMat_IS_ZERO,get_maxval_OF_dnMat
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
   PUBLIC :: get_d0,get_d1,get_d2,get_d3
-
 
   INTERFACE transpose
     MODULE PROCEDURE AD_TRANSPOSE_dnMat
@@ -185,7 +184,8 @@ CONTAINS
 !! @param name_var           character (optional):  Name of the variable from the calling subroutine (debuging purpose).
 !! @param name_sub           character (optional):  Name of the calling subroutine (debuging purpose).
   SUBROUTINE AD_alloc_dnMat(Mat,nsurf,nVar,nderiv,name_var,name_sub,err_dnMat)
-  IMPLICIT NONE
+    USE QDUtil_m, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnMat_t),    intent(inout)         :: Mat   !< derived type, which contains, matrix potential, its derivatives
     integer,           intent(in),  optional :: nsurf !< number of electronic surfaces
@@ -318,7 +318,8 @@ CONTAINS
 !! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param err_dnMat       integer (optional):    to handle the errors errors (0: no error).
   SUBROUTINE AD_dealloc_dnMat(Mat,err_dnMat)
-  IMPLICIT NONE
+    USE QDUtil_m, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnMat_t), intent(inout)         :: Mat        !< derived type, which contains, matrix potential, its derivatives
     integer,        intent(out), optional :: err_dnMat  !< to handle the errors
@@ -396,6 +397,9 @@ CONTAINS
 !! @param dnMat1                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param dnMat2                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
   SUBROUTINE AD_sub_dnMat2_TO_dnMat1(dnMat1,dnMat2)
+    USE QDUtil_m, out_unitp => out_unit
+    IMPLICIT NONE
+
     CLASS (dnMat_t), intent(inout) :: dnMat1
     CLASS (dnMat_t), intent(in)    :: dnMat2
 
@@ -438,6 +442,9 @@ CONTAINS
     END IF
   END SUBROUTINE AD_sub_dnMat2_TO_dnMat1
   SUBROUTINE AD_sub_Reduced_dnMat2_TO_dnMat1(dnMat1,dnMat2,lb,ub)
+    USE QDUtil_m, out_unitp => out_unit
+    IMPLICIT NONE
+
     CLASS (dnMat_t),  intent(inout) :: dnMat1
     CLASS (dnMat_t),  intent(in)    :: dnMat2
     integer,          intent(in)    :: lb,ub
@@ -497,7 +504,10 @@ CONTAINS
 !! @param S                     TYPE(dnS):       derived type which deals with the derivatives of a scalar.
 !! @param i,j                   integer (optional) indices of the matrix element. If not present i=j=1
   SUBROUTINE AD_sub_dnS_TO_dnMat(S,Mat,i,j)
+    USE QDUtil_m, out_unitp => out_unit
     USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
     TYPE (dnMat_t),     intent(inout) :: Mat
     TYPE (dnS_t),       intent(in)    :: S
     integer, optional,  intent(in)    :: i,j
@@ -594,7 +604,10 @@ CONTAINS
 !! @param S                     TYPE(dnS):       derived type which deals with the derivatives of a scalar.
 !! @param i,j                   integer (optional) indices of the matrix element. If not present i=j=1
   SUBROUTINE AD_sub_dnMat_TO_dnS(Mat,S,i,j)
+    USE QDUtil_m, out_unitp => out_unit
     USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
     TYPE (dnMat_t),     intent(in)    :: Mat
     TYPE (dnS_t),       intent(inout) :: S
     integer, optional,  intent(in)    :: i,j
@@ -676,7 +689,10 @@ CONTAINS
 !! @param Mat                   TYPE (dnMat_t):    derived type which deals with the derivatives of a matrix.
 !! @param MatOFS                TYPE(dnS):       matrix of derived type which deals with the derivatives of a scalar.
   SUBROUTINE AD_set_dnMat_FROM_MatOFdnS(Mat,MatOFS)
+    USE QDUtil_m, out_unitp => out_unit
     USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
     CLASS (dnMat_t),   intent(inout) :: Mat
     TYPE (dnS_t),      intent(in)    :: MatOFS(:,:)
 
@@ -702,6 +718,10 @@ CONTAINS
 
   END SUBROUTINE AD_set_dnMat_FROM_MatOFdnS
   SUBROUTINE AD_Mat_wADDTO_dnMat2_ider(Mat1,w1,dnMat2,ider)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
     real (kind=Rkind),  intent(in)            :: Mat1(:,:)
     TYPE (dnMat_t),     intent(inout)         :: dnMat2
     integer,            intent(in),  optional :: ider(:)
@@ -834,6 +854,9 @@ CONTAINS
 !! @param Mat                   TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param set_dnMat_TO_zero  TYPE (dnMat_t) (result):  dnMat derived type
   SUBROUTINE AD_set_dnMat_TO_zero(dnMat)
+    USE QDUtil_m, ONLY : ZERO, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t), intent(inout) :: dnMat
 
     integer :: nderiv_loc,nsurf_loc,nVar_loc
@@ -853,6 +876,8 @@ CONTAINS
 !! @param R                  real:                     some real number
 !! @param set_dnMat_TO_R  TYPE (dnMat_t) (result):  dnMat derived type
   SUBROUTINE AD_set_dnMat_TO_R(dnMat,R)
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    IMPLICIT NONE
 
     CLASS (dnMat_t), intent(inout) :: dnMat
     real (kind=Rkind), intent(in)  :: R
@@ -896,6 +921,8 @@ CONTAINS
 !! @param R                  real:                     some real number
 !! @param sub_dnMat_TIME_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_TIME_R(dnMat,R) RESULT (sub_dnMat_TIME_R)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnMat_t)                 :: sub_dnMat_TIME_R
     TYPE (dnMat_t),    intent(in)  :: dnMat
@@ -949,6 +976,8 @@ CONTAINS
 !! @param R                  real:                     some real number
 !! @param sub_R_TIME_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_TIME_dnMat(R,dnMat)  RESULT(sub_R_TIME_dnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnMat_t)                :: sub_R_TIME_dnMat
     TYPE (dnMat_t),   intent(in)  :: dnMat
@@ -1002,6 +1031,9 @@ CONTAINS
 !! @param dnMat2                    TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param dnMat2_PLUS_dnMat1 TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_dnMat2_PLUS_dnMat1(dnMat1,dnMat2)  RESULT(dnMat2_PLUS_dnMat1)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t)                :: dnMat2_PLUS_dnMat1
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
@@ -1052,9 +1084,11 @@ CONTAINS
 !! @param R                  real:                     some real number
 !! @param sub_dnMat_EXP_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_PLUS_R(dnMat,R)  RESULT (sub_dnMat_PLUS_R)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
-    TYPE (dnMat_t)                :: sub_dnMat_PLUS_R
-    TYPE (dnMat_t),   intent(in)  :: dnMat
+    TYPE (dnMat_t)                 :: sub_dnMat_PLUS_R
+    TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
     integer :: nderiv_loc,nsurf_loc,nVar_loc
@@ -1078,9 +1112,11 @@ CONTAINS
 !! @param R                  real:                     some real number
 !! @param sub_R_PLUS_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_PLUS_dnMat(R,dnMat) RESULT (sub_R_PLUS_dnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
-    TYPE (dnMat_t)                :: sub_R_PLUS_dnMat
-    TYPE (dnMat_t),   intent(in)  :: dnMat
+    TYPE (dnMat_t)                 :: sub_R_PLUS_dnMat
+    TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
     integer :: nderiv_loc,nsurf_loc,nVar_loc
@@ -1104,6 +1140,9 @@ CONTAINS
 !! @param dnMat2                    TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param dnMat2_MINUS_dnMat1 TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_dnMat2_MINUS_dnMat1(dnMat1,dnMat2) RESULT (dnMat2_MINUS_dnMat1)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t)                :: dnMat2_MINUS_dnMat1
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
@@ -1153,9 +1192,12 @@ CONTAINS
 !! @param R                    real:                     some real number
 !! @param sub_dnMat_MINUS_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_MINUS_R(dnMat,R) RESULT (sub_dnMat_MINUS_R)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
-    TYPE (dnMat_t)                :: sub_dnMat_MINUS_R
-    TYPE (dnMat_t),   intent(in)  :: dnMat
+
+    TYPE (dnMat_t)                 :: sub_dnMat_MINUS_R
+    TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
     integer :: nderiv_loc,nsurf_loc,nVar_loc
@@ -1179,9 +1221,12 @@ CONTAINS
 !! @param R                    real:                     some real number
 !! @param sub_R_MINUS_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_MINUS_dnMat(R,dnMat) RESULT (sub_R_MINUS_dnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
-    TYPE (dnMat_t)                :: sub_R_MINUS_dnMat
-    TYPE (dnMat_t),   intent(in)  :: dnMat
+
+    TYPE (dnMat_t)                 :: sub_R_MINUS_dnMat
+    TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
     integer :: nderiv_loc,nsurf_loc,nVar_loc
@@ -1234,6 +1279,9 @@ CONTAINS
 !! @param R                  real:                     exponent
 !! @param sub_dnMat_EXP_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_EXP_R(dnMat,R) RESULT (sub_dnMat_EXP_R)
+    USE QDUtil_m, ONLY : Rkind, ONE, TWO, THREE, out_unitp => out_unit
+    IMPLICIT NONE
+
 
     TYPE (dnMat_t)                 :: sub_dnMat_EXP_R
     TYPE (dnMat_t),    intent(in)  :: dnMat
@@ -1317,6 +1365,9 @@ CONTAINS
     END IF
   END FUNCTION AD_sub_dnMat_EXP_R
   FUNCTION AD_TRANSPOSE_dnMat(dnMat)  RESULT(TransdnMat) ! check with t(t(dnmat))-dnMat
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t)                :: TransdnMat
     TYPE (dnMat_t), intent(in)    :: dnMat
 
@@ -1368,6 +1419,9 @@ CONTAINS
   END FUNCTION AD_TRANSPOSE_dnMat
 
   FUNCTION AD_SYM_dnMat(dnMat)  RESULT(SymdnMat) ! check with t(t(dnmat))-dnMat
+    USE QDUtil_m, ONLY : Rkind, HALF, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t)                :: SymdnMat
     TYPE (dnMat_t), intent(in)    :: dnMat
 
@@ -1419,6 +1473,9 @@ CONTAINS
   END FUNCTION AD_SYM_dnMat
 
   FUNCTION AD_MATMUL_dnMat1_dnMat2(dnMat1,dnMat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnMat_t)                :: MatmuldnMat
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
@@ -1487,6 +1544,10 @@ CONTAINS
   END FUNCTION AD_MATMUL_dnMat1_dnMat2
 
   FUNCTION AD_MATMUL_dnMat1_Mat2(dnMat1,Mat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
+
     TYPE (dnMat_t)                  :: MatmuldnMat
     TYPE (dnMat_t),   intent(in)    :: dnMat1
     real(kind=Rkind), intent(in)    :: Mat2(:,:)
@@ -1540,6 +1601,10 @@ CONTAINS
 
   END FUNCTION AD_MATMUL_dnMat1_Mat2
   FUNCTION AD_MATMUL_Mat1_dnMat2(Mat1,dnMat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
+
     TYPE (dnMat_t)                  :: MatmuldnMat
     real(kind=Rkind), intent(in)    :: Mat1(:,:)
     TYPE (dnMat_t),   intent(in)    :: dnMat2
@@ -1600,7 +1665,9 @@ CONTAINS
 !! @param Mat                TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
 !! @param nio                integer (optional):  when present unit to print S, otherwise it is the default unit:out_unitp
   SUBROUTINE AD_Write_dnMat(Mat,nio,info)
-    USE ADLib_Util_m
+    USE QDUtil_m, ONLY : Rkind, Write_RVec => Write_Vec, Write_RMat => Write_Mat, &
+                         out_unitp => out_unit, RMatIO_format
+    IMPLICIT NONE
 
     TYPE (dnMat_t),   intent(in)           :: Mat
     integer,          intent(in), optional :: nio
@@ -1700,6 +1767,8 @@ CONTAINS
 !! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param get_nderiv_FROM_dnMat    integer  (result):  nderiv value, check against Mat%nederiv
   FUNCTION AD_get_nderiv_FROM_dnMat(Mat) RESULT(nderiv)
+    USE QDUtil_m, ONLY : out_unitp => out_unit
+    IMPLICIT NONE
 
     integer                       :: nderiv
     TYPE (dnMat_t), intent(in)    :: Mat
@@ -1774,6 +1843,8 @@ CONTAINS
 !! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
 !! @param AD_get_d0_FROM_dnMat      real  (result):      Mat%d0(:,:)
     FUNCTION AD_get_d0_FROM_dnMat(Mat) RESULT(d0)
+      USE QDUtil_m, ONLY : Rkind
+      IMPLICIT NONE
 
       TYPE (dnMat_t), intent(in)         :: Mat
       real (kind=Rkind),   allocatable   :: d0(:,:)
@@ -1789,6 +1860,8 @@ CONTAINS
 !! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
 !! @param AD_get_d1_FROM_dnMat      real  (result):      Mat%d1(:,:,:)
     FUNCTION AD_get_d1_FROM_dnMat(Mat) RESULT(d1)
+      USE QDUtil_m, ONLY : Rkind
+      IMPLICIT NONE
 
       TYPE (dnMat_t), intent(in)         :: Mat
       real (kind=Rkind),   allocatable   :: d1(:,:,:)
@@ -1804,6 +1877,8 @@ CONTAINS
 !! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
 !! @param AD_get_d2_FROM_dnMat      real  (result):      Mat%d2(:,:,:,:)
     FUNCTION AD_get_d2_FROM_dnMat(Mat) RESULT(d2)
+      USE QDUtil_m, ONLY : Rkind
+      IMPLICIT NONE
 
       TYPE (dnMat_t),       intent(in)    :: Mat
       real (kind=Rkind),    allocatable   :: d2(:,:,:,:)
@@ -1819,6 +1894,8 @@ CONTAINS
 !! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
 !! @param AD_get_d3_FROM_dnMat      real  (result):      Mat%d3(:,:,:,:,:)
     FUNCTION AD_get_d3_FROM_dnMat(Mat) RESULT(d3)
+      USE QDUtil_m, ONLY : Rkind
+      IMPLICIT NONE
 
       TYPE (dnMat_t),       intent(in)    :: Mat
       real (kind=Rkind),    allocatable   :: d3(:,:,:,:,:)
@@ -1835,7 +1912,8 @@ CONTAINS
 !! @param Mat                      TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
 !! @param epsi                     real (optional):     when present zero limit, otherwise 10^-10
   FUNCTION AD_Check_dnMat_IS_ZERO(Mat,epsi) RESULT(IS_ZERO)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ONETENTH
+    IMPLICIT NONE
 
     logical                                  :: IS_ZERO
     TYPE (dnMat_t),     intent(in)           :: Mat
@@ -1848,7 +1926,6 @@ CONTAINS
       IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= ONETENTH**10
     END IF
 
-
     END FUNCTION AD_Check_dnMat_IS_ZERO
 !> @brief Public function which gets the largest value of a derived type get_maxval_OF_dnMat (all components).
 !!
@@ -1858,7 +1935,8 @@ CONTAINS
 !! @param get_maxval_OF_dnMat   real  (result):      largest value (all components)
 !! @param Mat                      TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
   FUNCTION AD_get_maxval_OF_dnMat(Mat,nderiv) RESULT(mval)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO
+    IMPLICIT NONE
 
     real(kind=Rkind)                     :: mval
     TYPE (dnMat_t), intent(in)           :: Mat
@@ -1918,9 +1996,11 @@ CONTAINS
   END FUNCTION AD_Check_NotAlloc_dnMat
 
   SUBROUTINE AD_DIAG_dnMat(dnMat,dnMatDiag,dnVec,dnVecProj,dnVec0,type_diag)
-    USE ADLib_Util_m
-    USE ADLib_diago_m
+    USE QDUtil_m, ONLY : Rkind, ONETENTH, ZERO, ONE, TEN, PI, &
+                         diagonalization, out_unitp => out_unit, &
+                         Write_RVec => Write_Vec, Write_RMat => Write_Mat
     IMPLICIT NONE
+
 
     TYPE (dnMat_t),     intent(in)              :: dnMat
     TYPE (dnMat_t),     intent(inout)           :: dnMatDiag ! we keep it as a matrix
@@ -1976,7 +2056,8 @@ CONTAINS
     allocate(tVec(nsurf,nsurf))
     allocate(Mtemp(nsurf,nsurf))
 
-    CALL diagonalization(dnMat%d0,Eig,Vec,nsurf,type_diag=type_diag_loc,sort=1,phase=.TRUE.)
+        !diagonalization(RMat,REigVal,REigVec,nb_diago,diago_type,sort,phase,IEigVe
+    CALL diagonalization(dnMat%d0,Eig,Vec,nsurf,diago_type=type_diag_loc,sort=1,phase=.TRUE.)
 
     IF (present(dnVec0)) THEN
       IF (debug) write(out_unitp,*) 'Vec0 is present: the eigenvector phases are checked'

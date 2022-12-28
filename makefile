@@ -25,7 +25,12 @@ LAPACK = 1
 OS=$(shell uname)
 
 # Extansion for the object directory and the library
-ext_obj=_$(F90)_omp$(OMP)
+ext_obj=_$(F90)_OPT$(OPT)_omp$(OMP)
+
+QDDIR=/Users/lauvergn/git/QDUtilLib
+QDMODDIR=$(QDDIR)/OBJ/obj$(ext_obj)
+QDLib=$(QDDIR)/libQD$(ext_obj).a
+
 #=================================================================================
 
 
@@ -148,6 +153,8 @@ endif
       F90FLAGS = -Og -g -fbacktrace $(OMPFLAG) -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
       #F90FLAGS = -O0 -fbounds-check -Wuninitialized
    endif
+   F90FLAGS += -I$(QDMODDIR)
+   F90LIB   += $(QDLib)
 
    F90_VER = $(shell $(F90) --version | head -1 )
 
@@ -168,9 +175,10 @@ $(info ***********************************************************************)
 
 
 F90_FLAGS = $(F90) $(F90FLAGS)
-LYNK90 = $(F90_FLAGS)
+LYNK90    = $(F90_FLAGS)
 
- LIBS := $(PESLIB) $(F90LIB) $(ARPACKLIB)
+
+ LIBS := $(PESLIB) $(F90LIB) $(ARPACKLIB) $(QDLIB)
  LYNKFLAGS = $(LIBS)
 
 
@@ -198,9 +206,7 @@ OBJ_testdnPoly = $(DIROBJ)/TEST_dnPoly.o
 OBJ_lib        = $(DIROBJ)/dnSVM_m.o $(DIROBJ)/dnMat_m.o \
                  $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnPoly_m.o \
                  $(DIROBJ)/dnS_Op_m.o $(DIROBJ)/dnS_m.o \
-                 $(DIROBJ)/UtilLib_m.o $(DIROBJ)/diago_m.o \
-                 $(DIROBJ)/Test_m.o \
-                 $(DIROBJ)/NumParameters_m.o
+                 $(DIROBJ)/UtilLib_m.o
 #===============================================
 #============= Main programs: tests + example ==
 #
@@ -328,13 +334,8 @@ $(DIROBJ)/dnSVM_m.o:          $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o \
                               $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnS_Op_m.o \
                               $(DIROBJ)/dnMat_m.o
 #
-$(DIROBJ)/UtilLib_m.o:        $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/Test_m.o:           $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnS_m.o:            $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnPoly_m.o:         $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnFunc_m.o:         $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/dnMat_m.o:          $(DIROBJ)/dnS_m.o $(DIROBJ)/diago_m.o $(DIROBJ)/UtilLib_m.o $(DIROBJ)/NumParameters_m.o
-$(DIROBJ)/diago_m.o:          $(DIROBJ)/NumParameters_m.o
-#$(DIROBJ)/NumParameters_m.o:  $(DIROBJ)
+$(DIROBJ)/dnPoly_m.o:         $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o
+$(DIROBJ)/dnFunc_m.o:         $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o
+$(DIROBJ)/dnMat_m.o:          $(DIROBJ)/dnS_m.o
 #
 ############################################################################

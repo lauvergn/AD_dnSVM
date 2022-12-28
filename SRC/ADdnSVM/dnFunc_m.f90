@@ -34,15 +34,11 @@
 !! @date 26/04/2020
 !!
 MODULE ADdnSVM_dnFunc_m
-  USE ADLib_NumParameters_m
-  USE ADdnSVM_dnS_m
-  USE ADdnSVM_dnPoly_m
   IMPLICIT NONE
 
   PRIVATE
 
   PUBLIC :: RSphericalHarmonics,RSphericalHarmonics2
-
 
   INTERFACE RSphericalHarmonics
      MODULE PROCEDURE AD_RSphericalHarmonics
@@ -63,7 +59,10 @@ CONTAINS
   !       lm=4  => cos(2phi)
   !       .....
   ELEMENTAL FUNCTION AD_RSphericalHarmonics(th,phi,l,lm,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    USE ADdnSVM_dnPoly_m
+    IMPLICIT NONE
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: th,phi
@@ -93,7 +92,10 @@ CONTAINS
   !       m=+2  => cos(2phi)
   !       .....
   ELEMENTAL FUNCTION AD_RSphericalHarmonics2(th,phi,l,m,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+  USE QDUtil_m
+  USE ADdnSVM_dnS_m
+  USE ADdnSVM_dnPoly_m
+  IMPLICIT NONE
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: th,phi

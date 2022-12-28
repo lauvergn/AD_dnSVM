@@ -70,7 +70,7 @@
 !! @date 09/08/2017
 !!
 MODULE ADdnSVM_dnS_m
-  USE ADLib_NumParameters_m
+  USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
   IMPLICIT NONE
   PRIVATE
 
@@ -296,7 +296,9 @@ CONTAINS
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
 !! @param err_dnS            integer (optional):  to handle the errors errors (0: no error).
   SUBROUTINE AD_alloc_dnS(S,nVar,nderiv,err_dnS)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : out_unitp => out_unit
+    IMPLICIT NONE
+
     TYPE (dnS_t), intent(inout)          :: S         !< derived type, which contains, matrix potential, its derivatives
     integer,      intent(in),  optional  :: nVar      !< number of variables (coordiantes)
     integer,      intent(in),  optional  :: nderiv    !< order of the derivatives [0,1,3]
@@ -387,7 +389,7 @@ CONTAINS
 !!
 !! @param S                  TYPE (dnS_t):             derived type which deals with the derivatives of a scalar functions.
   ELEMENTAL SUBROUTINE AD_dealloc_dnS(S)
-    USE ADLib_NumParameters_m
+    IMPLICIT NONE
 
     TYPE (dnS_t), intent(inout)       :: S !< derived type, which contains, matrix potential, its derivatives
 
@@ -406,7 +408,7 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):  derived type which deals with the derivatives of a scalar functions.
 !! @param nderiv             integer:    the derivative order.
   ELEMENTAL FUNCTION AD_Check_NotAlloc_dnS(S,nderiv) RESULT (NotAlloc)
-    USE ADLib_NumParameters_m
+    IMPLICIT NONE
 
     logical                     :: NotAlloc
     TYPE (dnS_t), intent(in)    :: S
@@ -429,7 +431,8 @@ CONTAINS
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
 !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
   FUNCTION AD_init_dnS(Val,nVar,nderiv,iVar) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnS_t)                     :: Sres
     real (kind=Rkind), intent(in)    :: Val
@@ -493,7 +496,8 @@ CONTAINS
   !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
   !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
     FUNCTION AD_init_Tab_OF_dnS(TabVal,nderiv) RESULT(TabdnS)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unitp => out_unit
+      IMPLICIT NONE
 
       TYPE (dnS_t), ALLOCATABLE        :: TabdnS(:)
       real (kind=Rkind), intent(in)    :: TabVal(:)
@@ -540,7 +544,8 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param d0,d1,d2,d3        real  (optional):    real value (d0) or table to initialize S.
   SUBROUTINE AD_set_dnS(S,d0,d1,d2,d3)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     real (kind=Rkind), optional,   intent(in)     :: d0
     real (kind=Rkind), optional,   intent(in)     :: d1(:)
@@ -592,7 +597,9 @@ CONTAINS
 
   END SUBROUTINE AD_set_dnS
   SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1(S1,S2,list_act)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : out_unitp => out_unit
+    IMPLICIT NONE
+
     CLASS (dnS_t), intent(inout) :: S1
     CLASS (dnS_t), intent(in)    :: S2
     integer,       intent(in)    :: list_act(:)
@@ -630,7 +637,8 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param d0                 real  (result):      d0=S%d0
   ELEMENTAL FUNCTION AD_get_d0_FROM_dnS(S) RESULT(d0)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     real (kind=Rkind)                :: d0
     TYPE (dnS_t),        intent(in)  :: S
@@ -648,7 +656,8 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param d1                 real  (result):        d1=S%d1, d1 is allocatable
   FUNCTION AD_get_d1_FROM_dnS(S) RESULT(d1)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     real (kind=Rkind), allocatable     :: d1(:)
     TYPE (dnS_t),        intent(in)    :: S
@@ -659,7 +668,8 @@ CONTAINS
 
   END FUNCTION AD_get_d1_FROM_dnS
   FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnS(Vec) RESULT(Jac)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    IMPLICIT NONE
 
     real (kind=Rkind), allocatable     :: Jac(:,:)
     TYPE (dnS_t),        intent(in)    :: Vec(:)
@@ -706,7 +716,8 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d2                 real  (result):        d2=S%d2, d2 is allocatable
   FUNCTION AD_get_d2_FROM_dnS(S) RESULT(d2)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
       real (kind=Rkind),   allocatable   :: d2(:,:)
       TYPE (dnS_t),        intent(in)    :: S
@@ -724,7 +735,8 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d3                 real  (result):        d3=S%d3, d3 is allocatable
   FUNCTION AD_get_d3_FROM_dnS(S) RESULT(d3)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
       real (kind=Rkind), allocatable   :: d3(:,:,:)
       TYPE (dnS_t),        intent(in)    :: S
@@ -742,7 +754,8 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):          derived type which deals with the derivatives of a scalar functions.
   !! @param d0,d1,d2,d3                 real:         NOT allocatable
   SUBROUTINE AD_sub_get_dn_FROM_dnS(S,d0,d1,d2,d3)
-  USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    IMPLICIT NONE
 
       TYPE (dnS_t),        intent(in)              :: S
       real (kind=Rkind),   intent(inout), optional :: d0,d1(:),d2(:,:),d3(:,:,:)
@@ -786,7 +799,8 @@ CONTAINS
 !! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnS)
 !! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnS_FOR_test)
   SUBROUTINE AD_Write_dnS_file(S,nio,info,all_type,FOR_test,Rfmt)
-    USE ADLib_Util_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnS_t),     intent(in)           :: S
     integer,          intent(in), optional :: nio
@@ -796,7 +810,6 @@ CONTAINS
 
     integer :: i,j,k,nio_loc,nVar
     logical :: all_type_loc,FOR_test_loc
-    !character (len=50) :: fformat
     character (len=:), allocatable :: fformat,Rfmt_loc
 
     IF (present(nio)) THEN
@@ -915,7 +928,8 @@ CONTAINS
 
   END SUBROUTINE AD_Write_dnS_file
   SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt)
-    USE ADLib_Util_m
+    USE QDUtil_m, ONLY : Rkind, TO_string, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnS_t),     intent(in)           :: S
     character (len=:), allocatable         :: string
@@ -925,7 +939,6 @@ CONTAINS
 
     integer :: i,j,k
     logical :: all_type_loc,FOR_test_loc
-    !character (len=50) :: fformat
     character (len=:), allocatable :: fformat,Rfmt_loc
 
 
@@ -938,12 +951,12 @@ CONTAINS
       IF (present(info)) string = string // info // new_line('a')
       string = string // '-------------------------------------------' // new_line('a') // &
          'Write_dnS (all)' // new_line('a') //                                  &
-         'nderiv' // int_TO_char(S%nderiv) // new_line('a') //                  &
-         'S%d0' // real_TO_char(S%d0) // new_line('a')
+         'nderiv' // TO_string(S%nderiv) // new_line('a') //                  &
+         'S%d0' // TO_string(S%d0) // new_line('a')
       IF (allocated(S%d1)) THEN
         string = string // 'S%d1:'
         DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
-          string = string // ' ' // real_TO_char(S%d1(i))
+          string = string // ' ' // TO_string(S%d1(i))
         END DO
         string = string // new_line('a')
       ELSE
@@ -953,7 +966,7 @@ CONTAINS
         string = string // 'S%d2:'
         DO j=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
         DO i=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
-          string = string // ' ' // real_TO_char(S%d2(i,j))
+          string = string // ' ' // TO_string(S%d2(i,j))
         END DO
         END DO
         string = string // new_line('a')
@@ -965,7 +978,7 @@ CONTAINS
         DO k=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
         DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
         DO i=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
-          string = string // ' ' // real_TO_char(S%d3(i,j,k))
+          string = string // ' ' // TO_string(S%d3(i,j,k))
         END DO
         END DO
         END DO
@@ -987,21 +1000,21 @@ CONTAINS
       fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
 
       string = string // ' 0   derivative       ' //                            &
-          real_TO_char(S%d0,Rformat=Rfmt_loc) // new_line('a')
+          TO_string(S%d0,Rformat=Rfmt_loc) // new_line('a')
 
 
       IF (allocated(S%d1)) THEN
         DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
-          string = string // ' 1st derivative     ' // int_TO_char(i) // ' ' // &
-                        real_TO_char(S%d1(i),Rformat=Rfmt_loc)  // new_line('a')
+          string = string // ' 1st derivative     ' // TO_string(i) // ' ' // &
+                        TO_string(S%d1(i),Rformat=Rfmt_loc)  // new_line('a')
         END DO
       END IF
       IF (allocated(S%d2)) THEN
         DO i=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
         DO j=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
-          string = string // ' 2d  derivative   ' // int_TO_char(j) // ' ' //   &
-                        int_TO_char(i) // ' ' //                                &
-                        real_TO_char(S%d2(j,i),Rformat=Rfmt_loc)  // new_line('a')
+          string = string // ' 2d  derivative   ' // TO_string(j) // ' ' //   &
+                        TO_string(i) // ' ' //                                &
+                        TO_string(S%d2(j,i),Rformat=Rfmt_loc)  // new_line('a')
         END DO
         END DO
       END IF
@@ -1009,9 +1022,9 @@ CONTAINS
         DO i=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
         DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
         DO k=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
-          string = string // ' 3d  derivative ' // int_TO_char(k) // ' ' //     &
-                         int_TO_char(j) // ' ' // int_TO_char(i) // ' ' //      &
-                        real_TO_char(S%d3(k,j,i),Rformat=Rfmt_loc)  // new_line('a')
+          string = string // ' 3d  derivative ' // TO_string(k) // ' ' //     &
+                         TO_string(j) // ' ' // TO_string(i) // ' ' //      &
+                        TO_string(S%d3(k,j,i),Rformat=Rfmt_loc)  // new_line('a')
         END DO
         END DO
         END DO
@@ -1027,7 +1040,8 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param get_nderiv_FROM_dnS   integer  (result):   nderiv value, check against S%nederiv and the allocated d1,d2 or d3
   ELEMENTAL FUNCTION AD_get_nderiv_FROM_dnS(S) RESULT(nderiv)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     integer                     :: nderiv
     TYPE (dnS_t), intent(in)    :: S
@@ -1054,7 +1068,8 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param nVar                  integer  (result):   nVar value from the size of S%d1.
   ELEMENTAL FUNCTION AD_get_nVar_FROM_dnS(S) RESULT(nVar)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     integer                     :: nVar
     TYPE (dnS_t), intent(in)    :: S
@@ -1075,7 +1090,8 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param epsi                  real (optional):     when present zero limit, otherwise 10^-10
   ELEMENTAL FUNCTION AD_Check_dnS_IS_ZERO(S,epsi) RESULT(Check_dnS_IS_ZERO)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ONETENTH, out_unitp => out_unit
+    IMPLICIT NONE
 
     logical                                  :: Check_dnS_IS_ZERO
     TYPE (dnS_t),       intent(in)           :: S
@@ -1102,7 +1118,8 @@ CONTAINS
 !! @param get_maxval_OF_dnS     real  (result):      largest value
 !! @param S                     TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   ELEMENTAL FUNCTION AD_get_maxval_OF_dnS(S) RESULT(maxval_OF_dnS)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    IMPLICIT NONE
 
     real(kind=Rkind)            :: maxval_OF_dnS
     TYPE (dnS_t), intent(in)    :: S
@@ -1131,7 +1148,8 @@ CONTAINS
 !! @param x                        real:            abciss
 !! @param nderiv                   integer:         order of the derivative
   FUNCTION AD_get_Num_dnS_FROM_f_x(x,f,nderiv) RESULT(Snum)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, ZERO,ONE,TWO,THREE,FOUR,EIGHT,TWELVE, ONETENTH, out_unitp => out_unit
+    IMPLICIT NONE
 
     TYPE (dnS_t)                                 :: Snum
     real (kind=Rkind), external                  :: f ! an intrinsic function: sin exp ....
@@ -1165,8 +1183,6 @@ CONTAINS
       f0  = f(x)
       fp  = f(x+step)
       fm  = f(x-step)
-      !fpp = f(x+step+step)
-      !fmm = f(x-step-step)
 
       Snum%d0 = f0
       Snum%d1 = (fp-fm)/(step+step)
@@ -1206,7 +1222,8 @@ CONTAINS
 ! operators ==,/=,>=,>,<=,<
 !=========================================================
   ELEMENTAL FUNCTION AD_dnS_EQ_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     logical                     :: lres
     CLASS (dnS_t), intent(in)   :: S1
@@ -1223,6 +1240,8 @@ CONTAINS
 
   END FUNCTION AD_dnS_EQ_dnS
   ELEMENTAL FUNCTION AD_dnS_EQ_R(S1,R) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     logical                            :: lres
     CLASS (dnS_t),       intent(in)    :: S1
@@ -1235,7 +1254,8 @@ CONTAINS
 
   END FUNCTION AD_dnS_EQ_R
   ELEMENTAL FUNCTION AD_R_EQ_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     logical                            :: lres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1249,7 +1269,8 @@ CONTAINS
   END FUNCTION AD_R_EQ_dnS
 
   ELEMENTAL FUNCTION AD_dnS_NEQ_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     logical                     :: lres
     CLASS (dnS_t), intent(in)   :: S1
@@ -1266,6 +1287,9 @@ CONTAINS
 
   END FUNCTION AD_dnS_NEQ_dnS
   ELEMENTAL FUNCTION AD_dnS_NEQ_R(S1,R) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
+
     CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
 
@@ -1277,7 +1301,8 @@ CONTAINS
 
   END FUNCTION AD_dnS_NEQ_R
   ELEMENTAL FUNCTION AD_R_NEQ_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
@@ -1290,7 +1315,8 @@ CONTAINS
   END FUNCTION AD_R_NEQ_dnS
 
   ELEMENTAL FUNCTION AD_dnS_LE_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    IMPLICIT NONE
 
     CLASS (dnS_t), intent(in)   :: S1
     TYPE (dnS_t),  intent(in)   :: S2
@@ -1303,7 +1329,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_LE_dnS
   ELEMENTAL FUNCTION AD_dnS_LE_R(S1,R) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
@@ -1315,7 +1341,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_LE_R
   ELEMENTAL FUNCTION AD_R_LE_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
@@ -1328,7 +1354,7 @@ CONTAINS
   END FUNCTION AD_R_LE_dnS
 
   ELEMENTAL FUNCTION AD_dnS_LT_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t), intent(in)   :: S1
     TYPE (dnS_t),  intent(in)   :: S2
@@ -1340,7 +1366,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_LT_dnS
   ELEMENTAL FUNCTION AD_dnS_LT_R(S1,R) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
@@ -1352,7 +1378,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_LT_R
   ELEMENTAL FUNCTION AD_R_LT_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
@@ -1365,7 +1391,7 @@ CONTAINS
   END FUNCTION AD_R_LT_dnS
 
   ELEMENTAL FUNCTION AD_dnS_GE_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t), intent(in)   :: S1
     TYPE (dnS_t),  intent(in)   :: S2
@@ -1377,7 +1403,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_GE_dnS
   ELEMENTAL FUNCTION AD_dnS_GE_R(S1,R) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
@@ -1389,7 +1415,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_GE_R
   ELEMENTAL FUNCTION AD_R_GE_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S
     real (kind=Rkind), intent(in)    :: R
@@ -1402,7 +1428,7 @@ CONTAINS
   END FUNCTION AD_R_GE_dnS
 
   ELEMENTAL FUNCTION AD_dnS_GT_dnS(S1,S2) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t), intent(in)   :: S1
     TYPE (dnS_t),  intent(in)   :: S2
@@ -1414,7 +1440,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_GT_dnS
   ELEMENTAL FUNCTION AD_dnS_GT_R(S1,R) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(in)    :: S1
     real (kind=Rkind), intent(in)    :: R
@@ -1426,7 +1452,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_GT_R
   ELEMENTAL FUNCTION AD_R_GT_dnS(R,S) RESULT(lres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),        intent(in)   :: S
     real (kind=Rkind),   intent(in)    :: R
@@ -1441,7 +1467,7 @@ CONTAINS
 ! operators =,+,-,*,/,**
 !=========================================================
   ELEMENTAL SUBROUTINE AD_sub_dnS2_TO_dnS1(S1,S2) ! not used anymore
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
     CLASS (dnS_t), intent(inout) :: S1
     TYPE (dnS_t),  intent(in)    :: S2
 
@@ -1460,7 +1486,7 @@ CONTAINS
   END SUBROUTINE AD_sub_dnS2_TO_dnS1
 
   ELEMENTAL SUBROUTINE AD_set_dnS_TO_R(S,R)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(inout) :: S
     real (kind=Rkind), intent(in)    :: R
@@ -1480,7 +1506,7 @@ CONTAINS
 
   END SUBROUTINE AD_set_dnS_TO_R
   ELEMENTAL SUBROUTINE AD_set_dnS_TO_I(S,I)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     CLASS (dnS_t),     intent(inout) :: S
     integer,           intent(in)    :: I
@@ -1503,7 +1529,7 @@ CONTAINS
 
 
   ELEMENTAL FUNCTION AD_dnS2_PLUS_dnS1(S1,S2) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                :: Sres
     CLASS (dnS_t), intent(in)   :: S1,S2
@@ -1543,7 +1569,7 @@ CONTAINS
 
   END FUNCTION AD_dnS2_PLUS_dnS1
   ELEMENTAL FUNCTION AD_dnS_PLUS_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1557,7 +1583,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_PLUS_R
   ELEMENTAL FUNCTION AD_R_PLUS_dnS(R,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1571,7 +1597,7 @@ CONTAINS
 
   END FUNCTION AD_R_PLUS_dnS
   ELEMENTAL FUNCTION AD_dnS_PLUS_I(S,I) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1585,7 +1611,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_PLUS_I
   ELEMENTAL FUNCTION AD_I_PLUS_dnS(I,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1599,7 +1625,7 @@ CONTAINS
 
   END FUNCTION AD_I_PLUS_dnS
   ELEMENTAL FUNCTION AD_PLUS_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1611,7 +1637,7 @@ CONTAINS
 
   END FUNCTION AD_PLUS_dnS
   ELEMENTAL FUNCTION AD_dnS2_MINUS_dnS1(S1,S2) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                :: Sres
     CLASS (dnS_t), intent(in)   :: S1
@@ -1641,7 +1667,7 @@ CONTAINS
 
   END FUNCTION AD_dnS2_MINUS_dnS1
   ELEMENTAL FUNCTION AD_dnS_MINUS_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1655,7 +1681,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_MINUS_R
   ELEMENTAL FUNCTION AD_R_MINUS_dnS(R,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1672,7 +1698,7 @@ CONTAINS
 
   END FUNCTION AD_R_MINUS_dnS
   ELEMENTAL FUNCTION AD_dnS_MINUS_I(S,I) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1686,7 +1712,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_MINUS_I
   ELEMENTAL FUNCTION AD_I_MINUS_dnS(I,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1703,7 +1729,7 @@ CONTAINS
 
   END FUNCTION AD_I_MINUS_dnS
   ELEMENTAL FUNCTION AD_MINUS_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1724,7 +1750,7 @@ CONTAINS
   END FUNCTION AD_MINUS_dnS
 
   ELEMENTAL FUNCTION AD_dnS2_TIME_dnS1(S1,S2) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                :: Sres
     CLASS (dnS_t), intent(in)   :: S1
@@ -1782,7 +1808,7 @@ CONTAINS
 
   END FUNCTION AD_dnS2_TIME_dnS1
   ELEMENTAL FUNCTION AD_d0S_TIME_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                         :: Sres
     TYPE (dnS_t),          intent(in)    :: S
@@ -1799,8 +1825,7 @@ CONTAINS
 
   END FUNCTION AD_d0S_TIME_R
   ELEMENTAL FUNCTION AD_dnS_TIME_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
-    USE ADLib_Util_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1821,8 +1846,7 @@ CONTAINS
   END FUNCTION AD_dnS_TIME_R
 
    ELEMENTAL FUNCTION AD_R_TIME_dnS(R,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
-    USE ADLib_Util_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1844,8 +1868,7 @@ CONTAINS
   END FUNCTION AD_R_TIME_dnS
 
   ELEMENTAL FUNCTION AD_dnS_TIME_I(S,I) RESULT(Sres)
-    USE ADLib_NumParameters_m
-    USE ADLib_Util_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1859,8 +1882,7 @@ CONTAINS
   END FUNCTION AD_dnS_TIME_I
 
    ELEMENTAL FUNCTION AD_I_TIME_dnS(I,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
-    USE ADLib_Util_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1875,7 +1897,7 @@ CONTAINS
   END FUNCTION AD_I_TIME_dnS
 
   ELEMENTAL FUNCTION AD_dnS2_OVER_dnS1(S1,S2) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                :: Sres
     CLASS (dnS_t), intent(in)   :: S1
@@ -1888,7 +1910,7 @@ CONTAINS
 
   END FUNCTION AD_dnS2_OVER_dnS1
   ELEMENTAL FUNCTION AD_dnS_OVER_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1903,7 +1925,7 @@ CONTAINS
   END FUNCTION AD_dnS_OVER_R
 
   ELEMENTAL FUNCTION AD_R_OVER_dnS(R,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1919,7 +1941,7 @@ CONTAINS
   END FUNCTION AD_R_OVER_dnS
 
   ELEMENTAL FUNCTION AD_dnS_OVER_I(S,I) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1934,7 +1956,7 @@ CONTAINS
   END FUNCTION AD_dnS_OVER_I
 
   ELEMENTAL FUNCTION AD_I_OVER_dnS(I,S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -1956,7 +1978,7 @@ CONTAINS
 !=========================================================
 
   ELEMENTAL FUNCTION AD_get_F_dnS(S,d0f,d1f,d2f,d3f) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2000,7 +2022,7 @@ CONTAINS
   END FUNCTION AD_get_F_dnS
 
   ELEMENTAL FUNCTION AD_dnS_EXP_R(S,R) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -2027,7 +2049,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_EXP_R
   ELEMENTAL FUNCTION AD_dnS_EXP_I(S,I) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -2055,7 +2077,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_EXP_I
   ELEMENTAL FUNCTION AD_get_SQRT_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     CLASS (dnS_t),       intent(in)    :: S
@@ -2068,7 +2090,7 @@ CONTAINS
   END FUNCTION AD_get_SQRT_dnS
 
   ELEMENTAL FUNCTION AD_get_ABS_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2081,7 +2103,7 @@ CONTAINS
   END FUNCTION AD_get_ABS_dnS
 
   ELEMENTAL FUNCTION AD_get_EXP_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2100,7 +2122,7 @@ CONTAINS
 
   END FUNCTION AD_get_EXP_dnS
   ELEMENTAL FUNCTION AD_get_LOG_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2120,7 +2142,7 @@ CONTAINS
 
   END FUNCTION AD_get_LOG_dnS
   ELEMENTAL FUNCTION AD_get_LOG10_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2134,7 +2156,7 @@ CONTAINS
 
   END FUNCTION AD_get_LOG10_dnS
   ELEMENTAL FUNCTION AD_get_COS_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2155,7 +2177,7 @@ CONTAINS
 
   END FUNCTION AD_get_COS_dnS
   ELEMENTAL FUNCTION AD_get_ACOS_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2176,7 +2198,7 @@ CONTAINS
 
   END FUNCTION AD_get_ACOS_dnS
   ELEMENTAL FUNCTION AD_get_SIN_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2196,7 +2218,7 @@ CONTAINS
 
   END FUNCTION AD_get_SIN_dnS
   ELEMENTAL FUNCTION AD_get_ASIN_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2216,7 +2238,7 @@ CONTAINS
 
   END FUNCTION AD_get_ASIN_dnS
   ELEMENTAL FUNCTION AD_get_TAN_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2230,7 +2252,7 @@ CONTAINS
   END FUNCTION AD_get_TAN_dnS
 
   ELEMENTAL FUNCTION AD_get_ATAN_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2250,7 +2272,7 @@ CONTAINS
   END FUNCTION AD_get_ATAN_dnS
 
   ELEMENTAL FUNCTION AD_get_ATAN2_dnS(Sy,Sx) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: Sy,Sx
@@ -2265,7 +2287,7 @@ CONTAINS
   END FUNCTION AD_get_ATAN2_dnS
 
   ELEMENTAL FUNCTION AD_get_COSH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2286,7 +2308,7 @@ CONTAINS
 
   END FUNCTION AD_get_COSH_dnS
   ELEMENTAL FUNCTION AD_get_ACOSH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2306,7 +2328,7 @@ CONTAINS
 
   END FUNCTION AD_get_ACOSH_dnS
   ELEMENTAL FUNCTION AD_get_SINH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2324,7 +2346,7 @@ CONTAINS
 
   END FUNCTION AD_get_SINH_dnS
   ELEMENTAL FUNCTION AD_get_ASINH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2344,7 +2366,7 @@ CONTAINS
   END FUNCTION AD_get_ASINH_dnS
 
   ELEMENTAL FUNCTION AD_get_TANH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S
@@ -2364,7 +2386,7 @@ CONTAINS
   END FUNCTION AD_get_TANH_dnS
 
   ELEMENTAL FUNCTION AD_get_ATANH_dnS(S) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: S

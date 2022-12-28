@@ -34,7 +34,7 @@
 !! @date 26/04/2020
 !!
 MODULE ADdnSVM_dnS_Op_m
-  USE ADLib_NumParameters_m
+  USE QDUtil_m
   USE ADdnSVM_dnS_m
   IMPLICIT NONE
 
@@ -64,7 +64,7 @@ MODULE ADdnSVM_dnS_Op_m
 CONTAINS
 
     FUNCTION AD_dot_product_VecOFdnS(VecA,VecB) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecA(:),VecB(:)
@@ -97,7 +97,7 @@ CONTAINS
 
     END FUNCTION AD_dot_product_VecOFdnS
     FUNCTION AD_dot_product_VecOFdnS_Vec(VecA,VecB) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecA(:)
@@ -132,7 +132,7 @@ CONTAINS
 
     END FUNCTION AD_dot_product_VecOFdnS_Vec
     FUNCTION AD_dot_product_Vec_VecOFdnS(VecA,VecB) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecB(:)
@@ -166,7 +166,7 @@ CONTAINS
 
     END FUNCTION AD_dot_product_Vec_VecOFdnS
     FUNCTION AD_product_VecOFdnS(Vec) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m
 
       TYPE (dnS_t)                              :: Sres
       TYPE (dnS_t),        intent(in)           :: Vec(:)
@@ -181,7 +181,7 @@ CONTAINS
 
     END FUNCTION AD_product_VecOFdnS
     FUNCTION AD_SUM_VecOFdnS(Vec) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m
 
       TYPE (dnS_t)                              :: Sres
       TYPE (dnS_t),        intent(in)           :: Vec(:)
@@ -197,7 +197,7 @@ CONTAINS
     END FUNCTION AD_SUM_VecOFdnS
 
     FUNCTION AD_SUM_MatOFdnS(Mat) RESULT(Sres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m
 
       TYPE (dnS_t)                              :: Sres
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
@@ -216,7 +216,7 @@ CONTAINS
     END FUNCTION AD_SUM_MatOFdnS
 
     FUNCTION AD_transpose_MatOFdnS(Mat) RESULT(Mres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m
 
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
 
@@ -237,7 +237,7 @@ CONTAINS
     END FUNCTION AD_transpose_MatOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_VecOFdnS(Mat,Vec) RESULT(Vres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t),        intent(in)           :: Vec(:)
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
@@ -263,7 +263,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_VecOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_Vec(Mat,Vec) RESULT(Vres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       real(kind=Rkind),    intent(in)           :: Vec(:)
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
@@ -289,7 +289,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_Vec
 
     FUNCTION AD_matmul_Mat_VecOFdnS(Mat,Vec) RESULT(Vres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t),        intent(in)           :: Vec(:)
       real(kind=Rkind),    intent(in)           :: Mat(:,:)
@@ -317,7 +317,7 @@ CONTAINS
 
 
     FUNCTION AD_matmul_MatOFdnS_MatOFdnS(MatA,MatB) RESULT(Mres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t),        intent(in)           :: MatA(:,:)
       TYPE (dnS_t),        intent(in)           :: MatB(:,:)
@@ -347,7 +347,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_MatOFdnS
 
     FUNCTION AD_matmul_Mat_MatOFdnS(MatA,MatB) RESULT(Mres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       real(kind=Rkind),    intent(in)           :: MatA(:,:)
       TYPE (dnS_t),        intent(in)           :: MatB(:,:)
@@ -377,7 +377,7 @@ CONTAINS
     END FUNCTION AD_matmul_Mat_MatOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_Mat(MatA,MatB) RESULT(Mres)
-      USE ADLib_NumParameters_m
+      USE QDUtil_m, out_unitp => out_unit
 
       TYPE (dnS_t),        intent(in)           :: MatA(:,:)
       real(kind=Rkind),    intent(in)           :: MatB(:,:)

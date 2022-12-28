@@ -34,7 +34,7 @@
 !! @date 26/04/2020
 !!
 MODULE ADdnSVM_dnPoly_m
-  USE ADLib_NumParameters_m
+  USE QDUtil_m
   USE ADdnSVM_dnS_m
   IMPLICIT NONE
 
@@ -80,7 +80,7 @@ MODULE ADdnSVM_dnPoly_m
 
 CONTAINS
   ELEMENTAL FUNCTION AD_dnMonomial(x,i) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -93,7 +93,7 @@ CONTAINS
 
   END FUNCTION AD_dnMonomial
   ELEMENTAL FUNCTION AD_dnBox(x,i,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -118,7 +118,7 @@ CONTAINS
 
   END FUNCTION AD_dnBox
   ELEMENTAL FUNCTION AD_dnFourier(x,i,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -161,7 +161,7 @@ CONTAINS
 
   END FUNCTION AD_dnFourier
   ELEMENTAL FUNCTION AD_dnFourier2(x,i,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -204,7 +204,7 @@ CONTAINS
 
   END FUNCTION AD_dnFourier2
   ELEMENTAL FUNCTION AD_dnLegendre0(x,i,ReNorm) RESULT(Sres)
-  USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -248,7 +248,7 @@ CONTAINS
 
   END FUNCTION AD_dnLegendre0
   ELEMENTAL FUNCTION AD_dnLegendre(x,l,m,ReNorm) RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -320,8 +320,8 @@ CONTAINS
   END FUNCTION AD_dnLegendre
 
   ELEMENTAL FUNCTION AD_dnJacobi(x,n,alpha,beta,ReNorm) RESULT(Sres)
-    !USE ADLib_NumParameters_m
-    USE  ADLib_Util_m
+    USE QDUtil_m
+    USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -380,7 +380,7 @@ CONTAINS
 !
 !===================================================
   ELEMENTAL FUNCTION AD_dnHermite(x,l,ReNorm)  RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
@@ -433,7 +433,7 @@ CONTAINS
 !
 !===================================================
   ELEMENTAL FUNCTION AD_dnExpHermite(x,l,ReNorm)  RESULT(Sres)
-    USE ADLib_NumParameters_m
+    USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x

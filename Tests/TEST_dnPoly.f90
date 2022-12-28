@@ -54,10 +54,10 @@
 !! @date 03/08/2017
 !!
 PROGRAM TEST_dnPoly
-  USE ADLib_NumParameters_m
+  USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
+  USE QDUtil_Test_m
   USE ADLib_Util_m
   USE ADdnSVM_m
-  USE ADLib_Test_m
   IMPLICIT NONE
 
   TYPE (dnS_t)                        :: dnX,dnTh,dnPhi,Sana,SExact
@@ -71,8 +71,7 @@ PROGRAM TEST_dnPoly
 
   CALL read_arg()
 
-  CALL Initialize_Test(test_var,test_name='dnPoly',ZeroTresh=ONETENTH**10,      &
-                       PrintFlag = (print_level > 0))
+  CALL Initialize_Test(test_var,test_name='dnPoly',PrintFlag = (print_level > 0))
 
 
   nderiv = 1
@@ -264,7 +263,6 @@ PROGRAM TEST_dnPoly
 
 CONTAINS
   SUBROUTINE read_arg()
-    USE ADLib_NumParameters_m
     IMPLICIT NONE
 
     character(len=:), allocatable :: arg,arg2
