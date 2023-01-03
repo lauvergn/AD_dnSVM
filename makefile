@@ -17,22 +17,34 @@ OMP = 1
 LAPACK = 1
 #=================================================================================
 
-
-
 #=================================================================================
-#
 # Operating system, OS? automatic using uname:
-OS=$(shell uname)
-
-# Extansion for the object directory and the library
-ext_obj=_$(F90)_OPT$(OPT)_omp$(OMP)
-
-QDDIR=/Users/lauvergn/git/QDUtilLib
-QDMODDIR=$(QDDIR)/OBJ/obj$(ext_obj)
-QDLib=$(QDDIR)/libQD$(ext_obj).a
+#=================================================================================
+OS:=$(shell uname)
 
 #=================================================================================
+# extansion for the library (.a), objects and modules directory
+#=================================================================================
+ext_obj :=_$(F90)_opt$(OPT)_omp$(OMP)
 
+#=================================================================================
+# Directories
+#=================================================================================
+MAIN_path :=$(shell pwd)
+OBJ_DIR    := $(MAIN_path)/OBJ/obj$(ext_obj)
+$(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
+MOD_DIR    := $(OBJ_DIR)
+
+#=================================================================================
+# External Libraries directory (dnSVM ...)
+ifeq ($(ExternalLibDIR),)
+  ExternalLibDIR := $(MAIN_path)/Ext_Lib
+endif
+
+QD_DIR=$(ExternalLibDIR)/QDUtilLib
+QDMOD_DIR=$(QD_DIR)/OBJ/obj$(ext_obj)
+QDLib=$(QD_DIR)/libQD$(ext_obj).a
+#===============================================================================
 
 #=================================================================================
 # nag compillation (nagfor)
@@ -153,7 +165,7 @@ endif
       F90FLAGS = -Og -g -fbacktrace $(OMPFLAG) -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
       #F90FLAGS = -O0 -fbounds-check -Wuninitialized
    endif
-   F90FLAGS += -I$(QDMODDIR)
+   F90FLAGS += -I$(QDMOD_DIR)
    F90LIB   += $(QDLib)
 
    F90_VER = $(shell $(F90) --version | head -1 )
@@ -171,6 +183,7 @@ $(info ***********OpenMP:       $(OMPFLAG))
 $(info ***********F90FLAGS:     $(F90FLAGS))
 $(info ***********F90LIB:       $(F90LIB))
 $(info ***********ext_obj:      $(ext_obj))
+$(info ***********QD_DIR:        $(QD_DIR))
 $(info ***********************************************************************)
 
 
@@ -189,24 +202,21 @@ EXA_dnSEXE     = Exa_dnS.x
 LIBADshort     = libAD_dnSVM
 LIBAD          = libAD_dnSVM$(ext_obj)
 
-DIR0     := $(shell pwd)
-DIRAPP    = $(DIR0)/APP
-DIRTEST   = $(DIR0)/Tests
-DIROBJ    = $(DIR0)/OBJ/obj$(ext_obj)
-$(shell [ -d $(DIROBJ) ] || mkdir -p $(DIROBJ))
+DIRAPP    = $(MAIN_path)/APP
+DIRTEST   = $(MAIN_path)/Tests
 
-DIRSRC    = $(DIR0)/SRC
+DIRSRC    = $(MAIN_path)/SRC
 DIRLib    = $(DIRSRC)/ADLib
 DIRdnSVM  = $(DIRSRC)/ADdnSVM
 #
-OBJ_testdnS    = $(DIROBJ)/TEST_dnS.o
-OBJ_testdnPoly = $(DIROBJ)/TEST_dnPoly.o
+OBJ_testdnS    = $(OBJ_DIR)/TEST_dnS.o
+OBJ_testdnPoly = $(OBJ_DIR)/TEST_dnPoly.o
 
 
-OBJ_lib        = $(DIROBJ)/dnSVM_m.o $(DIROBJ)/dnMat_m.o \
-                 $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnPoly_m.o \
-                 $(DIROBJ)/dnS_Op_m.o $(DIROBJ)/dnS_m.o \
-                 $(DIROBJ)/UtilLib_m.o
+OBJ_lib        = $(OBJ_DIR)/dnSVM_m.o $(OBJ_DIR)/dnMat_m.o \
+                 $(OBJ_DIR)/dnFunc_m.o $(OBJ_DIR)/dnPoly_m.o \
+                 $(OBJ_DIR)/dnS_Op_m.o $(OBJ_DIR)/dnS_m.o \
+                 $(OBJ_DIR)/UtilLib_m.o
 #===============================================
 #============= Main programs: tests + example ==
 #
@@ -217,38 +227,39 @@ all: dnS dnPoly exa
 .PHONY: exa exa_dnS Exa_dnS
 exa exa_dnS Exa_dnS:$(EXA_dnSEXE)
 	echo "Exa_dnS compilation: OK"
-$(EXA_dnSEXE): $(DIROBJ)/Example_dnS.o $(LIBAD).a
-	$(LYNK90)   -o $(EXA_dnSEXE) $(DIROBJ)/Example_dnS.o $(LIBAD).a $(LYNKFLAGS)
+$(EXA_dnSEXE): $(OBJ_DIR)/Example_dnS.o $(LIBAD).a
+	$(LYNK90)   -o $(EXA_dnSEXE) $(OBJ_DIR)/Example_dnS.o $(LIBAD).a $(LYNKFLAGS)
 	echo "Exa_dnS compilation: OK"
-$(DIROBJ)/Example_dnS.o:$(DIRAPP)/Example_dnS.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRAPP)/Example_dnS.f90
+$(OBJ_DIR)/Example_dnS.o:$(DIRAPP)/Example_dnS.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)  -c $(DIRAPP)/Example_dnS.f90
 
 # Test dnS
 .PHONY: dns dnS testdns testdnS
 dns dnS testdns testdnS:$(TEST_dnSEXE)
 	echo "dnS compilation: OK"
-$(TEST_dnSEXE): $(DIROBJ)/TEST_dnS.o $(LIBAD).a
-	$(LYNK90)   -o $(TEST_dnSEXE) $(DIROBJ)/TEST_dnS.o $(LIBAD).a $(LYNKFLAGS)
+$(TEST_dnSEXE): $(OBJ_DIR)/TEST_dnS.o $(LIBAD).a
+	$(LYNK90)   -o $(TEST_dnSEXE) $(OBJ_DIR)/TEST_dnS.o $(LIBAD).a $(LYNKFLAGS)
 	echo "dnS compilation: OK"
-$(DIROBJ)/TEST_dnS.o:$(DIRTEST)/TEST_dnS.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRTEST)/TEST_dnS.f90
+$(OBJ_DIR)/TEST_dnS.o:$(DIRTEST)/TEST_dnS.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)  -c $(DIRTEST)/TEST_dnS.f90
 
 # Test dnPoly
 .PHONY: dnpoly dnPoly testdnpoly testdnPoly
 dnpoly dnPoly testdnpoly testdnPoly: $(TEST_dnPolyEXE)
 	echo "OBJ_testdnPoly compilation: OK"
-$(TEST_dnPolyEXE): $(DIROBJ)/TEST_dnPoly.o $(LIBAD).a
-	$(LYNK90)   -o $(TEST_dnPolyEXE) $(DIROBJ)/TEST_dnPoly.o $(LIBAD).a $(LYNKFLAGS)
+$(TEST_dnPolyEXE): $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a
+	$(LYNK90)   -o $(TEST_dnPolyEXE) $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a $(LYNKFLAGS)
 	echo "dnPoly compilation: OK"
-$(DIROBJ)/TEST_dnPoly.o:$(DIRTEST)/TEST_dnPoly.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRTEST)/TEST_dnPoly.f90
+$(OBJ_DIR)/TEST_dnPoly.o:$(DIRTEST)/TEST_dnPoly.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)  -c $(DIRTEST)/TEST_dnPoly.f90
 #
 #===============================================
 #================ unitary tests ================
 .PHONY: ut UT
 ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE)
-	./$(TEST_dnSEXE)
-	./$(TEST_dnPolyEXE)
+	@./$(TEST_dnSEXE) > Test.log
+	@./$(TEST_dnPolyEXE) >> Test.log
+	@grep -F TESTING Test.log| grep -F Number
 	@echo "  done with the unitary tests"
 #===============================================
 #===============================================
@@ -271,16 +282,17 @@ $(LIBAD).a: $(OBJ_lib)
 .PHONY: clean
 clean:
 	rm -f  $(TEST_dnSEXE) $(TEST_dnPolyEXE) $(EXA_dnSEXE) $(LIBAD).a
-	rm -f  dnSca.txt comp.log dnS.log dnPoly.log
+	rm -f  dnSca.txt comp.log dnS.log dnPoly.log Test.log
 	rm -fr *.dSYM
 	rm -fr build
-	cd $(DIROBJ) ; rm -f *.o *.mod *.MOD
+	cd $(OBJ_DIR) ; rm -f *.o *.mod *.MOD
 	@cd Tests && ./clean
 	@echo "  done cleaning up the example directories"
 .PHONY: cleanall
 cleanall: clean
 	rm -f *.a
 	rm -rf OBJ
+	cd $(MAIN_path)/Ext_Lib ; ./cleanlib
 	@echo "  done remove *.a libraries and OBJ directory"
 #===============================================
 #===============================================
@@ -288,54 +300,64 @@ cleanall: clean
 ##################################################################################
 ### dnSVM objects
 #
-$(DIROBJ)/dnSVM_m.o:$(DIRSRC)/dnSVM_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRSRC)/dnSVM_m.f90
+$(OBJ_DIR)/dnSVM_m.o:$(DIRSRC)/dnSVM_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)  -c $(DIRSRC)/dnSVM_m.f90
 	@echo "make dnSVM_m.o"
 #
 ### dnS, dnPoly, dnMat objects
 #
-$(DIROBJ)/dnS_m.o:$(DIRdnSVM)/dnS_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRdnSVM)/dnS_m.f90
-$(DIROBJ)/dnPoly_m.o:$(DIRdnSVM)/dnPoly_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnPoly_m.f90
-$(DIROBJ)/dnFunc_m.o:$(DIRdnSVM)/dnFunc_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnFunc_m.f90
-$(DIROBJ)/dnS_Op_m.o:$(DIRdnSVM)/dnS_Op_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnS_Op_m.f90
-$(DIROBJ)/dnMat_m.o:$(DIRdnSVM)/dnMat_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)   -c $(DIRdnSVM)/dnMat_m.f90
+$(OBJ_DIR)/dnS_m.o:$(DIRdnSVM)/dnS_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)  -c $(DIRdnSVM)/dnS_m.f90
+$(OBJ_DIR)/dnPoly_m.o:$(DIRdnSVM)/dnPoly_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnPoly_m.f90
+$(OBJ_DIR)/dnFunc_m.o:$(DIRdnSVM)/dnFunc_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnFunc_m.f90
+$(OBJ_DIR)/dnS_Op_m.o:$(DIRdnSVM)/dnS_Op_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS) -c $(DIRdnSVM)/dnS_Op_m.f90
+$(OBJ_DIR)/dnMat_m.o:$(DIRdnSVM)/dnMat_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)   -c $(DIRdnSVM)/dnMat_m.f90
 ##################################################################################
 #
 #
 ##################################################################################
 ### libraries
 #
-$(DIROBJ)/UtilLib_m.o:$(DIRLib)/UtilLib_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)   -c $(DIRLib)/UtilLib_m.f90
-$(DIROBJ)/Test_m.o:$(DIRLib)/Test_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)   -c $(DIRLib)/Test_m.f90
-$(DIROBJ)/diago_m.o:$(DIRLib)/diago_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)  -c $(DIRLib)/diago_m.f90
-$(DIROBJ)/NumParameters_m.o:$(DIRLib)/NumParameters_m.f90
-	cd $(DIROBJ) ; $(F90_FLAGS)   -c $(DIRLib)/NumParameters_m.f90
+$(OBJ_DIR)/UtilLib_m.o:$(DIRLib)/UtilLib_m.f90
+	cd $(OBJ_DIR) ; $(F90_FLAGS)   -c $(DIRLib)/UtilLib_m.f90
 #
 ##################################################################################
 #
+##################################################################################
+### external libraries
+#
+$(ExternalLibDIR):
+	@echo directory $(ExternalLibDIR) does not exist
+	exit 1
+
+$(QDLib): $(ExternalLibDIR)
+	cd $(ExternalLibDIR) ; ./get_QDUtilLib.sh
+	@echo "  done QDUtilLib"
+#
+##################################################################################
+
 #
 ##################################################################################
 ### dependencies
 #
-$(DIROBJ)/Example_dnS.o:      $(LIBAD).a
-$(DIROBJ)/TEST_dnS.o:         $(LIBAD).a
-$(DIROBJ)/TEST_dnPoly.o:      $(LIBAD).a
+$(OBJ_DIR)/Example_dnS.o:      $(LIBAD).a
+$(OBJ_DIR)/TEST_dnS.o:         $(LIBAD).a
+$(OBJ_DIR)/TEST_dnPoly.o:      $(LIBAD).a
 $(LIBAD).a:                   $(OBJ_lib)
 #
-$(DIROBJ)/dnSVM_m.o:          $(DIROBJ)/dnS_m.o $(DIROBJ)/dnPoly_m.o \
-                              $(DIROBJ)/dnFunc_m.o $(DIROBJ)/dnS_Op_m.o \
-                              $(DIROBJ)/dnMat_m.o
+$(OBJ_DIR)/dnSVM_m.o:          $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/dnPoly_m.o \
+                              $(OBJ_DIR)/dnFunc_m.o $(OBJ_DIR)/dnS_Op_m.o \
+                              $(OBJ_DIR)/dnMat_m.o
 #
-$(DIROBJ)/dnPoly_m.o:         $(DIROBJ)/dnS_m.o $(DIROBJ)/UtilLib_m.o
-$(DIROBJ)/dnFunc_m.o:         $(DIROBJ)/dnPoly_m.o $(DIROBJ)/dnS_m.o
-$(DIROBJ)/dnMat_m.o:          $(DIROBJ)/dnS_m.o
+$(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/UtilLib_m.o
+$(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
+$(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
+$(OBJ_DIR)/dnS_m.o:            $(OBJ_DIR)/UtilLib_m.o
+#
+$(OBJ_DIR)/UtilLib_m.o:        $(QDLib)
 #
 ############################################################################

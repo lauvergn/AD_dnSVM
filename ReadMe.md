@@ -108,8 +108,8 @@ You can change the compiler and the OpenMP flag either in the makefile or with e
 
 ```bash
   export ExternalF90=ifort # to change the compiller to ifort
-    export ExternalOMP=0     # 0/1 to turn off/on the OpenMP fortran flag.
-    export ExternalOPT=0     # 0/1 to turn off/on the fortran optimization.
+  export ExternalOMP=0     # 0/1 to turn off/on the OpenMP fortran flag.
+  export ExternalOPT=0     # 0/1 to turn off/on the fortran optimization.
 ```
 
 The library, **libAD_dnSVM_YYY_OMPx.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.

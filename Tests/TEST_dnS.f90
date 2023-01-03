@@ -450,7 +450,7 @@ PROGRAM TEST_dnS
 
   IF (print_level > 0) THEN
     CALL Append_Test(test_var,'Jac(inew,iold)=[ dQinew/dQiold ]:',Print_res=.FALSE.)
-    CALL Write_RMat(JacNewOld,string=test_var%test_log,nbcol1=5)
+    CALL Write_RMat(JacNewOld,string=test_var%test_log,nbcol=5)
     CALL Append_Test(test_var,'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]',Print_res=.FALSE.)
     CALL Append_Test(test_var,'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]',Print_res=.FALSE.)
   END IF

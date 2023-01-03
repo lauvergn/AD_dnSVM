@@ -321,7 +321,6 @@ CONTAINS
 
   ELEMENTAL FUNCTION AD_dnJacobi(x,n,alpha,beta,ReNorm) RESULT(Sres)
     USE QDUtil_m
-    USE ADLib_Util_m
 
     TYPE (dnS_t)                       :: Sres
     TYPE (dnS_t),        intent(in)    :: x
