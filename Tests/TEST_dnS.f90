@@ -30,7 +30,7 @@
 PROGRAM TEST_dnS
   USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
   USE QDUtil_Test_m
-  USE ADLib_Util_m
+  USE ADUtil_m
   USE ADdnSVM_m
   !USE ADLib_Test_m
   IMPLICIT NONE

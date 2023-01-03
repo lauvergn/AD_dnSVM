@@ -26,7 +26,7 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-MODULE ADLib_Util_m
+MODULE ADUtil_m
   USE QDUtil_m, out_unitp => out_unit
   IMPLICIT NONE
 
@@ -36,4 +36,4 @@ MODULE ADLib_Util_m
 
   PUBLIC :: print_level
 
-END MODULE ADLib_Util_m
+END MODULE ADUtil_m
