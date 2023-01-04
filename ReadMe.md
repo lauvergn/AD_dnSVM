@@ -90,31 +90,32 @@ Instead of several variable initializations, one can initialize a vector:
 
 ## 2) Installation
 
-With **fpm**
+### a) With fpm:
 
 ```bash
 fpm build
 ```
 
-with a **makefile**:
+
+### b) with a makefile:
 
 ```bash
 make all
 ```
 
 It will make the library, the executable tests and example.
-
-You can change the compiler and the OpenMP flag either in the makefile or with external variables:
+You can change the compiler, the OpenMP flag and the compiler optimization falg either in the makefile or when calling make:
 
 ```bash
-  export ExternalF90=ifort # to change the compiller to ifort
-  export ExternalOMP=0     # 0/1 to turn off/on the OpenMP fortran flag.
-  export ExternalOPT=0     # 0/1 to turn off/on the fortran optimization.
+make all FC=ifort OMP=0 OPT=0
+  # FC=ifort to change the compiller to ifort
+  # OMP=0/1 to turn off/on the OpenMP fortran flag.
+  #OPT=0/1 to turn off/on the fortran optimization.
 ```
 
-The library, **libAD_dnSVM_YYY_OMPx.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
-Remarks : YYY is the compiller (gfortran, ifort ...) and x is 0 or 1 (OMP0 / OMP1: whitout/with OpenMP)
-The .mod files are need. They are in the OBJ/obj_YYY_ompx directory.
+The library, **libAD_dnSVM_XXX_oppy_ompz.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
+Remarks : XXX is the compiller (gfortran, ifort ...), y is 0 or 1 (opt0 / opt1: compiler optimization) and z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
+The .mod files are need. They are in the **OBJ/obj_XXX_oppy_ompz** directory.
 
 ## 3) run the tests
 

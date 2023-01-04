@@ -216,9 +216,9 @@ $(ExtLibDIR):
 	@echo directory $(ExtLibDIR) does not exist
 	exit 1
 
-$(QDLib): $(ExtLibDIR)
+$(EXTLib): $(ExtLibDIR)
 	cd $(ExtLibDIR) ; ./get_QDUtilLib.sh
-	@echo "  done QDUtilLib"
+	@echo "  done EXTLib"
 #
 ##################################################################################
 
@@ -240,6 +240,48 @@ $(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnS_m.o:            $(OBJ_DIR)/UtilLib_m.o
 #
-$(OBJ_DIR)/UtilLib_m.o:        $(QDLib)
+$(OBJ_DIR)/UtilLib_m.o:        $(EXTLib)
 #
 ############################################################################
+
+
+
+#=================================================================================
+#=================================================================================
+# ifort compillation v17 v18 with mkl
+#=================================================================================
+ifeq ($(FC),ifort)
+
+  # opt management
+  ifeq ($(OPT),1)
+      #F90FLAGS = -O -parallel -g -traceback
+      FFLAGS = -O  -g -traceback
+  else
+      FFLAGS = -O0 -check all -g -traceback
+  endif
+
+  # where to store the modules
+  FFLAGS +=-module$(MOD_DIR)
+
+  # omp management
+  ifeq ($(OMP),1)
+    FFLAGS += -qopenmp
+  endif
+
+  # lapack management with cpreprocessing
+  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
+  FFLAGS += -I$(EXTMOD_DIR)
+
+  ifeq ($(LAPACK),1)
+    #F90LIB += -qmkl -lpthread
+    FLIB += -mkl -lpthread
+  else
+    FLIB += -lpthread
+  endif
+  FLIB   += $(EXTLib)
+
+  FC_VER = $(shell $(F90) --version | head -1 )
+
+endif
+#=================================================================================
+#=================================================================================
