@@ -1,9 +1,9 @@
 rm -r QDUtilLib*
 
-SAVELIB=Save_QDUtilLib-0.2.zip
+SAVELIB=Save_QDUtilLib-0.3.zip
 
 #latest release
- version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.2.zip
+ version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.3.zip
 #latest HEAD version
 #version=https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 

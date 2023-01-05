@@ -55,7 +55,6 @@
 !!
 PROGRAM Example_dnS
   USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
-  USE ADUtil_m
   USE ADdnSVM_m
   IMPLICIT NONE
 

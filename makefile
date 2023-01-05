@@ -46,6 +46,7 @@ ifeq ($(ExtLibDIR),)
   ExtLibDIR := Ext_Lib
 endif
 
+
 QD_DIR=$(ExtLibDIR)/QDUtilLib
 EXTMOD_DIR=$(QD_DIR)/OBJ/obj$(ext_obj)
 EXTLib=$(QD_DIR)/libQD$(ext_obj).a
@@ -95,7 +96,6 @@ ifeq ($(FC),gfortran)
    FFLAGS += -I$(EXTMOD_DIR)
    FLIB   += $(EXTLib)
 
-
    FC_VER = $(shell $(FC) --version | head -1 )
 
 endif
@@ -116,9 +116,7 @@ $(info ***********************************************************************)
 
 VPATH = $(MAIN_DIR):$(TESTS_DIR):$(SRC_DIR):$(SRC_DIR)/ADdnSVM
 
-
-SRCFILES=dnSVM_m.f90 dnMat_m.f90 dnFunc_m.f90 dnPoly_m.f90 dnS_Op_m.f90 dnS_m.f90 \
-         UtilLib_m.f90
+SRCFILES=dnSVM_m.f90 dnMat_m.f90 dnFunc_m.f90 dnPoly_m.f90 dnS_Op_m.f90 dnS_m.f90
 
 OBJ0=${SRCFILES:.f90=.o}
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -181,7 +179,7 @@ $(LIBAD).a: $(OBJ)
 	@echo "  done Library: "$(LIBAD).a
 #===============================================
 #===============================================
-
+#
 #===============================================
 #================ cleaning =====================
 .PHONY: clean cleanall
@@ -235,12 +233,11 @@ $(OBJ_DIR)/dnSVM_m.o:          $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/dnPoly_m.o \
                                $(OBJ_DIR)/dnFunc_m.o $(OBJ_DIR)/dnS_Op_m.o \
                                $(OBJ_DIR)/dnMat_m.o
 #
-$(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/UtilLib_m.o
+$(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
-$(OBJ_DIR)/dnS_m.o:            $(OBJ_DIR)/UtilLib_m.o
 #
-$(OBJ_DIR)/UtilLib_m.o:        $(EXTLib)
+$(OBJ_DIR)/dnS_m.o:            $(EXTLib)
 #
 ############################################################################
 
@@ -261,7 +258,7 @@ ifeq ($(FC),ifort)
   endif
 
   # where to store the modules
-  FFLAGS +=-module$(MOD_DIR)
+  FFLAGS +=-module $(MOD_DIR)
 
   # omp management
   ifeq ($(OMP),1)

@@ -30,9 +30,7 @@
 PROGRAM TEST_dnS
   USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
   USE QDUtil_Test_m
-  USE ADUtil_m
   USE ADdnSVM_m
-  !USE ADLib_Test_m
   IMPLICIT NONE
 
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
@@ -671,7 +669,7 @@ CONTAINS
     IMPLICIT NONE
 
     character(len=:), allocatable :: arg,arg2
-    integer :: iarg,arg_len
+    integer :: iarg,arg_len,prt_lev
 
     IF (COMMAND_ARGUMENT_COUNT() /= 0 .AND. COMMAND_ARGUMENT_COUNT() /= 2) THEN
       write(out_unitp,*) ' ERROR in read_arg'
@@ -694,7 +692,9 @@ CONTAINS
 
       SELECT CASE(arg)
       CASE("-p","--print")
-        read(arg2,*) print_level
+        read(arg2,*) prt_lev
+        CALL set_print_level(prt_lev)
+
       CASE Default
         write(out_unitp,*) ' ERROR in read_arg'
         write(out_unitp,*) ' Wrong ',name_sub,' argument!'
