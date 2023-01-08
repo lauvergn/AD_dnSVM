@@ -48,8 +48,8 @@ endif
 
 
 QD_DIR=$(ExtLibDIR)/QDUtilLib
-EXTMOD_DIR=$(QD_DIR)/OBJ/obj$(ext_obj)
-EXTLib=$(QD_DIR)/libQD$(ext_obj).a
+QDMOD_DIR=$(QD_DIR)/OBJ/obj$(ext_obj)
+QDLIBA=$(QD_DIR)/libQD$(ext_obj).a
 #===============================================================================
 
 #=================================================================================
@@ -93,8 +93,8 @@ ifeq ($(FC),gfortran)
     endif
   endif
 
-   FFLAGS += -I$(EXTMOD_DIR)
-   FLIB   += $(EXTLib)
+   FFLAGS += -I$(QDMOD_DIR)
+   FLIB   += $(QDLIBA)
 
    FC_VER = $(shell $(FC) --version | head -1 )
 
@@ -206,7 +206,7 @@ $(OBJ_DIR)/%.o: %.f90
 	$(FC) $(FFLAGS) -o $@ -c $<
 #
 ##################################################################################
-#
+
 ##################################################################################
 ### external libraries
 #
@@ -214,9 +214,9 @@ $(ExtLibDIR):
 	@echo directory $(ExtLibDIR) does not exist
 	exit 1
 
-$(EXTLib): $(ExtLibDIR)
-	cd $(ExtLibDIR) ; ./get_QDUtilLib.sh
-	@echo "  done EXTLib"
+$(QDLIBA): $(ExtLibDIR)
+	cd $(ExtLibDIR) ; ./get_QDUtilLib.sh $(FC) $(OPT) $(OMP) $(LAPACK) $(ExtLibDIR)
+	@echo "  done " $(QDLIBA) " in AD_dnSVM"
 #
 ##################################################################################
 
@@ -237,7 +237,7 @@ $(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
 #
-$(OBJ_DIR)/dnS_m.o:            $(EXTLib)
+$(OBJ_DIR)/dnS_m.o:            $(QDLIBA)
 #
 ############################################################################
 
@@ -267,7 +267,7 @@ ifeq ($(FC),ifort)
 
   # lapack management with cpreprocessing
   FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
-  FFLAGS += -I$(EXTMOD_DIR)
+  FFLAGS += -I$(QDMOD_DIR)
 
   ifeq ($(LAPACK),1)
     #F90LIB += -qmkl -lpthread
@@ -275,7 +275,7 @@ ifeq ($(FC),ifort)
   else
     FLIB += -lpthread
   endif
-  FLIB   += $(EXTLib)
+  FLIB   += $(QDLIBA)
 
   FC_VER = $(shell $(F90) --version | head -1 )
 
