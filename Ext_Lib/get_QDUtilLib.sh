@@ -14,7 +14,7 @@ ext_obj="_"$FC"_opt"$OPT"_omp"$OMP
 SAVE_version=Save_QDUtilLib-0.3
 LOC_version=QDUtilLib
 
-test -f $LOC_version/"libQD"$ext_obj.a && exit 0
+test -f $ExtLibDIR/$LOC_version/"libQD"$ext_obj.a && exit 0
 
 rm -rf QDUtilLib* #always remove the link
 

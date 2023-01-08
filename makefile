@@ -9,14 +9,33 @@
 #FC = ifort
 #FC = nagfor
 #
-# Optimize? Empty: default No optimization; 0: No Optimization; 1 Optimzation
+# Optimize? Empty: default Optimization; 0: No Optimization; 1 Optimzation
 OPT = 1
 ## OpenMP? Empty: default with OpenMP; 0: No OpenMP; 1 with OpenMP
 OMP = 1
 ## Lapack/blas/mkl? Empty: default with Lapack; 0: without Lapack; 1 with Lapack
 LAPACK = 1
 #=================================================================================
-
+ifeq ($(FC),)
+  FFC      := gfortran
+else
+  FFC      := $(FC)
+endif
+ifeq ($(OPT),)
+  OOPT      := 1
+else
+  OOPT      := $(OPT)
+endif
+ifeq ($(OMP),)
+  OOMP      := 1
+else
+  OOMP      := $(OMP)
+endif
+ifeq ($(LAPACK),)
+  LLAPACK      := 1
+else
+  LLAPACK      := $(LAPACK)
+endif
 #=================================================================================
 # Operating system, OS? automatic using uname:
 #=================================================================================
@@ -25,8 +44,7 @@ OS:=$(shell uname)
 #=================================================================================
 # extansion for the library (.a), objects and modules directory
 #=================================================================================
-ext_obj :=_$(FC)_opt$(OPT)_omp$(OMP)
-
+ext_obj :=_$(FFC)_opt$(OOPT)_omp$(OOMP)
 #=================================================================================
 # Directories
 #=================================================================================
@@ -56,11 +74,9 @@ QDLIBA=$(QD_DIR)/libQD$(ext_obj).a
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FC),gfortran)
+ifeq ($(FFC),gfortran)
 
-  CPPpre  = -cpp
-
-  ifeq ($(OPT),1)
+  ifeq ($(OOPT),1)
     FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
@@ -70,15 +86,15 @@ ifeq ($(FC),gfortran)
   FFLAGS +=-J$(MOD_DIR)
 
   # omp management
-  ifeq ($(OMP),1)
+  ifeq ($(OOMP),1)
     FFLAGS += -fopenmp
   endif
 
   # lapack management with cpreprocessing
-  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   # OS management
-  ifeq ($(LAPACK),1)
+  ifeq ($(LLAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
@@ -96,17 +112,17 @@ ifeq ($(FC),gfortran)
    FFLAGS += -I$(QDMOD_DIR)
    FLIB   += $(QDLIBA)
 
-   FC_VER = $(shell $(FC) --version | head -1 )
+   FC_VER = $(shell $(FFC) --version | head -1 )
 
 endif
 #=================================================================================
 #=================================================================================
 $(info ***********************************************************************)
 $(info ***********OS:           $(OS))
-$(info ***********COMPILER:     $(FC))
+$(info ***********COMPILER:     $(FFC))
 $(info ***********COMPILER_VER: $(FC_VER))
-$(info ***********OPTIMIZATION: $(OPT))
-$(info ***********OpenMP:       $(OMP))
+$(info ***********OPTIMIZATION: $(OOPT))
+$(info ***********OpenMP:       $(OOMP))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
@@ -139,21 +155,21 @@ all: dnS dnPoly exa
 exa exa_dnS Exa_dnS:$(EXA_dnSEXE)
 	echo "Exa_dnS compilation: OK"
 $(EXA_dnSEXE): $(OBJ_DIR)/Example_dnS.o $(LIBAD).a
-	$(FC) $(FFLAGS)   -o $(EXA_dnSEXE) $(OBJ_DIR)/Example_dnS.o $(LIBAD).a $(FLIB)
+	$(FFC) $(FFLAGS)   -o $(EXA_dnSEXE) $(OBJ_DIR)/Example_dnS.o $(LIBAD).a $(FLIB)
 	echo "Exa_dnS compilation: OK"
 # Test dnS
 .PHONY: dns dnS testdns testdnS
 dns dnS testdns testdnS:$(TEST_dnSEXE)
 	echo "dnS compilation: OK"
 $(TEST_dnSEXE): $(OBJ_DIR)/TEST_dnS.o $(LIBAD).a
-	$(FC) $(FFLAGS)   -o $(TEST_dnSEXE) $(OBJ_DIR)/TEST_dnS.o $(LIBAD).a $(FLIB)
+	$(FFC) $(FFLAGS)   -o $(TEST_dnSEXE) $(OBJ_DIR)/TEST_dnS.o $(LIBAD).a $(FLIB)
 	echo "dnS compilation: OK"
 # Test dnPoly
 .PHONY: dnpoly dnPoly testdnpoly testdnPoly
 dnpoly dnPoly testdnpoly testdnPoly: $(TEST_dnPolyEXE)
 	echo "OBJ_testdnPoly compilation: OK"
 $(TEST_dnPolyEXE): $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a
-	$(FC) $(FFLAGS)   -o $(TEST_dnPolyEXE) $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a $(FLIB)
+	$(FFC) $(FFLAGS)   -o $(TEST_dnPolyEXE) $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a $(FLIB)
 	echo "dnPoly compilation: OK"
 #
 #===============================================
@@ -203,7 +219,7 @@ cleanall: clean
 #============= compilation dnSVM ===============
 #===============================================
 $(OBJ_DIR)/%.o: %.f90
-	$(FC) $(FFLAGS) -o $@ -c $<
+	$(FFC) $(FFLAGS) -o $@ -c $<
 #
 ##################################################################################
 
@@ -215,7 +231,7 @@ $(ExtLibDIR):
 	exit 1
 
 $(QDLIBA): $(ExtLibDIR)
-	cd $(ExtLibDIR) ; ./get_QDUtilLib.sh $(FC) $(OPT) $(OMP) $(LAPACK) $(ExtLibDIR)
+	cd $(ExtLibDIR) ; ./get_QDUtilLib.sh $(FFC) $(OOPT) $(OOMP) $(LLAPACK) $(ExtLibDIR)
 	@echo "  done " $(QDLIBA) " in AD_dnSVM"
 #
 ##################################################################################
@@ -247,10 +263,10 @@ $(OBJ_DIR)/dnS_m.o:            $(QDLIBA)
 #=================================================================================
 # ifort compillation v17 v18 with mkl
 #=================================================================================
-ifeq ($(FC),ifort)
+ifeq ($(FFC),ifort)
 
   # opt management
-  ifeq ($(OPT),1)
+  ifeq ($(OOPT),1)
       #F90FLAGS = -O -parallel -g -traceback
       FFLAGS = -O  -g -traceback
   else
@@ -261,16 +277,15 @@ ifeq ($(FC),ifort)
   FFLAGS +=-module $(MOD_DIR)
 
   # omp management
-  ifeq ($(OMP),1)
+  ifeq ($(OOMP),1)
     FFLAGS += -qopenmp
   endif
 
   # lapack management with cpreprocessing
-  FFLAGS += $(CPPpre) -D__LAPACK="$(LAPACK)"
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
   FFLAGS += -I$(QDMOD_DIR)
 
-  ifeq ($(LAPACK),1)
-    #F90LIB += -qmkl -lpthread
+  ifeq ($(LLAPACK),1)
     FLIB += -mkl -lpthread
   else
     FLIB += -lpthread
