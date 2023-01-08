@@ -11,7 +11,7 @@ ExtLibDIR=$5
 
 ext_obj="_"$FC"_opt"$OPT"_omp"$OMP
 
-SAVE_version=Save_QDUtilLib-0.3
+SAVE_version=Save_QDUtilLib-0.4
 LOC_version=QDUtilLib
 
 test -f $ExtLibDIR/$LOC_version/"libQD"$ext_obj.a && exit 0
@@ -20,7 +20,7 @@ rm -rf QDUtilLib* #always remove the link
 
 
 #latest release
- version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.3.zip
+ version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.4.zip
 #latest HEAD version
 #version=https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 
