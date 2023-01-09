@@ -180,6 +180,7 @@ MODULE ADdnSVM_dnS_m
 
   PUBLIC :: get_nderiv,get_nVar
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
+  PUBLIC :: get_Flatten_dnS
   PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
@@ -225,7 +226,9 @@ MODULE ADdnSVM_dnS_m
   INTERFACE get_d3
      MODULE PROCEDURE AD_get_d3_FROM_dnS
   END INTERFACE
-
+  INTERFACE   get_Flatten_dnS
+     MODULE PROCEDURE   AD_get_Flatten_dnS
+  END INTERFACE
   INTERFACE ReduceDerivatives_dnS2_TO_dnS1
      MODULE PROCEDURE AD_ReduceDerivatives_dnS2_TO_dnS1
   END INTERFACE
@@ -745,7 +748,89 @@ CONTAINS
 
       IF (allocated(S%d3)) d3 = S%d3
 
-    END FUNCTION AD_get_d3_FROM_dnS
+  END FUNCTION AD_get_d3_FROM_dnS
+!> @brief Public function to get FlatdnS(:) from a derived type dnS.
+!!
+!> @author David Lauvergnat
+!! @date 09/01/2023
+!!
+!! @param S            TYPE (dnS_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param FlatdnS      real  (result):
+  FUNCTION AD_get_Flatten_dnS(S,all_der,i_der) RESULT(FlatdnS)
+      USE QDUtil_m, ONLY : Rkind, out_unit
+      IMPLICIT NONE
+
+      real (kind=Rkind),    allocatable          :: FlatdnS(:)
+
+      TYPE (dnS_t),         intent(in)           :: S
+      logical,              intent(in), optional :: all_der
+      integer,              intent(in), optional :: i_der
+
+      logical, allocatable :: tab_der(:)
+      integer :: nderiv,FlatdnS_size,i,f
+
+      nderiv = get_nderiv(S)
+      allocate(tab_der(0:nderiv))
+      tab_der(:) = .FALSE.
+
+      IF (present(all_der)) THEN
+        IF (all_der) THEN
+          tab_der(:) = .TRUE.
+          IF (present(i_der)) THEN
+             write(out_unit,*) ' ERROR in AD_get_Flatten_dnS'
+             write(out_unit,*) ' all_der and i_der are present and incompatible'
+             write(out_unit,*) '   all_der,i_der',all_der,i_der
+             STOP 'ERROR in AD_get_Flatten_dnS: all_der and i_der are present and incompatible'
+          END IF
+        END IF
+      END IF
+
+      IF (present(i_der)) THEN
+        IF (i_der < 0 .OR. i_der > nderiv) THEN
+          write(out_unit,*) ' ERROR in AD_get_Flatten_dnS'
+          write(out_unit,*) ' i_der MUST be >= 0 and <= nderiv'
+          write(out_unit,*) '   i_der,nderiv',i_der,nderiv
+          STOP 'ERROR in AD_get_Flatten_dnS: i_der MUST be >= 0 and <= nderiv'
+        END IF
+        tab_der(:)     = .FALSE.
+        tab_der(i_der) = .TRUE.
+      ELSE
+        tab_der(:) = .TRUE.
+      END IF
+      ! size of FlatdnS
+      FlatdnS_size = 0
+      IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+      IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
+      IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
+      IF (tab_der(3)) FlatdnS_size = FlatdnS_size + size(S%d3)
+
+      !write(out_unit,*) 'tab_der,FlatdnS_size',tab_der,FlatdnS_size
+
+      allocate(FlatdnS(FlatdnS_size))
+
+      i = 0
+      IF (tab_der(0)) THEN
+        f = i + 1
+        FlatdnS(i+1:f) = S%d0
+        i = f
+      END IF
+      IF (tab_der(1)) THEN
+        f = i + size(S%d1)
+        FlatdnS(i+1:f) = S%d1
+        i = f
+      END IF
+      IF (tab_der(2)) THEN
+        f = i + size(S%d2)
+        FlatdnS(i+1:f) = reshape(S%d2,shape=[size(S%d2)])
+        i = f
+      END IF
+      IF (tab_der(3)) THEN
+        f = i + size(S%d3)
+        FlatdnS(i+1:f) = reshape(S%d3,shape=[size(S%d3)])
+        i = f
+      END IF
+
+  END FUNCTION AD_get_Flatten_dnS
   !> @brief Public subroutine to get d0,d1,d2,d3 from a derived type dnS.
   !!
   !> @author David Lauvergnat

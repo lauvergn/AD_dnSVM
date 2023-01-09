@@ -170,7 +170,11 @@ MODULE ADdnSVM_dnMat_m
      MODULE PROCEDURE AD_get_d3_FROM_dnMat
   END INTERFACE
 
-CONTAINS
+  INTERFACE get_Flatten_dnMat
+     MODULE PROCEDURE AD_get_Flatten_dnMat
+  END INTERFACE
+
+  CONTAINS
 !> @brief Public subroutine which allocates a derived type dnMat.
 !!
 !> @author David Lauvergnat
@@ -1903,6 +1907,87 @@ CONTAINS
       IF (allocated(Mat%d3)) d3 = Mat%d3
   
     END FUNCTION AD_get_d3_FROM_dnMat
+!> @brief Public function to get FlatdnMat(:) from a derived type dnMat.
+!!
+!> @author David Lauvergnat
+!! @date 09/01/2023
+!!
+!! @param Mat                       TYPE (dnMat_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param AD_get_d3_FROM_dnMat      real  (result):      FlatdnMat
+    FUNCTION AD_get_Flatten_dnMat(Mat,all_der,i_der) RESULT(FlatdnMat)
+      USE QDUtil_m, ONLY : Rkind, out_unit
+      IMPLICIT NONE
+
+      TYPE (dnMat_t),       intent(in)    :: Mat
+      real (kind=Rkind),    allocatable   :: FlatdnMat(:)
+      logical,              intent(in), optional :: all_der
+      integer,              intent(in), optional :: i_der
+
+      logical, allocatable :: tab_der(:)
+      integer :: nderiv,FlatdnMat_size,i,f
+
+      nderiv = get_nderiv(Mat)
+      allocate(tab_der(0:nderiv))
+      tab_der(:) = .FALSE.
+
+      IF (present(all_der)) THEN
+        IF (all_der) THEN
+          tab_der(:) = .TRUE.
+          IF (present(i_der)) THEN
+             write(out_unit,*) ' ERROR in AD_get_Flatten_dnMat'
+             write(out_unit,*) ' all_der and i_der are present and incompatible'
+             write(out_unit,*) '   all_der,i_der',all_der,i_der
+             STOP 'ERROR in AD_get_Flatten_dnMat: all_der and i_der are present and incompatible'
+          END IF
+        END IF
+      END IF
+
+      IF (present(i_der)) THEN
+        IF (i_der < 0 .OR. i_der > nderiv) THEN
+          write(out_unit,*) ' ERROR in AD_get_Flatten_dnMat'
+          write(out_unit,*) ' i_der MUST be >= 0 and <= nderiv'
+          write(out_unit,*) '   i_der,nderiv',i_der,nderiv
+          STOP 'ERROR in AD_get_Flatten_dnMat: i_der MUST be >= 0 and <= nderiv'
+        END IF
+        tab_der(:)     = .FALSE.
+        tab_der(i_der) = .TRUE.
+      ELSE
+        tab_der(:) = .TRUE.
+      END IF
+      ! size of FlatdnMat
+      FlatdnMat_size = 0
+      IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+      IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
+      IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
+      IF (tab_der(3)) FlatdnMat_size = FlatdnMat_size + size(Mat%d3)
+
+      !write(out_unit,*) 'tab_der,FlatdnMat_size',tab_der,FlatdnMat_size
+
+      allocate(FlatdnMat(FlatdnMat_size))
+
+      i = 0
+      IF (tab_der(0)) THEN
+        f = i + size(Mat%d0)
+        FlatdnMat(i+1:f) = reshape(Mat%d0,shape=[size(Mat%d0)])
+        i = f
+      END IF
+      IF (tab_der(1)) THEN
+        f = i + size(Mat%d1)
+        FlatdnMat(i+1:f) = reshape(Mat%d1,shape=[size(Mat%d1)])
+        i = f
+      END IF
+      IF (tab_der(2)) THEN
+        f = i + size(Mat%d2)
+        FlatdnMat(i+1:f) = reshape(Mat%d2,shape=[size(Mat%d2)])
+        i = f
+      END IF
+      IF (tab_der(3)) THEN
+        f = i + size(Mat%d3)
+        FlatdnMat(i+1:f) = reshape(Mat%d3,shape=[size(Mat%d3)])
+        i = f
+      END IF
+
+    END FUNCTION AD_get_Flatten_dnMat
 !> @brief Public function which ckecks a derived type dnMat is zero (all components).
 !!
 !> @author David Lauvergnat
