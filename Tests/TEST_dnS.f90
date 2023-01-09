@@ -664,37 +664,37 @@ PROGRAM TEST_dnS
 
   nderiv = 3
   dnX         = Variable(TWO,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
-  FlatdnS     = get_Flatten_dnS(dnX)
+  FlatdnS     = get_Flatten(dnX)
   FlatdnS_ref = [TWO,  ONE,ZERO,  ZERO,ZERO,ZERO,ZERO,  ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref        ==0?')
 
   dnX         = Variable(TWO,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
-  FlatdnS     = get_Flatten_dnS(dnX,all_der=.TRUE.)
+  FlatdnS     = get_Flatten(dnX,all_der=.TRUE.)
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (all)       ==0?')
 
-  FlatdnS     = get_Flatten_dnS(dnX,i_der=0)
+  FlatdnS     = get_Flatten(dnX,i_der=0)
   FlatdnS_ref = [TWO]
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d0)        ==0?')
 
-  FlatdnS     = get_Flatten_dnS(dnX,i_der=1)
+  FlatdnS     = get_Flatten(dnX,i_der=1)
   FlatdnS_ref = [ONE,ZERO]
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d1)        ==0?')
 
-  FlatdnS     = get_Flatten_dnS(dnX,i_der=2)
+  FlatdnS     = get_Flatten(dnX,i_der=2)
   FlatdnS_ref = [ZERO,ZERO,ZERO,ZERO]
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d2)        ==0?')
 
-  FlatdnS     = get_Flatten_dnS(dnX,i_der=3)
+  FlatdnS     = get_Flatten(dnX,i_der=3)
   FlatdnS_ref = [ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
   write(out_unitp,*) 'FlatdnS',FlatdnS
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)

@@ -81,7 +81,7 @@ MODULE ADdnSVM_dnMat_m
   PUBLIC :: Mat_wADDTO_dnMat2_ider
   PUBLIC :: Check_dnMat_IS_ZERO,get_maxval_OF_dnMat
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
-  PUBLIC :: get_d0,get_d1,get_d2,get_d3
+  PUBLIC :: get_d0,get_d1,get_d2,get_d3,get_Flatten
 
   INTERFACE transpose
     MODULE PROCEDURE AD_TRANSPOSE_dnMat
@@ -170,7 +170,7 @@ MODULE ADdnSVM_dnMat_m
      MODULE PROCEDURE AD_get_d3_FROM_dnMat
   END INTERFACE
 
-  INTERFACE get_Flatten_dnMat
+  INTERFACE get_Flatten
      MODULE PROCEDURE AD_get_Flatten_dnMat
   END INTERFACE
 

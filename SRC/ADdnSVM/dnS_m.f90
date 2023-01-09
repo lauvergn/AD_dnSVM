@@ -180,7 +180,7 @@ MODULE ADdnSVM_dnS_m
 
   PUBLIC :: get_nderiv,get_nVar
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
-  PUBLIC :: get_Flatten_dnS
+  PUBLIC :: get_Flatten
   PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
@@ -226,7 +226,7 @@ MODULE ADdnSVM_dnS_m
   INTERFACE get_d3
      MODULE PROCEDURE AD_get_d3_FROM_dnS
   END INTERFACE
-  INTERFACE   get_Flatten_dnS
+  INTERFACE   get_Flatten
      MODULE PROCEDURE   AD_get_Flatten_dnS
   END INTERFACE
   INTERFACE ReduceDerivatives_dnS2_TO_dnS1
