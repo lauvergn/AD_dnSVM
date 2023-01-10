@@ -2,40 +2,34 @@
 
 ./clean
 
+rm -f ALL_Tests.log
+
 here=`pwd`
 
 
 #for ExternalF90 in gfortran ifort pgf90 nagfor
 for F90 in gfortran
 do
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  echo $F90
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  for OPT in 0 1
-  do
-    for OMP in 0 1
-    do
-
-      echo OPT: $OPT OpenMP: $OMP
-
-      cd ..
-        XRES="Xres_dnS_dnPoly_"$F90"_Opt"$OPT"_OMP"$OMP
-        XLOG="comp_"$F90"_Opt"$OPT"_OMP"$OMP".log"
-        make clean > $here/$XLOG 2>&1
-        make F90=F90 OPT=OPT OMP=OMP all > $here/$XLOG 2>&1
-        make ut > $here/$XRES
-      cd  $here
-      grep "Number of error" $XRES
-
-    done
-  done
+for OPT in 0 1
+do
+for OMP in 0 1
+do
+for LAPACK in 0 1
+do
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      >> ALL_Tests.log
+  echo $F90 OPT=$OPT OMP=$OMP LAPACK=$LAPACK  >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      >> ALL_Tests.log
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx      >> ALL_Tests.log
+  cd ..
+    RES="res_dnS_dnPoly_"$F90"_Opt"$OPT"_OMP"$OMP"_Lapack"$LAPACK
+    XLOG="comp_"$F90"_Opt"$OPT"_OMP"$OMP"_Lapack"$LAPACK".log"
+    make F90=$F90 OPT=$OPT OMP=$OMP LAPACK=$LAPACK lib > $here/$XLOG 2>&1
+    make F90=$F90 OPT=$OPT OMP=$OMP LAPACK=$LAPACK ut > $here/$RES 2> $here/$XLOG
+  cd  $here
+  grep "Number of error" $RES  >> ALL_Tests.log
 
 done
-
-for XRES in Xres*
-do
-  RES=`echo $XRES | sed "s/X//"`
-  mv $XRES $RES
+done
+done
 done

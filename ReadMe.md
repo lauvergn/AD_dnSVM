@@ -104,18 +104,24 @@ make all
 ```
 
 It will make the library, the executable tests and example.
-You can change the compiler, the OpenMP flag and the compiler optimization falg either in the makefile or when calling make:
+You can change the compiler, Lapack flag, the OpenMP flag and the compiler optimization falg either in the makefile or when calling make:
 
 ```bash
-make all FC=ifort OMP=0 OPT=0
+make all FC=ifort OMP=0 OPT=0 LAPACK=0
   # FC=ifort to change the compiller to ifort
   # OMP=0/1 to turn off/on the OpenMP fortran flag.
-  #OPT=0/1 to turn off/on the fortran optimization.
+  # OPT=0/1 to turn off/on the fortran optimization.
+  # LAPACK=0/1 to turn off/on the lapack use
 ```
 
-The library, **libAD_dnSVM_XXX_oppy_ompz.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
-Remarks : XXX is the compiller (gfortran, ifort ...), y is 0 or 1 (opt0 / opt1: compiler optimization) and z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
-The .mod files are need. They are in the **OBJ/obj_XXX_oppy_ompz** directory.
+The library, **libAD_dnSVM_XXX_oppy_ompz_lapackw.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
+Remarks : 
+- XXX is the compiller (gfortran, ifort ...)
+- y is 0 or 1 (opt0 / opt1: compiler optimization)
+- z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
+- w is 0 or 1 (lapack0 / lapack1: whitout/with lapack)
+
+If needed, the .mod files are in the **OBJ/obj_XXX_oppy_ompz_lapackw** directory.
 
 ## 3) run the tests
 
@@ -133,7 +139,7 @@ or in the Tests directory, run the scripts
     ./run_test_dnPoly
 ```
 
-or in the Tests directory, run the script
+or in the Tests directory (with several combinations of OMP, OPT ...), run the script
 
 ```bash
     ./run_tests
