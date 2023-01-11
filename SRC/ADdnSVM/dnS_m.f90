@@ -770,6 +770,8 @@ CONTAINS
       integer :: nderiv,FlatdnS_size,i,f
 
       nderiv = get_nderiv(S)
+      IF (nderiv < 0) RETURN ! S%d... are not allocated
+
       allocate(tab_der(0:nderiv))
       tab_der(:) = .FALSE.
 
@@ -799,11 +801,22 @@ CONTAINS
       END IF
       ! size of FlatdnS
       FlatdnS_size = 0
-      IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
-      IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
-      IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
-      IF (tab_der(3)) FlatdnS_size = FlatdnS_size + size(S%d3)
-
+      SELECT CASE (nderiv)
+      CASE (0)
+        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+      CASE (1)
+        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
+      CASE (2)
+        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
+        IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
+      CASE (3)
+        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
+        IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
+        IF (tab_der(3)) FlatdnS_size = FlatdnS_size + size(S%d3)
+      END SELECT
       !write(out_unit,*) 'tab_der,FlatdnS_size',tab_der,FlatdnS_size
 
       allocate(FlatdnS(FlatdnS_size))

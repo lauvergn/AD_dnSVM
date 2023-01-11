@@ -1927,6 +1927,8 @@ MODULE ADdnSVM_dnMat_m
       integer :: nderiv,FlatdnMat_size,i,f
 
       nderiv = get_nderiv(Mat)
+      IF (nderiv < 0) RETURN ! Mat%d... are not allocated
+
       allocate(tab_der(0:nderiv))
       tab_der(:) = .FALSE.
 
@@ -1956,10 +1958,22 @@ MODULE ADdnSVM_dnMat_m
       END IF
       ! size of FlatdnMat
       FlatdnMat_size = 0
-      IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
-      IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
-      IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
-      IF (tab_der(3)) FlatdnMat_size = FlatdnMat_size + size(Mat%d3)
+      SELECT CASE (nderiv)
+      CASE (0)
+        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+      CASE (1)
+        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
+      CASE (2)
+        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
+        IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
+      CASE (3)
+        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
+        IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
+        IF (tab_der(3)) FlatdnMat_size = FlatdnMat_size + size(Mat%d3)
+      END SELECT
 
       !write(out_unit,*) 'tab_der,FlatdnMat_size',tab_der,FlatdnMat_size
 
