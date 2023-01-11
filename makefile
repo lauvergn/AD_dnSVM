@@ -85,6 +85,7 @@ ifeq ($(FFC),gfortran)
     #FFLAGS = -O0 -fbounds-check -Wuninitialized
   endif
 
+  # where to store .mod files
   FFLAGS +=-J$(MOD_DIR)
 
   # omp management
@@ -95,14 +96,19 @@ ifeq ($(FFC),gfortran)
   # lapack management with cpreprocessing
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
+  # where to look .mod files
+  FFLAGS += -I$(QDMOD_DIR)
+
+
+   FLIB   = $(QDLIBA)
   # OS management
   ifeq ($(LLAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
+      FLIB += -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB += -llapack -lblas
       #
       # linux libs with mkl and with openmp
       #FLIB = -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
@@ -111,8 +117,6 @@ ifeq ($(FFC),gfortran)
     endif
   endif
 
-   FFLAGS += -I$(QDMOD_DIR)
-   FLIB   += $(QDLIBA)
 
    FC_VER = $(shell $(FFC) --version | head -1 )
 
@@ -284,14 +288,16 @@ ifeq ($(FFC),ifort)
 
   # lapack management with cpreprocessing
   FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
+
+  # where to look .mod files
   FFLAGS += -I$(QDMOD_DIR)
 
+  FLIB    = $(QDLIBA)
   ifeq ($(LLAPACK),1)
     FLIB += -mkl -lpthread
   else
     FLIB += -lpthread
   endif
-  FLIB   += $(QDLIBA)
 
   FC_VER = $(shell $(F90) --version | head -1 )
 
