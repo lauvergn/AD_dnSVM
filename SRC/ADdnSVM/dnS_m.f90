@@ -766,18 +766,20 @@ CONTAINS
       logical,              intent(in), optional :: all_der
       integer,              intent(in), optional :: i_der
 
-      logical, allocatable :: tab_der(:)
+      logical :: tab_der(0:3)
       integer :: nderiv,FlatdnS_size,i,f
 
       nderiv = get_nderiv(S)
-      IF (nderiv < 0) RETURN ! S%d... are not allocated
+      IF (nderiv < 0) THEN
+        allocate(FlatdnS(0))
+        RETURN ! S%d... are not allocated
+      END IF
 
-      allocate(tab_der(0:nderiv))
       tab_der(:) = .FALSE.
 
       IF (present(all_der)) THEN
         IF (all_der) THEN
-          tab_der(:) = .TRUE.
+          tab_der(0:nderiv) = .TRUE.
           IF (present(i_der)) THEN
              write(out_unit,*) ' ERROR in AD_get_Flatten_dnS'
              write(out_unit,*) ' all_der and i_der are present and incompatible'
@@ -794,29 +796,17 @@ CONTAINS
           write(out_unit,*) '   i_der,nderiv',i_der,nderiv
           STOP 'ERROR in AD_get_Flatten_dnS: i_der MUST be >= 0 and <= nderiv'
         END IF
-        tab_der(:)     = .FALSE.
-        tab_der(i_der) = .TRUE.
+        tab_der(0:nderiv) = .FALSE.
+        tab_der(i_der)    = .TRUE.
       ELSE
-        tab_der(:) = .TRUE.
+        tab_der(0:nderiv) = .TRUE.
       END IF
       ! size of FlatdnS
       FlatdnS_size = 0
-      SELECT CASE (nderiv)
-      CASE (0)
-        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
-      CASE (1)
-        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
-        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
-      CASE (2)
-        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
-        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
-        IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
-      CASE (3)
-        IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
-        IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
-        IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
-        IF (tab_der(3)) FlatdnS_size = FlatdnS_size + size(S%d3)
-      END SELECT
+      IF (tab_der(0)) FlatdnS_size = FlatdnS_size + 1
+      IF (tab_der(1)) FlatdnS_size = FlatdnS_size + size(S%d1)
+      IF (tab_der(2)) FlatdnS_size = FlatdnS_size + size(S%d2)
+      IF (tab_der(3)) FlatdnS_size = FlatdnS_size + size(S%d3)
       !write(out_unit,*) 'tab_der,FlatdnS_size',tab_der,FlatdnS_size
 
       allocate(FlatdnS(FlatdnS_size))

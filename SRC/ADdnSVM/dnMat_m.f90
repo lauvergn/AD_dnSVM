@@ -1923,18 +1923,20 @@ MODULE ADdnSVM_dnMat_m
       logical,              intent(in), optional :: all_der
       integer,              intent(in), optional :: i_der
 
-      logical, allocatable :: tab_der(:)
+      logical :: tab_der(0:3)
       integer :: nderiv,FlatdnMat_size,i,f
 
       nderiv = get_nderiv(Mat)
-      IF (nderiv < 0) RETURN ! Mat%d... are not allocated
+      IF (nderiv < 0) THEN
+        allocate(FlatdnMat(0))
+        RETURN ! Mat%d... are not allocated
+      END IF
 
-      allocate(tab_der(0:nderiv))
       tab_der(:) = .FALSE.
 
       IF (present(all_der)) THEN
         IF (all_der) THEN
-          tab_der(:) = .TRUE.
+          tab_der(0:nderiv) = .TRUE.
           IF (present(i_der)) THEN
              write(out_unit,*) ' ERROR in AD_get_Flatten_dnMat'
              write(out_unit,*) ' all_der and i_der are present and incompatible'
@@ -1951,29 +1953,17 @@ MODULE ADdnSVM_dnMat_m
           write(out_unit,*) '   i_der,nderiv',i_der,nderiv
           STOP 'ERROR in AD_get_Flatten_dnMat: i_der MUST be >= 0 and <= nderiv'
         END IF
-        tab_der(:)     = .FALSE.
-        tab_der(i_der) = .TRUE.
+        tab_der(0:nderiv) = .FALSE.
+        tab_der(i_der)    = .TRUE.
       ELSE
-        tab_der(:) = .TRUE.
+        tab_der(0:nderiv) = .TRUE.
       END IF
       ! size of FlatdnMat
       FlatdnMat_size = 0
-      SELECT CASE (nderiv)
-      CASE (0)
-        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
-      CASE (1)
-        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
-        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
-      CASE (2)
-        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
-        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
-        IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
-      CASE (3)
-        IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
-        IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
-        IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
-        IF (tab_der(3)) FlatdnMat_size = FlatdnMat_size + size(Mat%d3)
-      END SELECT
+      IF (tab_der(0)) FlatdnMat_size = FlatdnMat_size + size(Mat%d0)
+      IF (tab_der(1)) FlatdnMat_size = FlatdnMat_size + size(Mat%d1)
+      IF (tab_der(2)) FlatdnMat_size = FlatdnMat_size + size(Mat%d2)
+      IF (tab_der(3)) FlatdnMat_size = FlatdnMat_size + size(Mat%d3)
 
       !write(out_unit,*) 'tab_der,FlatdnMat_size',tab_der,FlatdnMat_size
 
