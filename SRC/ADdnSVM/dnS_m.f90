@@ -1029,6 +1029,7 @@ CONTAINS
     logical :: all_type_loc,FOR_test_loc
     character (len=:), allocatable :: fformat,Rfmt_loc
 
+    IF (.NOT. allocated(string)) string = ''
 
     all_type_loc = .FALSE.
     IF (present(all_type)) all_type_loc = all_type

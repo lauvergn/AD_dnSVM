@@ -3,16 +3,15 @@
 EXTLIB_TYPE=$1
 
 echo "In get_QDUtilLib.sh"
-pwd
 
-SAVE_version=Save_QDUtilLib-0.7
+SAVE_version=Save_QDUtilLib-0.9-dev
 LOC_version=QDUtilLib
 
 rm -rf QDUtilLib* #always remove the link
 
 
 #latest release
- version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.7.zip
+ version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.9-dev.zip
 #latest HEAD version
 #version=https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 

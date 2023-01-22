@@ -60,6 +60,7 @@ PROGRAM TEST_dnS
 
     character (len=*), parameter :: name_sub='TEST_dnS'
 
+  CALL read_arg()
 
   CALL Initialize_Test(test_var,test_name='dnS')
 
@@ -356,6 +357,7 @@ PROGRAM TEST_dnS
 
   CALL Flush_Test(test_var)
 
+
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'new tests: **, composition')
   CALL Append_Test(test_var,'============================================')
@@ -569,7 +571,6 @@ PROGRAM TEST_dnS
   IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='product - 1 (2D)')
   CALL Flush_Test(test_var)
 
-
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'new tests : two-argument fuction, 2D, nderiv=2')
   CALL Append_Test(test_var,'============================================')
@@ -586,7 +587,6 @@ PROGRAM TEST_dnS
   IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='atan2 (2D)')
   IF (print_level > 0) CALL Write_dnS(Snum,string=test_var%test_log,info='atan (2D)')
   CALL Flush_Test(test_var)
-
 
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'new tests : init const, 2D, nderiv=2')
@@ -655,7 +655,6 @@ PROGRAM TEST_dnS
   CALL Logical_Test(test_var,test1=res_test,info='(sin(x)) - (sin(x))       ==0?')
 
   CALL Flush_Test(test_var)
-
 
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'new tests : flatten dnS')
@@ -737,8 +736,6 @@ PROGRAM TEST_dnS
   ! finalize the tests
   CALL Finalize_Test(test_var)
 
-
-
 CONTAINS
   SUBROUTINE read_arg()
     USE QDUtil_m
@@ -746,6 +743,8 @@ CONTAINS
 
     character(len=:), allocatable :: arg,arg2
     integer :: iarg,arg_len,prt_lev
+    !logical, parameter :: debug = .TRUE.
+    logical, parameter :: debug = .FALSE.
 
     IF (COMMAND_ARGUMENT_COUNT() /= 0 .AND. COMMAND_ARGUMENT_COUNT() /= 2) THEN
       write(out_unitp,*) ' ERROR in read_arg'
@@ -786,6 +785,7 @@ CONTAINS
       deallocate(arg2)
     END DO
     IF (print_level > 0) write(out_unitp,*) '=================================='
+    flush(out_unitp)
 
   END SUBROUTINE read_arg
 
