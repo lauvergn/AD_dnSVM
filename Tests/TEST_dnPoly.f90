@@ -54,7 +54,7 @@
 !! @date 03/08/2017
 !!
 PROGRAM TEST_dnPoly
-  USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
+  USE QDUtil_m
   USE QDUtil_Test_m
   USE ADdnSVM_m
   IMPLICIT NONE
@@ -74,7 +74,7 @@ PROGRAM TEST_dnPoly
 
 
   nderiv = 1
-  write(out_unitp,'(a,i2)') "== TESTING dnPoly module with nderiv=",nderiv
+  write(out_unit,'(a,i2)') "== TESTING dnPoly module with nderiv=",nderiv
 
   x       = HALF
   dnX     = Variable(x,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
@@ -268,10 +268,10 @@ CONTAINS
     integer :: iarg,arg_len,prt_lev
 
     IF (COMMAND_ARGUMENT_COUNT() /= 0 .AND. COMMAND_ARGUMENT_COUNT() /= 2) THEN
-      write(out_unitp,*) ' ERROR in read_arg'
-      write(out_unitp,*) ' Wrong TEST_dnPoly argument number!'
-      write(out_unitp,*) 'argument number',COMMAND_ARGUMENT_COUNT()
-      write(out_unitp,*) ' You can have 0 or 2 arguments.'
+      write(out_unit,*) ' ERROR in read_arg'
+      write(out_unit,*) ' Wrong TEST_dnPoly argument number!'
+      write(out_unit,*) 'argument number',COMMAND_ARGUMENT_COUNT()
+      write(out_unit,*) ' You can have 0 or 2 arguments.'
       STOP 'Wrong TEST_dnPoly argument number'
     END IF
 
@@ -291,20 +291,20 @@ CONTAINS
         read(arg2,*) prt_lev
         CALL set_print_level(prt_lev)
       CASE Default
-        write(out_unitp,*) ' ERROR in read_arg'
-        write(out_unitp,*) ' Wrong TEST_dnPoly argument!'
-        write(out_unitp,*) '   arg: "',arg,'"'
-        write(out_unitp,*) ' The possibilities are:'
-        write(out_unitp,*) '    -p or --print'
+        write(out_unit,*) ' ERROR in read_arg'
+        write(out_unit,*) ' Wrong TEST_dnPoly argument!'
+        write(out_unit,*) '   arg: "',arg,'"'
+        write(out_unit,*) ' The possibilities are:'
+        write(out_unit,*) '    -p or --print'
         STOP 'Wrong TEST_dnPoly argument'
       END SELECT
 
-      IF (print_level > 0) write(out_unitp,*) 'Argument number: ',iarg,' ==> arg: "',arg,'", arg2: "',arg2,'"'
+      IF (print_level > 0) write(out_unit,*) 'Argument number: ',iarg,' ==> arg: "',arg,'", arg2: "',arg2,'"'
 
       deallocate(arg)
       deallocate(arg2)
     END DO
-    IF (print_level > 0) write(out_unitp,*) '=================================='
+    IF (print_level > 0) write(out_unit,*) '=================================='
 
   END SUBROUTINE read_arg
 

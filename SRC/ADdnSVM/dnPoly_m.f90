@@ -263,8 +263,8 @@ CONTAINS
     character (len=*), parameter :: name_sub='AD_dnLegendre'
 
     ! IF (m < 0 .OR. l < 0 .OR. abs(x) > ONE) THEN
-    !   write(out_unitp,*) 'mauvais arguments dans poly_legendre :'
-    !   write(out_unitp,*) ' m l : ',m,l,' et x = ',x
+    !   write(out_unit,*) 'mauvais arguments dans poly_legendre :'
+    !   write(out_unit,*) ' m l : ',m,l,' et x = ',x
     !   STOP
     ! END IF
 

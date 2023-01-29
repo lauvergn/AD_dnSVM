@@ -70,7 +70,7 @@
 !! @date 09/08/2017
 !!
 MODULE ADdnSVM_dnS_m
-  USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+  USE QDUtil_m, ONLY : Rkind, out_unit
   IMPLICIT NONE
   PRIVATE
 
@@ -299,7 +299,7 @@ CONTAINS
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
 !! @param err_dnS            integer (optional):  to handle the errors errors (0: no error).
   SUBROUTINE AD_alloc_dnS(S,nVar,nderiv,err_dnS)
-    USE QDUtil_m, ONLY : out_unitp => out_unit
+    USE QDUtil_m, ONLY : out_unit
     IMPLICIT NONE
 
     TYPE (dnS_t), intent(inout)          :: S         !< derived type, which contains, matrix potential, its derivatives
@@ -332,15 +332,15 @@ CONTAINS
     END IF
     S%nderiv = nderiv_loc
 
-    !write(out_unitp,*) 'S%nderiv in alloc_dnS',S%nderiv
+    !write(out_unit,*) 'S%nderiv in alloc_dnS',S%nderiv
 
 
     IF (nderiv_loc >= 1) THEN
       allocate(S%d1(nVar_loc),stat=err_dnS_loc)
       IF (err_dnS_loc /= 0 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) '  Problem with allocate of S%d1'
-        write(out_unitp,*) '  nVar > 0?',nVar_loc
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d1'
+        write(out_unit,*) '  nVar > 0?',nVar_loc
         IF (present(err_dnS)) THEN
           err_dnS = err_dnS_loc
           RETURN
@@ -353,9 +353,9 @@ CONTAINS
     IF (nderiv_loc >= 2) THEN
       allocate(S%d2(nVar_loc,nVar_loc),stat=err_dnS_loc)
       IF (err_dnS_loc /= 0 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) '  Problem with allocate of S%d2'
-        write(out_unitp,*) '  nVar > 0',nVar_loc
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d2'
+        write(out_unit,*) '  nVar > 0',nVar_loc
         IF (present(err_dnS)) THEN
           err_dnS = err_dnS_loc
           RETURN
@@ -368,9 +368,9 @@ CONTAINS
     IF (nderiv_loc >= 3) THEN
       allocate(S%d3(nVar_loc,nVar_loc,nVar_loc),stat=err_dnS_loc)
       IF (err_dnS_loc /= 0 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) '  Problem with allocate of S%d3'
-        write(out_unitp,*) '  nVar > 0',nVar_loc
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d3'
+        write(out_unit,*) '  nVar > 0',nVar_loc
         IF (present(err_dnS)) THEN
           err_dnS = err_dnS_loc
           RETURN
@@ -380,8 +380,8 @@ CONTAINS
       END IF
     END IF
 
-    !write(out_unitp,*) 'err_dnS_loc',err_dnS_loc
-    !IF (present(err_dnS)) write(out_unitp,*) 'err_dnS',err_dnS
+    !write(out_unit,*) 'err_dnS_loc',err_dnS_loc
+    !IF (present(err_dnS)) write(out_unit,*) 'err_dnS',err_dnS
 
   END SUBROUTINE AD_alloc_dnS
 
@@ -434,7 +434,7 @@ CONTAINS
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
 !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
   FUNCTION AD_init_dnS(Val,nVar,nderiv,iVar) RESULT(Sres)
-    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
     IMPLICIT NONE
 
     TYPE (dnS_t)                     :: Sres
@@ -467,18 +467,18 @@ CONTAINS
     END IF
 
     IF (iVar_loc < 0 .OR. iVar_loc > nVar_loc) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' the iVar value (',iVar_loc,') is out of range: [1:',nVar_loc,']'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the iVar value (',iVar_loc,') is out of range: [1:',nVar_loc,']'
       STOP 'Problem with the iVar value in init_dnS'
     END IF
 
-    !write(out_unitp,*) 'iVar_loc',iVar_loc ; flush(out_unitp)
-    !write(out_unitp,*) 'nVar_loc,nderiv_loc',nVar_loc,nderiv_loc ; flush(out_unitp)
+    !write(out_unit,*) 'iVar_loc',iVar_loc ; flush(out_unit)
+    !write(out_unit,*) 'nVar_loc,nderiv_loc',nVar_loc,nderiv_loc ; flush(out_unit)
 
     CALL AD_alloc_dnS(Sres,nVar_loc,nderiv_loc,err_dnS_loc)
     IF (err_dnS_loc /= 0) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' Problem in alloc_dnS CALL'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Problem in alloc_dnS CALL'
       STOP 'Problem Problem in AD_alloc_dnS CALL in AD_init_dnS'
     END IF
 
@@ -499,7 +499,7 @@ CONTAINS
   !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
   !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
     FUNCTION AD_init_Tab_OF_dnS(TabVal,nderiv) RESULT(TabdnS)
-      USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unitp => out_unit
+      USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
       IMPLICIT NONE
 
       TYPE (dnS_t), ALLOCATABLE        :: TabdnS(:)
@@ -527,8 +527,8 @@ CONTAINS
       DO iVar=1,nVar
         CALL AD_alloc_dnS(TabdnS(iVar),nVar,nderiv_loc,err_dnS_loc)
         IF (err_dnS_loc /= 0) THEN
-          write(out_unitp,*) ' ERROR in ',name_sub
-          write(out_unitp,*) ' Problem in alloc_dnS CALL'
+          write(out_unit,*) ' ERROR in ',name_sub
+          write(out_unit,*) ' Problem in alloc_dnS CALL'
           STOP 'Problem Problem in AD_alloc_dnS CALL in AD_init_Tab_OF_dnS'
         END IF
 
@@ -547,7 +547,7 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param d0,d1,d2,d3        real  (optional):    real value (d0) or table to initialize S.
   SUBROUTINE AD_set_dnS(S,d0,d1,d2,d3)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     real (kind=Rkind), optional,   intent(in)     :: d0
@@ -569,9 +569,9 @@ CONTAINS
       S%d1     = d1
       S%nderiv = 1
       IF (.NOT. present(d0)) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' d1 is present but not d0'
-        write(out_unitp,*) ' CHECK the fortran!!'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d1 is present but not d0'
+        write(out_unit,*) ' CHECK the fortran!!'
         STOP 'ERROR in AD_set_dnS'
       END IF
     END IF
@@ -580,9 +580,9 @@ CONTAINS
       S%d2     = d2
       S%nderiv = 2
       IF (.NOT. present(d1)) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' d2 is present but not d1'
-        write(out_unitp,*) ' CHECK the fortran!!'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d2 is present but not d1'
+        write(out_unit,*) ' CHECK the fortran!!'
         STOP 'ERROR in AD_set_dnS'
       END IF
     END IF
@@ -591,16 +591,16 @@ CONTAINS
       S%d3     = d3
       S%nderiv = 3
       IF (.NOT. present(d2)) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' d3 is present but not d2'
-        write(out_unitp,*) ' CHECK the fortran!!'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d3 is present but not d2'
+        write(out_unit,*) ' CHECK the fortran!!'
         STOP 'ERROR in AD_set_dnS'
       END IF
     END IF
 
   END SUBROUTINE AD_set_dnS
   SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1(S1,S2,list_act)
-    USE QDUtil_m, ONLY : out_unitp => out_unit
+    USE QDUtil_m, ONLY : out_unit
     IMPLICIT NONE
 
     CLASS (dnS_t), intent(inout) :: S1
@@ -614,11 +614,11 @@ CONTAINS
 
     IF (allocated(S2%d1)) THEN
     IF (size(list_act) > size(S2%d1) ) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' size(list_act) > size(S2%d1)'
-      write(out_unitp,*) ' size(list_act) ',size(list_act)
-      write(out_unitp,*) ' size(S2%d1)    ',size(S2%d1)
-      write(out_unitp,*) ' CHECK the fortran!!'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(list_act) > size(S2%d1)'
+      write(out_unit,*) ' size(list_act) ',size(list_act)
+      write(out_unit,*) ' size(S2%d1)    ',size(S2%d1)
+      write(out_unit,*) ' CHECK the fortran!!'
       STOP 'ERROR in AD_ReduceDerivatives_dnS2_TO_dnS1'
     END IF
     END IF
@@ -640,7 +640,7 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param d0                 real  (result):      d0=S%d0
   ELEMENTAL FUNCTION AD_get_d0_FROM_dnS(S) RESULT(d0)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     real (kind=Rkind)                :: d0
@@ -659,7 +659,7 @@ CONTAINS
 !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param d1                 real  (result):        d1=S%d1, d1 is allocatable
   FUNCTION AD_get_d1_FROM_dnS(S) RESULT(d1)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     real (kind=Rkind), allocatable     :: d1(:)
@@ -671,7 +671,7 @@ CONTAINS
 
   END FUNCTION AD_get_d1_FROM_dnS
   FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnS(Vec) RESULT(Jac)
-    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
     IMPLICIT NONE
 
     real (kind=Rkind), allocatable     :: Jac(:,:)
@@ -690,11 +690,11 @@ CONTAINS
       IF (nVarOld == 0) nVarOld = get_nVar(Vec(iVar))
 
       IF (nVarOld /= get_nVar(Vec(iVar))) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) '  The nVarOld from Vec(:) are different'
-        write(out_unitp,*) '  iVar',iVar
-        write(out_unitp,*) '  nVar from Vec_OF_dnS(iVar)',get_nVar(Vec(iVar))
-        write(out_unitp,*) '  nVarOld',nVarOld
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  The nVarOld from Vec(:) are different'
+        write(out_unit,*) '  iVar',iVar
+        write(out_unit,*) '  nVar from Vec_OF_dnS(iVar)',get_nVar(Vec(iVar))
+        write(out_unit,*) '  nVarOld',nVarOld
         STOP 'ERROR in AD_get_Jacobian_FROM_Vec_OF_dnS: incomptiple nVar from Vec(:)'
       END IF
 
@@ -719,7 +719,7 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d2                 real  (result):        d2=S%d2, d2 is allocatable
   FUNCTION AD_get_d2_FROM_dnS(S) RESULT(d2)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
       real (kind=Rkind),   allocatable   :: d2(:,:)
@@ -738,7 +738,7 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d3                 real  (result):        d3=S%d3, d3 is allocatable
   FUNCTION AD_get_d3_FROM_dnS(S) RESULT(d3)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
       real (kind=Rkind), allocatable   :: d3(:,:,:)
@@ -842,7 +842,7 @@ CONTAINS
   !! @param S                  TYPE (dnS_t):          derived type which deals with the derivatives of a scalar functions.
   !! @param d0,d1,d2,d3                 real:         NOT allocatable
   SUBROUTINE AD_sub_get_dn_FROM_dnS(S,d0,d1,d2,d3)
-    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
     IMPLICIT NONE
 
       TYPE (dnS_t),        intent(in)              :: S
@@ -882,12 +882,12 @@ CONTAINS
 !! @date 03/08/2017
 !!
 !! @param S                  TYPE (dnS_t):         derived type which deals with the derivatives of a scalar functions.
-!! @param nio                integer (optional):   when present unit to print S, otherwise it is the default unit:out_unitp
+!! @param nio                integer (optional):   when present unit to print S, otherwise it is the default unit:out_unit
 !! @param info               character (optional): when present, write info
 !! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnS)
 !! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnS_FOR_test)
   SUBROUTINE AD_Write_dnS_file(S,nio,info,all_type,FOR_test,Rfmt)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnS_t),     intent(in)           :: S
@@ -903,7 +903,7 @@ CONTAINS
     IF (present(nio)) THEN
       nio_loc = nio
     ELSE
-      nio_loc = out_unitp
+      nio_loc = out_unit
     END IF
 
     all_type_loc = .FALSE.
@@ -1016,7 +1016,7 @@ CONTAINS
 
   END SUBROUTINE AD_Write_dnS_file
   SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt)
-    USE QDUtil_m, ONLY : Rkind, TO_string, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, TO_string, out_unit
     IMPLICIT NONE
 
     TYPE (dnS_t),     intent(in)           :: S
@@ -1129,7 +1129,7 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param get_nderiv_FROM_dnS   integer  (result):   nderiv value, check against S%nederiv and the allocated d1,d2 or d3
   ELEMENTAL FUNCTION AD_get_nderiv_FROM_dnS(S) RESULT(nderiv)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     integer                     :: nderiv
@@ -1157,7 +1157,7 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param nVar                  integer  (result):   nVar value from the size of S%d1.
   ELEMENTAL FUNCTION AD_get_nVar_FROM_dnS(S) RESULT(nVar)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     integer                     :: nVar
@@ -1179,7 +1179,7 @@ CONTAINS
 !! @param S                     TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param epsi                  real (optional):     when present zero limit, otherwise 10^-10
   ELEMENTAL FUNCTION AD_Check_dnS_IS_ZERO(S,epsi) RESULT(Check_dnS_IS_ZERO)
-    USE QDUtil_m, ONLY : Rkind, ONETENTH, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ONETENTH, out_unit
     IMPLICIT NONE
 
     logical                                  :: Check_dnS_IS_ZERO
@@ -1207,7 +1207,7 @@ CONTAINS
 !! @param get_maxval_OF_dnS     real  (result):      largest value
 !! @param S                     TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   ELEMENTAL FUNCTION AD_get_maxval_OF_dnS(S) RESULT(maxval_OF_dnS)
-    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
     IMPLICIT NONE
 
     real(kind=Rkind)            :: maxval_OF_dnS
@@ -1237,7 +1237,7 @@ CONTAINS
 !! @param x                        real:            abciss
 !! @param nderiv                   integer:         order of the derivative
   FUNCTION AD_get_Num_dnS_FROM_f_x(x,f,nderiv) RESULT(Snum)
-    USE QDUtil_m, ONLY : Rkind, ZERO,ONE,TWO,THREE,FOUR,EIGHT,TWELVE, ONETENTH, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO,ONE,TWO,THREE,FOUR,EIGHT,TWELVE, ONETENTH, out_unit
     IMPLICIT NONE
 
     TYPE (dnS_t)                                 :: Snum
@@ -1311,7 +1311,7 @@ CONTAINS
 ! operators ==,/=,>=,>,<=,<
 !=========================================================
   ELEMENTAL FUNCTION AD_dnS_EQ_dnS(S1,S2) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     logical                     :: lres
@@ -1329,7 +1329,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_EQ_dnS
   ELEMENTAL FUNCTION AD_dnS_EQ_R(S1,R) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     logical                            :: lres
@@ -1343,7 +1343,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_EQ_R
   ELEMENTAL FUNCTION AD_R_EQ_dnS(R,S) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     logical                            :: lres
@@ -1358,7 +1358,7 @@ CONTAINS
   END FUNCTION AD_R_EQ_dnS
 
   ELEMENTAL FUNCTION AD_dnS_NEQ_dnS(S1,S2) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     logical                     :: lres
@@ -1376,7 +1376,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_NEQ_dnS
   ELEMENTAL FUNCTION AD_dnS_NEQ_R(S1,R) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     CLASS (dnS_t),     intent(in)    :: S1
@@ -1390,7 +1390,7 @@ CONTAINS
 
   END FUNCTION AD_dnS_NEQ_R
   ELEMENTAL FUNCTION AD_R_NEQ_dnS(R,S) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     CLASS (dnS_t),     intent(in)    :: S
@@ -1404,7 +1404,7 @@ CONTAINS
   END FUNCTION AD_R_NEQ_dnS
 
   ELEMENTAL FUNCTION AD_dnS_LE_dnS(S1,S2) RESULT(lres)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     CLASS (dnS_t), intent(in)   :: S1

@@ -1,17 +1,20 @@
 #!/bin/bash
 
 EXTLIB_TYPE=$1
+BaseName=QDUtilLib
 
-echo "In get_QDUtilLib.sh"
+echo "In get_"$BaseName".sh"
 
-SAVE_version=Save_QDUtilLib-0.9-dev
-LOC_version=QDUtilLib
 
-rm -rf QDUtilLib* #always remove the link
+SAVE_version="Save_"$BaseName"_devloc"
+LOC_version=$BaseName
+
+
+rm -rf $BaseName* #always remove the link
 
 
 #latest release
- version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.9-dev.zip
+ version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.7.zip
 #latest HEAD version
 #version=https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 
@@ -23,11 +26,11 @@ test -e $LOC_version.zip && echo $LOC_version.zip file exist || cp $SAVE_version
 unzip $LOC_version.zip
 rm -f $LOC_version.zip
 
+#LIBDIR=`ls -d QDUtilLib*`
 
-LIBDIR=`ls -d QDUtilLib*`
-#echo $QMLDIR
+LIBDIR=`ls -d $BaseName*`
+#echo $LIBDIR
 
 ln -s $LIBDIR $LOC_version
 
-
-echo "End get_QDUtilLib.sh"
+echo "End get_"$BaseName".sh"

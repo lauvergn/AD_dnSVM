@@ -64,7 +64,7 @@ MODULE ADdnSVM_dnS_Op_m
 CONTAINS
 
     FUNCTION AD_dot_product_VecOFdnS(VecA,VecB) RESULT(Sres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecA(:),VecB(:)
@@ -76,16 +76,16 @@ CONTAINS
 
 
       IF (size(VecA) /= size(VecB)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are incompatible'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are incompatible'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_VecOFdnS: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are < 1'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are < 1'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_VecOFdnS: sizes are < 1'
       END IF
 
@@ -97,7 +97,7 @@ CONTAINS
 
     END FUNCTION AD_dot_product_VecOFdnS
     FUNCTION AD_dot_product_VecOFdnS_Vec(VecA,VecB) RESULT(Sres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecA(:)
@@ -110,16 +110,16 @@ CONTAINS
 
 
       IF (size(VecA) /= size(VecB)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are incompatible'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are incompatible'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_VecOFdnS_Vec: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are < 1'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are < 1'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_VecOFdnS_Vec: sizes are < 1'
       END IF
 
@@ -132,7 +132,7 @@ CONTAINS
 
     END FUNCTION AD_dot_product_VecOFdnS_Vec
     FUNCTION AD_dot_product_Vec_VecOFdnS(VecA,VecB) RESULT(Sres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t)                       :: Sres
       TYPE (dnS_t),        intent(in)    :: VecB(:)
@@ -145,16 +145,16 @@ CONTAINS
 
 
       IF (size(VecA) /= size(VecB)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are incompatible'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are incompatible'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_Vec_VecOFdnS: sizes are incomptible'
       END IF
 
       IF (size(VecA) < 1) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of both vectors are < 1'
-         write(out_unitp,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of both vectors are < 1'
+         write(out_unit,*) '  size(VecA),size(VecB)',size(VecA),size(VecB)
          STOP 'ERROR in AD_dot_product_Vec_VecOFdnS: sizes are < 1'
       END IF
 
@@ -237,7 +237,7 @@ CONTAINS
     END FUNCTION AD_transpose_MatOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_VecOFdnS(Mat,Vec) RESULT(Vres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t),        intent(in)           :: Vec(:)
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
@@ -249,9 +249,9 @@ CONTAINS
 
 
       IF (size(Vec) /= size(Mat,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
-         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
+         write(out_unit,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
          STOP 'ERROR in AD_matmul_MatOFdnS_VecOFdnS: sizes are incomptible'
       END IF
 
@@ -263,7 +263,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_VecOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_Vec(Mat,Vec) RESULT(Vres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       real(kind=Rkind),    intent(in)           :: Vec(:)
       TYPE (dnS_t),        intent(in)           :: Mat(:,:)
@@ -275,9 +275,9 @@ CONTAINS
 
 
       IF (size(Vec) /= size(Mat,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
-         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
+         write(out_unit,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
          STOP 'ERROR in AD_matmul_MatOFdnS_Vec: sizes are incomptible'
       END IF
 
@@ -289,7 +289,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_Vec
 
     FUNCTION AD_matmul_Mat_VecOFdnS(Mat,Vec) RESULT(Vres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t),        intent(in)           :: Vec(:)
       real(kind=Rkind),    intent(in)           :: Mat(:,:)
@@ -301,9 +301,9 @@ CONTAINS
 
 
       IF (size(Vec) /= size(Mat,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
-         write(out_unitp,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of Vec(:) and Mat(.,:) are incomptible'
+         write(out_unit,*) '  size(Vec),size(Mat,dim=2)',size(Vec),size(Mat,dim=2)
          STOP 'ERROR in AD_matmul_Mat_VecOFdnS: sizes are incomptible'
 
       END IF
@@ -317,7 +317,7 @@ CONTAINS
 
 
     FUNCTION AD_matmul_MatOFdnS_MatOFdnS(MatA,MatB) RESULT(Mres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t),        intent(in)           :: MatA(:,:)
       TYPE (dnS_t),        intent(in)           :: MatB(:,:)
@@ -329,9 +329,9 @@ CONTAINS
 
 
       IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
-         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unit,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
          STOP 'ERROR in AD_matmul_MatOFdnS_MatOFdnS: sizes are incomptible'
 
       END IF
@@ -347,7 +347,7 @@ CONTAINS
     END FUNCTION AD_matmul_MatOFdnS_MatOFdnS
 
     FUNCTION AD_matmul_Mat_MatOFdnS(MatA,MatB) RESULT(Mres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       real(kind=Rkind),    intent(in)           :: MatA(:,:)
       TYPE (dnS_t),        intent(in)           :: MatB(:,:)
@@ -359,9 +359,9 @@ CONTAINS
 
 
       IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
-         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unit,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
          STOP 'ERROR in AD_matmul_Mat_MatOFdnS: sizes are incomptible'
 
       END IF
@@ -377,7 +377,7 @@ CONTAINS
     END FUNCTION AD_matmul_Mat_MatOFdnS
 
     FUNCTION AD_matmul_MatOFdnS_Mat(MatA,MatB) RESULT(Mres)
-      USE QDUtil_m, out_unitp => out_unit
+      USE QDUtil_m
 
       TYPE (dnS_t),        intent(in)           :: MatA(:,:)
       real(kind=Rkind),    intent(in)           :: MatB(:,:)
@@ -389,9 +389,9 @@ CONTAINS
 
 
       IF (size(MatB,dim=1) /= size(MatA,dim=2)) THEN
-         write(out_unitp,*) ' ERROR in ',name_sub
-         write(out_unitp,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
-         write(out_unitp,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
+         write(out_unit,*) ' ERROR in ',name_sub
+         write(out_unit,*) '  sizes of MatA(.,:) and MatB(:,.) are incomptible'
+         write(out_unit,*) '  size(MatA(.,:)),size(MatB(:,.))',size(MatA,dim=2),size(MatB,dim=1)
          STOP 'ERROR in AD_matmul_MatOFdnS_Mat: sizes are incomptible'
 
       END IF

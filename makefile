@@ -219,6 +219,19 @@ cleanall: clean
 	cd $(MAIN_path)/Ext_Lib ; ./cleanlib
 	@echo "  done remove *.a libraries and OBJ directory"
 #===============================================
+#================ zip and copy the directory ===
+ExtLibSAVEDIR := /Users/lauvergn/git/Ext_Lib
+BaseName := AD_dnSVM
+.PHONY: zip
+zip: cleanall
+	test -d $(ExtLibSAVEDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
+	cd $(ExtLibSAVEDIR) ; rm -rf $(BaseName)_devloc
+	mkdir $(ExtLibSAVEDIR)/$(BaseName)_devloc
+	cp -r * $(ExtLibSAVEDIR)/$(BaseName)_devloc
+	cd $(ExtLibSAVEDIR) ; zip -r Save_$(BaseName)_devloc.zip $(BaseName)_devloc
+	cd $(ExtLibSAVEDIR) ; rm -rf $(BaseName)_devloc
+	@echo "  done zip"
+#===============================================
 #===============================================
 #
 #===============================================

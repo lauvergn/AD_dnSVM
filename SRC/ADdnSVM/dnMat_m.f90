@@ -188,7 +188,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param name_var           character (optional):  Name of the variable from the calling subroutine (debuging purpose).
 !! @param name_sub           character (optional):  Name of the calling subroutine (debuging purpose).
   SUBROUTINE AD_alloc_dnMat(Mat,nsurf,nVar,nderiv,name_var,name_sub,err_dnMat)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     IMPLICIT NONE
 
     TYPE (dnMat_t),    intent(inout)         :: Mat   !< derived type, which contains, matrix potential, its derivatives
@@ -207,10 +207,10 @@ MODULE ADdnSVM_dnMat_m
 
     CALL AD_dealloc_dnMat(Mat,err_dnMat_loc)
     IF (err_dnMat_loc /= 0) THEN
-      write(out_unitp,*) ' ERROR in AD_alloc_dnMat'
-      write(out_unitp,*) ' Problem in AD_dealloc_dnMat CALL in AD_alloc_dnMat'
-      IF (present(name_var)) write(out_unitp,*) '  for the variable: ',name_var
-      IF (present(name_sub)) write(out_unitp,*) '  call from the subroutine: ',name_sub
+      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+      write(out_unit,*) ' Problem in AD_dealloc_dnMat CALL in AD_alloc_dnMat'
+      IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+      IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
       IF (present(err_dnMat)) THEN
         err_dnMat = err_dnMat_loc
         RETURN
@@ -242,15 +242,15 @@ MODULE ADdnSVM_dnMat_m
     END IF
     Mat%nderiv = nderiv_loc
 
-    !write(out_unitp,*) 'Mat%nderiv in alloc_dnMat',Mat%nderiv
+    !write(out_unit,*) 'Mat%nderiv in alloc_dnMat',Mat%nderiv
 
     allocate(Mat%d0(nsurf_loc,nsurf_loc),stat=err_dnMat_loc)
     IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1) THEN
-      write(out_unitp,*) ' ERROR in AD_alloc_dnMat'
-      write(out_unitp,*) '  Problem with allocate of Mat%d0'
-      write(out_unitp,*) '  nsurf > 0?',nsurf_loc
-      IF (present(name_var)) write(out_unitp,*) '  for the variable: ',name_var
-      IF (present(name_sub)) write(out_unitp,*) '  call from the subroutine: ',name_sub
+      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+      write(out_unit,*) '  Problem with allocate of Mat%d0'
+      write(out_unit,*) '  nsurf > 0?',nsurf_loc
+      IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+      IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
       IF (present(err_dnMat)) THEN
         err_dnMat = err_dnMat_loc
         RETURN
@@ -262,12 +262,12 @@ MODULE ADdnSVM_dnMat_m
     IF (nderiv_loc >= 1) THEN
       allocate(Mat%d1(nsurf_loc,nsurf_loc,nVar_loc),stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in AD_alloc_dnMat'
-        write(out_unitp,*) '  Problem with allocate of Mat%d1'
-        write(out_unitp,*) '  nsurf > 0?',nsurf_loc
-        write(out_unitp,*) '  nVar > 0?',nVar_loc
-        IF (present(name_var)) write(out_unitp,*) '  for the variable: ',name_var
-        IF (present(name_sub)) write(out_unitp,*) '  call from the subroutine: ',name_sub
+        write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d1'
+        write(out_unit,*) '  nsurf > 0?',nsurf_loc
+        write(out_unit,*) '  nVar > 0?',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -280,12 +280,12 @@ MODULE ADdnSVM_dnMat_m
     IF (nderiv_loc >= 2) THEN
       allocate(Mat%d2(nsurf_loc,nsurf_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in AD_alloc_dnMat'
-        write(out_unitp,*) '  Problem with allocate of Mat%d2'
-        write(out_unitp,*) '  nsurf > 0',nsurf_loc
-        write(out_unitp,*) '  nVar > 0',nVar_loc
-        IF (present(name_var)) write(out_unitp,*) '  for the variable: ',name_var
-        IF (present(name_sub)) write(out_unitp,*) '  call from the subroutine: ',name_sub
+        write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d2'
+        write(out_unit,*) '  nsurf > 0',nsurf_loc
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -298,12 +298,12 @@ MODULE ADdnSVM_dnMat_m
     IF (nderiv_loc >= 3) THEN
       allocate(Mat%d3(nsurf_loc,nsurf_loc,nVar_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
-        write(out_unitp,*) ' ERROR in AD_alloc_dnMat'
-        write(out_unitp,*) '  Problem with allocate of Mat%d2'
-        write(out_unitp,*) '  nsurf > 0',nsurf_loc
-        write(out_unitp,*) '  nVar > 0',nVar_loc
-        IF (present(name_var)) write(out_unitp,*) '  for the variable: ',name_var
-        IF (present(name_sub)) write(out_unitp,*) '  call from the subroutine: ',name_sub
+        write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d2'
+        write(out_unit,*) '  nsurf > 0',nsurf_loc
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -322,7 +322,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param err_dnMat       integer (optional):    to handle the errors errors (0: no error).
   SUBROUTINE AD_dealloc_dnMat(Mat,err_dnMat)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     IMPLICIT NONE
 
     TYPE (dnMat_t), intent(inout)         :: Mat        !< derived type, which contains, matrix potential, its derivatives
@@ -337,8 +337,8 @@ MODULE ADdnSVM_dnMat_m
     IF (allocated(Mat%d0)) THEN
       deallocate(Mat%d0,stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0) THEN
-        write(out_unitp,*) ' ERROR in dealloc_dnMat'
-        write(out_unitp,*) '  Problem with deallocate of Mat%d0'
+        write(out_unit,*) ' ERROR in dealloc_dnMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d0'
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -351,8 +351,8 @@ MODULE ADdnSVM_dnMat_m
     IF (allocated(Mat%d1)) THEN
       deallocate(Mat%d1,stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0) THEN
-        write(out_unitp,*) ' ERROR in dealloc_dnMat'
-        write(out_unitp,*) '  Problem with deallocate of Mat%d1'
+        write(out_unit,*) ' ERROR in dealloc_dnMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d1'
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -365,8 +365,8 @@ MODULE ADdnSVM_dnMat_m
     IF (allocated(Mat%d2)) THEN
       deallocate(Mat%d2,stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0) THEN
-        write(out_unitp,*) ' ERROR in dealloc_dnMat'
-        write(out_unitp,*) '  Problem with deallocate of Mat%d2'
+        write(out_unit,*) ' ERROR in dealloc_dnMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d2'
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -379,8 +379,8 @@ MODULE ADdnSVM_dnMat_m
     IF (allocated(Mat%d3)) THEN
       deallocate(Mat%d3,stat=err_dnMat_loc)
       IF (err_dnMat_loc /= 0) THEN
-        write(out_unitp,*) ' ERROR in dealloc_dnMat'
-        write(out_unitp,*) '  Problem with deallocate of Mat%d3'
+        write(out_unit,*) ' ERROR in dealloc_dnMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d3'
         IF (present(err_dnMat)) THEN
           err_dnMat = err_dnMat_loc
           RETURN
@@ -401,7 +401,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param dnMat1                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param dnMat2                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
   SUBROUTINE AD_sub_dnMat2_TO_dnMat1(dnMat1,dnMat2)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     IMPLICIT NONE
 
     CLASS (dnMat_t), intent(inout) :: dnMat1
@@ -415,7 +415,7 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat2)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat2)
 
-    !write(out_unitp,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
 
     IF (nderiv_loc < 0 .OR. nsurf_loc < 1 .OR. (nderiv_loc > 0  .AND. nVar_loc < 1)) RETURN
@@ -439,14 +439,14 @@ MODULE ADdnSVM_dnMat_m
        dnMat1%d2 = dnMat2%d2
        dnMat1%d3 = dnMat2%d3
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END SUBROUTINE AD_sub_dnMat2_TO_dnMat1
   SUBROUTINE AD_sub_Reduced_dnMat2_TO_dnMat1(dnMat1,dnMat2,lb,ub)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     IMPLICIT NONE
 
     CLASS (dnMat_t),  intent(inout) :: dnMat1
@@ -461,17 +461,17 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat2)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat2)
 
-    !write(out_unitp,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
 
     IF (nderiv_loc < 0 .OR. nsurf_loc < 1 .OR. (nderiv_loc > 0  .AND. nVar_loc < 1)) RETURN
 
     IF (lb < 1 .OR. ub > nsurf_loc .OR. lb > ub) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The indexes lb and ub are wrong.'
-      write(out_unitp,*) 'lb,ub',lb,ub
-      write(out_unitp,*) 'The range is [1...',nsurf_loc,']'
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The indexes lb and ub are wrong.'
+      write(out_unit,*) 'lb,ub',lb,ub
+      write(out_unit,*) 'The range is [1...',nsurf_loc,']'
+      write(out_unit,*) 'It should never append! Check the source'
       STOP 'ERROR in AD_sub_Reduced_dnMat2_TO_dnMat1: lb or ub are wrong'
     END IF
 
@@ -493,9 +493,9 @@ MODULE ADdnSVM_dnMat_m
        dnMat1%d2 = dnMat2%d2(lb:ub,lb:ub,:,:)
        dnMat1%d3 = dnMat2%d3(lb:ub,lb:ub,:,:,:)
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END SUBROUTINE AD_sub_Reduced_dnMat2_TO_dnMat1
@@ -508,7 +508,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param S                     TYPE(dnS):       derived type which deals with the derivatives of a scalar.
 !! @param i,j                   integer (optional) indices of the matrix element. If not present i=j=1
   SUBROUTINE AD_sub_dnS_TO_dnMat(S,Mat,i,j)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     USE ADdnSVM_dnS_m
     IMPLICIT NONE
 
@@ -537,17 +537,17 @@ MODULE ADdnSVM_dnMat_m
 
 
     IF (i_loc < 1 .OR. i_loc > nsurf_dnMat .OR. j_loc < 1 .OR. j_loc > nsurf_dnMat) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
 
     IF (nderiv_dnS == -1) THEN
       IF (nderiv_dnMat == -1) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' dnMat is not allocated.'
-        write(out_unitp,*) 'It should never append! Check the source.'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' dnMat is not allocated.'
+        write(out_unit,*) 'It should never append! Check the source.'
         STOP 'dnMat is not allocated.'
       END IF
       ! S (dnS) is a constant
@@ -564,17 +564,17 @@ MODULE ADdnSVM_dnMat_m
       IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR.                  &
            nderiv_dnS /= nderiv_dnMat  .OR.  nVar_dnS /= nVar_dnMat .OR.  &
            nsurf_dnMat < 1 ) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' dnMat is not allocated or ...'
-        write(out_unitp,*) '  ... nderiv from dnMat or dnS are different or ...'
-        write(out_unitp,*) '  ... nVar from dnMat or dnS are different or ...'
-        write(out_unitp,*) '  ... nsurf from dnMat is < 1'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' dnMat is not allocated or ...'
+        write(out_unit,*) '  ... nderiv from dnMat or dnS are different or ...'
+        write(out_unit,*) '  ... nVar from dnMat or dnS are different or ...'
+        write(out_unit,*) '  ... nsurf from dnMat is < 1'
 
-        write(out_unitp,*) 'nderiv from dnMat and dnS:',nderiv_dnMat,nderiv_dnS
-        write(out_unitp,*) 'nVar   from dnMat and dnS:',nVar_dnMat,nVar_dnS
-        write(out_unitp,*) 'nsurf  from dnMat        :',nsurf_dnMat
+        write(out_unit,*) 'nderiv from dnMat and dnS:',nderiv_dnMat,nderiv_dnS
+        write(out_unit,*) 'nVar   from dnMat and dnS:',nVar_dnMat,nVar_dnS
+        write(out_unit,*) 'nsurf  from dnMat        :',nsurf_dnMat
 
-        write(out_unitp,*) 'It should never append! Check the source'
+        write(out_unit,*) 'It should never append! Check the source'
         STOP 'dnMat is not allocated or inconsistent nVar,nderiv parameters.'
       END IF
 
@@ -608,7 +608,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param S                     TYPE(dnS):       derived type which deals with the derivatives of a scalar.
 !! @param i,j                   integer (optional) indices of the matrix element. If not present i=j=1
   SUBROUTINE AD_sub_dnMat_TO_dnS(Mat,S,i,j)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     USE ADdnSVM_dnS_m
     IMPLICIT NONE
 
@@ -637,17 +637,17 @@ MODULE ADdnSVM_dnMat_m
 
 
     IF (i_loc < 1 .OR. i_loc > nsurf_dnMat .OR. j_loc < 1 .OR. j_loc > nsurf_dnMat) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
 
     IF (nderiv_dnMat == -1) THEN
       IF (nderiv_dnS == -1) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' dnS is not allocated.'
-        write(out_unitp,*) 'It should never append! Check the source.'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' dnS is not allocated.'
+        write(out_unit,*) 'It should never append! Check the source.'
         STOP 'dnS is not allocated.'
       END IF
       ! dnMat is a constant
@@ -656,12 +656,12 @@ MODULE ADdnSVM_dnMat_m
     ELSE
 
       IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR. nsurf_dnMat < 1 ) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' dnMat is not allocated or ...'
-        write(out_unitp,*) '  ... nsurf from dnMat is < 1'
-        write(out_unitp,*) 'nsurf  from dnMat        :',nsurf_dnMat
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' dnMat is not allocated or ...'
+        write(out_unit,*) '  ... nsurf from dnMat is < 1'
+        write(out_unit,*) 'nsurf  from dnMat        :',nsurf_dnMat
 
-        write(out_unitp,*) 'It should never append! Check the source'
+        write(out_unit,*) 'It should never append! Check the source'
         STOP 'dnMat is not allocated or inconsistent nsurf parameter.'
       END IF
 
@@ -693,7 +693,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param Mat                   TYPE (dnMat_t):    derived type which deals with the derivatives of a matrix.
 !! @param MatOFS                TYPE(dnS):       matrix of derived type which deals with the derivatives of a scalar.
   SUBROUTINE AD_set_dnMat_FROM_MatOFdnS(Mat,MatOFS)
-    USE QDUtil_m, out_unitp => out_unit
+    USE QDUtil_m
     USE ADdnSVM_dnS_m
     IMPLICIT NONE
 
@@ -708,9 +708,9 @@ MODULE ADdnSVM_dnMat_m
 
     IF (lbound(Mat%d0,dim=1) /= lbound(MatOFS,dim=1) .OR. ubound(Mat%d0,dim=1) /= ubound(MatOFS,dim=1) .OR. &
         lbound(Mat%d0,dim=2) /= lbound(MatOFS,dim=2) .OR. ubound(Mat%d0,dim=2) /= ubound(MatOFS,dim=2) ) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) '  the matrices have not the same dimensions'
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  the matrices have not the same dimensions'
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
 
@@ -722,7 +722,7 @@ MODULE ADdnSVM_dnMat_m
 
   END SUBROUTINE AD_set_dnMat_FROM_MatOFdnS
   SUBROUTINE AD_Mat_wADDTO_dnMat2_ider(Mat1,w1,dnMat2,ider)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     USE ADdnSVM_dnS_m
     IMPLICIT NONE
 
@@ -743,35 +743,35 @@ MODULE ADdnSVM_dnMat_m
     nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
 
     IF (.NOT. allocated(dnMat2%d0)) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) '  dnMat2%d0 is not allocated.'
-      write(out_unitp,*) ' CHECK the fortran source!!'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  dnMat2%d0 is not allocated.'
+      write(out_unit,*) ' CHECK the fortran source!!'
       STOP
     END IF
 
     IF (.NOT. all(shape(Mat1) == shape(dnMat2%d0))) THEN
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) '  The shape of Mat1 dnMat2%d0 must be equal.'
-      write(out_unitp,*) '  shape(Mat1):      ',shape(Mat1)
-      write(out_unitp,*) '  shape(dnMat2%d0): ',shape(dnMat2%d0)
-      write(out_unitp,*) ' CHECK the fortran source!!'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  The shape of Mat1 dnMat2%d0 must be equal.'
+      write(out_unit,*) '  shape(Mat1):      ',shape(Mat1)
+      write(out_unit,*) '  shape(dnMat2%d0): ',shape(dnMat2%d0)
+      write(out_unit,*) ' CHECK the fortran source!!'
       STOP
     END IF
     IF (present(ider)) THEN
       IF (size(ider) > nderiv) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' size(ider) cannot be > and nderiv.'
-        write(out_unitp,*) ' size(ider)',size(ider)
-        write(out_unitp,*) ' nderiv    ',nderiv
-        write(out_unitp,*) ' CHECK the fortran source!!'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' size(ider) cannot be > and nderiv.'
+        write(out_unit,*) ' size(ider)',size(ider)
+        write(out_unit,*) ' nderiv    ',nderiv
+        write(out_unit,*) ' CHECK the fortran source!!'
         STOP
       END IF
       IF (any(ider < 0) .OR. any(ider > nVar)) THEN
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' Some ider(:) values are out-of-range.'
-        write(out_unitp,*) ' ider(:)',ider
-        write(out_unitp,'(a,i0,a)') ' derivative range [0:',nVar,']'
-        write(out_unitp,*) ' CHECK the fortran source!!'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' Some ider(:) values are out-of-range.'
+        write(out_unit,*) ' ider(:)',ider
+        write(out_unit,'(a,i0,a)') ' derivative range [0:',nVar,']'
+        write(out_unit,*) ' CHECK the fortran source!!'
         STOP
       END IF
     END IF
@@ -838,10 +838,10 @@ MODULE ADdnSVM_dnMat_m
         END DO
 
       CASE Default
-        write(out_unitp,*) ' ERROR in ',name_sub
-        write(out_unitp,*) ' size(ider) > 3 is NOT possible.'
-        write(out_unitp,*) '   ider',ider
-        write(out_unitp,*) 'It should never append! Check the source'
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' size(ider) > 3 is NOT possible.'
+        write(out_unit,*) '   ider',ider
+        write(out_unit,*) 'It should never append! Check the source'
         STOP
       END SELECT
     ELSE
@@ -858,7 +858,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param Mat                   TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param set_dnMat_TO_zero  TYPE (dnMat_t) (result):  dnMat derived type
   SUBROUTINE AD_set_dnMat_TO_zero(dnMat)
-    USE QDUtil_m, ONLY : ZERO, out_unitp => out_unit
+    USE QDUtil_m, ONLY : ZERO, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t), intent(inout) :: dnMat
@@ -880,7 +880,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     some real number
 !! @param set_dnMat_TO_R  TYPE (dnMat_t) (result):  dnMat derived type
   SUBROUTINE AD_set_dnMat_TO_R(dnMat,R)
-    USE QDUtil_m, ONLY : Rkind, ZERO, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
     IMPLICIT NONE
 
     CLASS (dnMat_t), intent(inout) :: dnMat
@@ -892,7 +892,7 @@ MODULE ADdnSVM_dnMat_m
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'nderiv',nderiv_loc
+    !write(out_unit,*) 'nderiv',nderiv_loc
 
 
     IF (nderiv_loc == 0) THEN
@@ -910,9 +910,9 @@ MODULE ADdnSVM_dnMat_m
        dnMat%d2 = ZERO
        dnMat%d3 = ZERO
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 or nderiv < 0 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 or nderiv < 0 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END SUBROUTINE AD_set_dnMat_TO_R
@@ -925,7 +925,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     some real number
 !! @param sub_dnMat_TIME_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_TIME_R(dnMat,R) RESULT (sub_dnMat_TIME_R)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                 :: sub_dnMat_TIME_R
@@ -940,12 +940,12 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
     CALL AD_alloc_dnMat(sub_dnMat_TIME_R,nsurf_loc,nVar_loc,nderiv_loc,&
                          name_var='sub_dnMat_TIME_R',name_sub=name_sub)
 
-    !write(out_unitp,*) 'nderiv',nderiv_loc
+    !write(out_unit,*) 'nderiv',nderiv_loc
 
 
     IF (nderiv_loc == 0) THEN
@@ -965,9 +965,9 @@ MODULE ADdnSVM_dnMat_m
        sub_dnMat_TIME_R%d2 = dnMat%d2 * R
        sub_dnMat_TIME_R%d3 = dnMat%d3 * R
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END FUNCTION AD_sub_dnMat_TIME_R
@@ -980,7 +980,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     some real number
 !! @param sub_R_TIME_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_TIME_dnMat(R,dnMat)  RESULT(sub_R_TIME_dnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: sub_R_TIME_dnMat
@@ -995,12 +995,12 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
     CALL AD_alloc_dnMat(sub_R_TIME_dnMat,nsurf_loc,nVar_loc,nderiv_loc,&
                          name_var='sub_R_TIME_dnMat',name_sub=name_sub)
 
-    !write(out_unitp,*) 'nderiv',nderiv_loc
+    !write(out_unit,*) 'nderiv',nderiv_loc
 
 
     IF (nderiv_loc == 0) THEN
@@ -1020,9 +1020,9 @@ MODULE ADdnSVM_dnMat_m
        sub_R_TIME_dnMat%d2 = dnMat%d2 * R
        sub_R_TIME_dnMat%d3 = dnMat%d3 * R
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END FUNCTION AD_sub_R_TIME_dnMat
@@ -1035,7 +1035,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param dnMat2                    TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param dnMat2_PLUS_dnMat1 TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_dnMat2_PLUS_dnMat1(dnMat1,dnMat2)  RESULT(dnMat2_PLUS_dnMat1)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: dnMat2_PLUS_dnMat1
@@ -1049,7 +1049,7 @@ MODULE ADdnSVM_dnMat_m
     nsurf  = min(AD_get_nsurf_FROM_dnMat(dnMat1), AD_get_nsurf_FROM_dnMat(dnMat2))
     nVar   = min(AD_get_nVar_FROM_dnMat(dnMat1),  AD_get_nVar_FROM_dnMat(dnMat2))
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(dnMat2_PLUS_dnMat1)
 
@@ -1073,9 +1073,9 @@ MODULE ADdnSVM_dnMat_m
        dnMat2_PLUS_dnMat1%d2 = dnMat1%d2 + dnMat2%d2
        dnMat2_PLUS_dnMat1%d3 = dnMat1%d3 + dnMat2%d3
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END FUNCTION AD_dnMat2_PLUS_dnMat1
@@ -1088,7 +1088,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     some real number
 !! @param sub_dnMat_EXP_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_PLUS_R(dnMat,R)  RESULT (sub_dnMat_PLUS_R)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                 :: sub_dnMat_PLUS_R
@@ -1116,7 +1116,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     some real number
 !! @param sub_R_PLUS_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_PLUS_dnMat(R,dnMat) RESULT (sub_R_PLUS_dnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                 :: sub_R_PLUS_dnMat
@@ -1144,7 +1144,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param dnMat2                    TYPE (dnMat_t):           derived type which deals with the derivatives of a matrix.
 !! @param dnMat2_MINUS_dnMat1 TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_dnMat2_MINUS_dnMat1(dnMat1,dnMat2) RESULT (dnMat2_MINUS_dnMat1)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: dnMat2_MINUS_dnMat1
@@ -1181,9 +1181,9 @@ MODULE ADdnSVM_dnMat_m
        dnMat2_MINUS_dnMat1%d2 = dnMat1%d2 - dnMat2%d2
        dnMat2_MINUS_dnMat1%d3 = dnMat1%d3 - dnMat2%d3
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END FUNCTION AD_dnMat2_MINUS_dnMat1
@@ -1196,7 +1196,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                    real:                     some real number
 !! @param sub_dnMat_MINUS_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_MINUS_R(dnMat,R) RESULT (sub_dnMat_MINUS_R)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
 
@@ -1225,7 +1225,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                    real:                     some real number
 !! @param sub_R_MINUS_dnMat TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_R_MINUS_dnMat(R,dnMat) RESULT (sub_R_MINUS_dnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
 
@@ -1241,12 +1241,12 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
     CALL AD_alloc_dnMat(sub_R_MINUS_dnMat,nsurf_loc,nVar_loc,nderiv_loc,&
                          name_var='sub_R_MINUS_dnMat',name_sub=name_sub)
 
-    !write(out_unitp,*) 'nderiv',nderiv_loc
+    !write(out_unit,*) 'nderiv',nderiv_loc
     IF (nderiv_loc == 0) THEN
        sub_R_MINUS_dnMat%d0 = R - dnMat%d0
 
@@ -1267,9 +1267,9 @@ MODULE ADdnSVM_dnMat_m
        sub_R_MINUS_dnMat%d3 =   - dnMat%d3
 
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
 
@@ -1283,7 +1283,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param R                  real:                     exponent
 !! @param sub_dnMat_EXP_R TYPE (dnMat_t) (result):  dnMat derived type
   FUNCTION AD_sub_dnMat_EXP_R(dnMat,R) RESULT (sub_dnMat_EXP_R)
-    USE QDUtil_m, ONLY : Rkind, ONE, TWO, THREE, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, ONE, TWO, THREE, out_unit
     IMPLICIT NONE
 
 
@@ -1299,12 +1299,12 @@ MODULE ADdnSVM_dnMat_m
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
     CALL AD_alloc_dnMat(sub_dnMat_EXP_R,nsurf_loc,nVar_loc,            &
                 nderiv_loc,name_var='sub_dnMat_EXP_R',name_sub=name_sub)
 
-    !write(out_unitp,*) 'nderiv',nderiv_loc
+    !write(out_unit,*) 'nderiv',nderiv_loc
 
 
     IF (nderiv_loc == 0) THEN
@@ -1362,14 +1362,14 @@ MODULE ADdnSVM_dnMat_m
        END DO
 
     ELSE
-      write(out_unitp,*) ' ERROR in ',name_sub
-      write(out_unitp,*) ' nderiv > 3 is NOT possible',nderiv_loc
-      write(out_unitp,*) 'It should never append! Check the source'
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
   END FUNCTION AD_sub_dnMat_EXP_R
   FUNCTION AD_TRANSPOSE_dnMat(dnMat)  RESULT(TransdnMat) ! check with t(t(dnmat))-dnMat
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: TransdnMat
@@ -1383,7 +1383,7 @@ MODULE ADdnSVM_dnMat_m
     nsurf  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(TransdnMat)
 
@@ -1423,7 +1423,7 @@ MODULE ADdnSVM_dnMat_m
   END FUNCTION AD_TRANSPOSE_dnMat
 
   FUNCTION AD_SYM_dnMat(dnMat)  RESULT(SymdnMat) ! check with t(t(dnmat))-dnMat
-    USE QDUtil_m, ONLY : Rkind, HALF, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, HALF, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: SymdnMat
@@ -1437,7 +1437,7 @@ MODULE ADdnSVM_dnMat_m
     nsurf  = AD_get_nsurf_FROM_dnMat(dnMat)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(SymdnMat)
 
@@ -1477,7 +1477,7 @@ MODULE ADdnSVM_dnMat_m
   END FUNCTION AD_SYM_dnMat
 
   FUNCTION AD_MATMUL_dnMat1_dnMat2(dnMat1,dnMat2)  RESULT(MatmuldnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
     TYPE (dnMat_t)                :: MatmuldnMat
@@ -1493,7 +1493,7 @@ MODULE ADdnSVM_dnMat_m
     nVar   = min(AD_get_nVar_FROM_dnMat(dnMat1),  AD_get_nVar_FROM_dnMat(dnMat2))
 
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(MatmuldnMat)
 
@@ -1548,7 +1548,7 @@ MODULE ADdnSVM_dnMat_m
   END FUNCTION AD_MATMUL_dnMat1_dnMat2
 
   FUNCTION AD_MATMUL_dnMat1_Mat2(dnMat1,Mat2)  RESULT(MatmuldnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
 
@@ -1566,7 +1566,7 @@ MODULE ADdnSVM_dnMat_m
     nVar   = AD_get_nVar_FROM_dnMat(dnMat1)
 
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(MatmuldnMat)
 
@@ -1605,7 +1605,7 @@ MODULE ADdnSVM_dnMat_m
 
   END FUNCTION AD_MATMUL_dnMat1_Mat2
   FUNCTION AD_MATMUL_Mat1_dnMat2(Mat1,dnMat2)  RESULT(MatmuldnMat)
-    USE QDUtil_m, ONLY : Rkind, out_unitp => out_unit
+    USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
 
@@ -1623,7 +1623,7 @@ MODULE ADdnSVM_dnMat_m
     nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
 
 
-    !write(out_unitp,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(MatmuldnMat)
 
@@ -1667,10 +1667,10 @@ MODULE ADdnSVM_dnMat_m
 !! @date 03/08/2017
 !!
 !! @param Mat                TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
-!! @param nio                integer (optional):  when present unit to print S, otherwise it is the default unit:out_unitp
+!! @param nio                integer (optional):  when present unit to print S, otherwise it is the default unit:out_unit
   SUBROUTINE AD_Write_dnMat(Mat,nio,info)
-    USE QDUtil_m, ONLY : Rkind, Write_RVec => Write_Vec, Write_RMat => Write_Mat, &
-                         out_unitp => out_unit, RMatIO_format
+    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, &
+                         out_unit, RMatIO_format
     IMPLICIT NONE
 
     TYPE (dnMat_t),   intent(in)           :: Mat
@@ -1682,7 +1682,7 @@ MODULE ADdnSVM_dnMat_m
     IF (present(nio)) THEN
       nio_loc = nio
     ELSE
-      nio_loc = out_unitp
+      nio_loc = out_unit
     END IF
 
     nsurf_loc  = AD_get_nsurf_FROM_dnMat(Mat)
@@ -1695,12 +1695,12 @@ MODULE ADdnSVM_dnMat_m
 
       IF (allocated(Mat%d1)) THEN
         write(nio_loc,*) ' 1st derivative'
-        CALL Write_RVec(Mat%d1(1,1,:),nio_loc,5)
+        CALL Write_Vec(Mat%d1(1,1,:),nio_loc,5)
       END IF
 
       IF (allocated(Mat%d2)) THEN
         write(nio_loc,*) ' 2d derivative'
-        CALL Write_RMat(Mat%d2(1,1,:,:),nio_loc,5)
+        CALL Write_Mat(Mat%d2(1,1,:,:),nio_loc,5)
       END IF
       IF (allocated(Mat%d3)) THEN
         write(nio_loc,*) ' 3d derivative'
@@ -1719,7 +1719,7 @@ MODULE ADdnSVM_dnMat_m
          ELSE
            write(nio_loc,*) ' no derivative'
          END IF
-        CALL Write_RMat(Mat%d0,nio_loc,5)
+        CALL Write_Mat(Mat%d0,nio_loc,5)
       END IF
 
       IF (allocated(Mat%d1)) THEN
@@ -1729,7 +1729,7 @@ MODULE ADdnSVM_dnMat_m
           ELSE
             write(nio_loc,*) ' 1st derivative',i
           END IF
-          CALL Write_RMat(Mat%d1(:,:,i),nio_loc,5)
+          CALL Write_Mat(Mat%d1(:,:,i),nio_loc,5)
         END DO
       END IF
 
@@ -1741,7 +1741,7 @@ MODULE ADdnSVM_dnMat_m
           ELSE
             write(nio_loc,*) ' 2d derivative',j,i
           END IF
-          CALL Write_RMat(Mat%d2(:,:,j,i),nio_loc,5)
+          CALL Write_Mat(Mat%d2(:,:,j,i),nio_loc,5)
         END DO
         END DO
       END IF
@@ -1755,7 +1755,7 @@ MODULE ADdnSVM_dnMat_m
           ELSE
             write(nio_loc,*) ' 3d derivative',k,j,i
           END IF
-          CALL Write_RMat(Mat%d3(:,:,k,j,i),nio_loc,5)
+          CALL Write_Mat(Mat%d3(:,:,k,j,i),nio_loc,5)
         END DO
         END DO
         END DO
@@ -1771,7 +1771,7 @@ MODULE ADdnSVM_dnMat_m
 !! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
 !! @param get_nderiv_FROM_dnMat    integer  (result):  nderiv value, check against Mat%nederiv
   FUNCTION AD_get_nderiv_FROM_dnMat(Mat) RESULT(nderiv)
-    USE QDUtil_m, ONLY : out_unitp => out_unit
+    USE QDUtil_m, ONLY : out_unit
     IMPLICIT NONE
 
     integer                       :: nderiv
@@ -1792,8 +1792,8 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     IF (Mat%nderiv /= nderiv) THEN
-      write(out_unitp,*) ' ERROR in AD_get_nderiv_FROM_dnMat'
-      write(out_unitp,*) '  Problem with nderiv in Mat'
+      write(out_unit,*) ' ERROR in AD_get_nderiv_FROM_dnMat'
+      write(out_unit,*) '  Problem with nderiv in Mat'
       CALL AD_Write_dnMat(Mat)
       STOP 'ERROR in AD_get_nderiv_FROM_dnMat'
     END IF
@@ -2086,8 +2086,8 @@ MODULE ADdnSVM_dnMat_m
 
   SUBROUTINE AD_DIAG_dnMat(dnMat,dnMatDiag,dnVec,dnVecProj,dnVec0,type_diag)
     USE QDUtil_m, ONLY : Rkind, ONETENTH, ZERO, ONE, TEN, PI, &
-                         diagonalization, out_unitp => out_unit, &
-                         Write_RVec => Write_Vec, Write_RMat => Write_Mat
+                         diagonalization, out_unit, &
+                         Write_Vec, Write_Mat
     IMPLICIT NONE
 
 
@@ -2116,13 +2116,13 @@ MODULE ADdnSVM_dnMat_m
 !-----------------------------------------------------------
 
     IF (debug) THEN
-      write(out_unitp,*) ' BEGINNING ',name_sub
-      flush(out_unitp)
+      write(out_unit,*) ' BEGINNING ',name_sub
+      flush(out_unit)
     END IF
 
     type_diag_loc = 2
     IF (present(type_diag)) type_diag_loc = type_diag
-    IF (debug) write(out_unitp,*) 'type_diag',type_diag_loc
+    IF (debug) write(out_unit,*) 'type_diag',type_diag_loc
 
     nderiv = AD_get_nderiv_FROM_dnMat(dnMat)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat)
@@ -2149,26 +2149,26 @@ MODULE ADdnSVM_dnMat_m
     CALL diagonalization(dnMat%d0,Eig,Vec,nsurf,diago_type=type_diag_loc,sort=1,phase=.TRUE.)
 
     IF (present(dnVec0)) THEN
-      IF (debug) write(out_unitp,*) 'Vec0 is present: the eigenvector phases are checked'
-      flush(out_unitp)
+      IF (debug) write(out_unit,*) 'Vec0 is present: the eigenvector phases are checked'
+      flush(out_unit)
 
        DO i=1,nsurf
          IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
-            IF (debug) write(out_unitp,*) 'Change phase:',i
+            IF (debug) write(out_unit,*) 'Change phase:',i
             Vec(:,i) = -Vec(:,i)
           END IF
        END DO
 
        IF (debug) THEN
-         write(out_unitp,*) 'Vec before rotation'
-         CALL Write_RMat(Vec,nio=out_unitp,nbcol=5)
+         write(out_unit,*) 'Vec before rotation'
+         CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
        END IF
 
        !For degenerated eigenvectors (works only with 2 vectors)
        DO i=1,nsurf-1
          IF ( abs(Eig(i)-Eig(i+1)) < TEN*epsi) THEN
            j = i+1
-           IF (debug) write(out_unitp,*) 'degenerated vectors',i,j
+           IF (debug) write(out_unit,*) 'degenerated vectors',i,j
 
            aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
            aji = dot_product(dnVec0%d0(:,j),Vec(:,i))
@@ -2177,14 +2177,14 @@ MODULE ADdnSVM_dnMat_m
 
            !change the phase of one vector (i) if det(Mij)<0
            IF ((aii*ajj-aij*aji) < 0) THEN
-             IF (debug) write(out_unitp,*) 'det < 0',(aii*ajj-aij*aji)
+             IF (debug) write(out_unit,*) 'det < 0',(aii*ajj-aij*aji)
              Vec(:,i) = -Vec(:,i)
              aii = -aii
              aji = -aji
            ELSE
-             IF (debug) write(out_unitp,*) 'det > 0'
+             IF (debug) write(out_unit,*) 'det > 0'
            END IF
-           IF (debug) write(out_unitp,*) 'aii,ajj,aji,aij',aii,ajj,aji,aij
+           IF (debug) write(out_unit,*) 'aii,ajj,aji,aij',aii,ajj,aji,aij
 
            Mij(1,:) = [aii,aij]
            Mij(2,:) = [aji,ajj]
@@ -2199,14 +2199,14 @@ MODULE ADdnSVM_dnMat_m
 
            RMij = matmul(Rot,Mij)
            RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
-           IF (debug) write(out_unitp,*) 'RMij',RMij
+           IF (debug) write(out_unit,*) 'RMij',RMij
            err1 = sqrt(sum(RMij**2))
-           IF (debug) write(out_unitp,*) 'Err, th',th,err1
+           IF (debug) write(out_unit,*) 'Err, th',th,err1
            ! th+pi => Rot=-Rot
            RMij = -matmul(Rot,Mij) ; RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
-           IF (debug) write(out_unitp,*) 'RMij',RMij
+           IF (debug) write(out_unit,*) 'RMij',RMij
            err2 = sqrt(sum(RMij**2))
-           IF (debug) write(out_unitp,*) 'Err, th+pi',th+pi,err2
+           IF (debug) write(out_unit,*) 'Err, th+pi',th+pi,err2
 
            IF (err2 < err1) THEN
              th = th+pi
@@ -2214,7 +2214,7 @@ MODULE ADdnSVM_dnMat_m
              ss = -ss
            END IF
 
-           IF (debug) write(out_unitp,*) 'theta',th
+           IF (debug) write(out_unit,*) 'theta',th
 
            IF (abs(th) < epsi) CYCLE
 
@@ -2225,12 +2225,12 @@ MODULE ADdnSVM_dnMat_m
          END IF
        END DO
 
-       IF (debug) write(out_unitp,*) 'Change phase?'
-       flush(out_unitp)
+       IF (debug) write(out_unit,*) 'Change phase?'
+       flush(out_unit)
 
        DO i=1,nsurf
          IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
-            IF (debug) write(out_unitp,*) 'Change phase:',i
+            IF (debug) write(out_unit,*) 'Change phase:',i
             Vec(:,i) = -Vec(:,i)
           END IF
        END DO
@@ -2245,17 +2245,17 @@ MODULE ADdnSVM_dnMat_m
            max_diff = abs(aii-ONE)
            i_max    = i
          END IF
-         IF (debug) write(out_unitp,*) '<Vec0(:,i)|Vec(:,i)> :',i,aii
+         IF (debug) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',i,aii
        END DO
        IF (max_diff > 0.2_Rkind .OR. debug) THEN
-         write(out_unitp,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
-         write(out_unitp,*) 'Vec:'
-         CALL Write_RMat(Vec,nio=out_unitp,nbcol=5)
-         write(out_unitp,*) 'Vec0:'
-         CALL Write_RMat(dnVec0%d0,nio=out_unitp,nbcol=5)
+         write(out_unit,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
+         write(out_unit,*) 'Vec:'
+         CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
+         write(out_unit,*) 'Vec0:'
+         CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
        END IF
     ELSE
-      IF (debug) write(out_unitp,*) 'Vec0 is absent: the eigenvector phases are not checked'
+      IF (debug) write(out_unit,*) 'Vec0 is absent: the eigenvector phases are not checked'
     END IF
 
     tVec         = transpose(Vec)
@@ -2417,8 +2417,8 @@ MODULE ADdnSVM_dnMat_m
       IF (present(dnVecProj)) CALL AD_Write_dnMat(dnVecProj,info='dnVecProj')
       CALL AD_Write_dnMat(dnVec,info='dnVec')
       CALL AD_Write_dnMat(dnMatDiag,info='dnMatDiag')
-      write(out_unitp,*) ' END ',name_sub
-      flush(out_unitp)
+      write(out_unit,*) ' END ',name_sub
+      flush(out_unit)
     END IF
 
   END SUBROUTINE AD_DIAG_dnMat

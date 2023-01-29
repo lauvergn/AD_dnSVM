@@ -28,7 +28,7 @@
 !===============================================================================
 !!
 PROGRAM TEST_dnS
-  USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
+  USE QDUtil_m
   USE QDUtil_Test_m
   USE ADdnSVM_m
   IMPLICIT NONE
@@ -453,7 +453,7 @@ PROGRAM TEST_dnS
 
   IF (print_level > 0) THEN
     CALL Append_Test(test_var,'Jac(inew,iold)=[ dQinew/dQiold ]:',Print_res=.FALSE.)
-    CALL Write_RMat(JacNewOld,string=test_var%test_log,nbcol=5)
+    CALL Write_Mat(JacNewOld,string=test_var%test_log,nbcol=5)
     CALL Append_Test(test_var,'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]',Print_res=.FALSE.)
     CALL Append_Test(test_var,'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]',Print_res=.FALSE.)
   END IF
@@ -482,7 +482,7 @@ PROGRAM TEST_dnS
     CALL Write_dnS(Vec_dnS(2),info='Vec_dnS(2)')
     DO i=0,1
       DO j=2,3
-        write(out_unitp,*) 'Mat_dnS',i,j
+        write(out_unit,*) 'Mat_dnS',i,j
         CALL Write_dnS(Mat_dnS(i,j))
       END DO
     END DO
@@ -667,21 +667,21 @@ PROGRAM TEST_dnS
   FlatdnS_ref = [TWO,  ONE,ZERO,  ZERO,ZERO,ZERO,ZERO,  ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (nderiv=3)  ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   dnX         = Variable(TWO,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
   FlatdnS     = get_Flatten(dnX,all_der=.TRUE.)
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (all)       ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   FlatdnS     = get_Flatten(dnX,i_der=0)
   FlatdnS_ref = [TWO]
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d0)        ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
 
@@ -689,21 +689,21 @@ PROGRAM TEST_dnS
   FlatdnS_ref = [ONE,ZERO]
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d1)        ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   FlatdnS     = get_Flatten(dnX,i_der=2)
   FlatdnS_ref = [ZERO,ZERO,ZERO,ZERO]
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d2)        ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   FlatdnS     = get_Flatten(dnX,i_der=3)
   FlatdnS_ref = [ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (%d3)        ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   nderiv = 2
@@ -712,14 +712,14 @@ PROGRAM TEST_dnS
   FlatdnS_ref = [TWO,  ONE,ZERO,  ZERO,ZERO,ZERO,ZERO]
   res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (nderiv=2)   ==0?')
-  write(out_unitp,*) 'FlatdnS',FlatdnS
+  write(out_unit,*) 'FlatdnS',FlatdnS
   CALL Flush_Test(test_var)
 
   CALL dealloc_dnS(dnX)
   FlatdnS     = get_Flatten(dnX)
   res_test    = (size(FlatdnS) == 0)
   CALL Logical_Test(test_var,test1=res_test,info='size(FlatdnS)   ==0?')
-  write(out_unitp,*) 'size FlatdnS',size(FlatdnS)
+  write(out_unit,*) 'size FlatdnS',size(FlatdnS)
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
@@ -747,10 +747,10 @@ CONTAINS
     logical, parameter :: debug = .FALSE.
 
     IF (COMMAND_ARGUMENT_COUNT() /= 0 .AND. COMMAND_ARGUMENT_COUNT() /= 2) THEN
-      write(out_unitp,*) ' ERROR in read_arg'
-      write(out_unitp,*) ' Wrong ',name_sub,' argument number!'
-      write(out_unitp,*) 'argument number',COMMAND_ARGUMENT_COUNT()
-      write(out_unitp,*) ' You can have 0 or 2 arguments.'
+      write(out_unit,*) ' ERROR in read_arg'
+      write(out_unit,*) ' Wrong ',name_sub,' argument number!'
+      write(out_unit,*) 'argument number',COMMAND_ARGUMENT_COUNT()
+      write(out_unit,*) ' You can have 0 or 2 arguments.'
       STOP 'Wrong TEST_dnS argument number'
     END IF
 
@@ -771,21 +771,21 @@ CONTAINS
         CALL set_print_level(prt_lev)
 
       CASE Default
-        write(out_unitp,*) ' ERROR in read_arg'
-        write(out_unitp,*) ' Wrong ',name_sub,' argument!'
-        write(out_unitp,*) '   arg: "',arg,'"'
-        write(out_unitp,*) ' The possibilities are:'
-        write(out_unitp,*) '    -p or --print'
+        write(out_unit,*) ' ERROR in read_arg'
+        write(out_unit,*) ' Wrong ',name_sub,' argument!'
+        write(out_unit,*) '   arg: "',arg,'"'
+        write(out_unit,*) ' The possibilities are:'
+        write(out_unit,*) '    -p or --print'
         STOP 'Wrong TEST_dnS argument(s)'
       END SELECT
 
-      IF (print_level > 0) write(out_unitp,*) 'Argument number: ',iarg,' ==> arg: "',arg,'", arg2: "',arg2,'"'
+      IF (print_level > 0) write(out_unit,*) 'Argument number: ',iarg,' ==> arg: "',arg,'", arg2: "',arg2,'"'
 
       deallocate(arg)
       deallocate(arg2)
     END DO
-    IF (print_level > 0) write(out_unitp,*) '=================================='
-    flush(out_unitp)
+    IF (print_level > 0) write(out_unit,*) '=================================='
+    flush(out_unit)
 
   END SUBROUTINE read_arg
 

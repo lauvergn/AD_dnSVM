@@ -54,7 +54,7 @@
 !! @date 03/08/2017
 !!
 PROGRAM Example_dnS
-  USE QDUtil_m, out_unitp => out_unit, Write_RMat => Write_Mat
+  USE QDUtil_m
   USE ADdnSVM_m
   IMPLICIT NONE
 
@@ -68,7 +68,7 @@ PROGRAM Example_dnS
   character (len=*), parameter :: name_sub='Example_dnS'
 
 
-  write(out_unitp,'(a)') "== Example_dnS =="
+  write(out_unit,'(a)') "== Example_dnS =="
 
   Vec = Variable([HALF,ONE,TWO], nderiv=1 )
 
@@ -81,35 +81,35 @@ PROGRAM Example_dnS
 
   CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945')
 
-  write(out_unitp,'(a)') "== Jacobian matrix (polar transformation) =="
+  write(out_unit,'(a)') "== Jacobian matrix (polar transformation) =="
   r  = Variable( Val=TWO,  nVar=2, iVar=1, nderiv=1 )
   th = Variable( Val=Pi/3, nVar=2, iVar=2, nderiv=1 )
 
   x = r*cos(th)
   y = r*sin(th)
-  write(out_unitp,*) '[dx/dr, dx/dth]:',get_d1(x)
-  write(out_unitp,*) '[dy/dr, dy/dth]:',get_d1(y)
+  write(out_unit,*) '[dx/dr, dx/dth]:',get_d1(x)
+  write(out_unit,*) '[dy/dr, dy/dth]:',get_d1(y)
 
   Vec   = Variable([TWO,Pi/3], nderiv=1 ) ! Vec(1) : r, Vec(2) : th
   VecXY = Vec(1)*[cos(Vec(2)),sin(Vec(2))] ! polar transformation
 
 
-  write(out_unitp,*) 'Jac(inew,iold)=[ dQinew/dQiold ]:'
+  write(out_unit,*) 'Jac(inew,iold)=[ dQinew/dQiold ]:'
   JacNewOld = get_Jacobian( VecXY )
-  CALL Write_RMat(JacNewOld,out_unitp,5)
+  CALL Write_Mat(JacNewOld,out_unit,5)
 
-  write(out_unitp,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
-  write(out_unitp,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
+  write(out_unit,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
+  write(out_unit,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
 
 
-  write(out_unitp,*) '== Box(x,i) [0,Pi] =='
-  write(out_unitp,*) ' [sin(x)/sqrt(pi/2), sin(2x)/sqrt(pi/2), sin(3x)/sqrt(pi/2) ...]'
-  write(out_unitp,*) ' x = 0.5'
+  write(out_unit,*) '== Box(x,i) [0,Pi] =='
+  write(out_unit,*) ' [sin(x)/sqrt(pi/2), sin(2x)/sqrt(pi/2), sin(3x)/sqrt(pi/2) ...]'
+  write(out_unit,*) ' x = 0.5'
 
   X   = Variable(Val=HALF, nderiv=1 )
   Vec = dnBox(X,[1,2,3,4,5,6])
   DO i=1,size(Vec)
-    CALL Write_dnS(Vec(i),out_unitp,info='dnBox_' // int_TO_char(i))
+    CALL Write_dnS(Vec(i),out_unit,info='dnBox_' // int_TO_char(i))
   END DO
 
 END PROGRAM Example_dnS
