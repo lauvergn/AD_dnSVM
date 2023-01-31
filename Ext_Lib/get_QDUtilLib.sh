@@ -14,7 +14,7 @@ rm -rf $BaseName* #always remove the link
 
 
 #latest release
- version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.7.zip
+ version=https://github.com/lauvergn/QDUtilLib/archive/refs/tags/v0.10-dev.zip
 #latest HEAD version
 #version=https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 
