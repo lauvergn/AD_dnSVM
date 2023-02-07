@@ -85,7 +85,7 @@ MODULE ADdnSVM_dnS_m
 !! @param d2                      real:    2d  order derivative (hessian: matrix of nVar*nVar derivatives)
 !! @param d3                      real:    3d  order derivative (nVar*nVar*nVar derivatives)
 
-    integer:: AD_dnS_test = 0
+  integer:: AD_dnS_test = 0
 
 
   TYPE, PUBLIC :: dnS_t
@@ -886,7 +886,7 @@ CONTAINS
 !! @param info               character (optional): when present, write info
 !! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnS)
 !! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnS_FOR_test)
-  SUBROUTINE AD_Write_dnS_file(S,nio,info,all_type,FOR_test,Rfmt)
+  SUBROUTINE AD_Write_dnS_file(S,nio,info,all_type,FOR_test,Rfmt,nderiv)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
@@ -895,8 +895,10 @@ CONTAINS
     character(len=*), intent(in), optional :: info
     logical,          intent(in), optional :: all_type,FOR_test
     character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
 
-    integer :: i,j,k,nio_loc,nVar
+
+    integer :: i,j,k,nio_loc,nderiv_loc,nVar
     logical :: all_type_loc,FOR_test_loc
     character (len=:), allocatable :: fformat,Rfmt_loc
 
@@ -911,26 +913,29 @@ CONTAINS
     FOR_test_loc = .FALSE.
     IF (present(FOR_test)) FOR_test_loc = FOR_test
 
+    nderiv_loc = S%nderiv
+    IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
+
     IF (all_type_loc) THEN ! write all variables
       IF (present(info)) write(nio_loc,*) info
       write(nio_loc,*) '-------------------------------------------'
       write(nio_loc,*) 'Write_dnS (all)'
       write(nio_loc,*) 'nderiv',S%nderiv
       write(nio_loc,*) 'S%d0',S%d0
-      IF (allocated(S%d1)) THEN
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
         write(nio_loc,*) 'S%d1:',S%d1
       ELSE
-        write(nio_loc,*) 'S%d1: not allocated'
+        write(nio_loc,*) 'S%d1: not allocated or not printed'
       END IF
-      IF (allocated(S%d2)) THEN
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
         write(nio_loc,*) 'S%d2:',S%d2
       ELSE
-        write(nio_loc,*) 'S%d2: not allocated'
+        write(nio_loc,*) 'S%d2: not allocated or not printed'
       END IF
-      IF (allocated(S%d3)) THEN
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
         write(nio_loc,*) 'S%d3:',S%d3
       ELSE
-        write(nio_loc,*) 'S%d3: not allocated'
+        write(nio_loc,*) 'S%d3: not allocated or not printed'
       END IF
       write(nio_loc,*) 'END Write_dnS (all)'
       write(nio_loc,*) '-------------------------------------------'
@@ -944,17 +949,17 @@ CONTAINS
       write(nio_loc,*) 'S%d0'
       write(nio_loc,*) 1
       write(nio_loc,*) S%d0
-      IF (allocated(S%d1)) THEN
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
         write(nio_loc,*) 'S%d1'
         write(nio_loc,*) size(S%d1)
         write(nio_loc,*) S%d1
       END IF
-      IF (allocated(S%d2)) THEN
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
         write(nio_loc,*) 'S%d2'
         write(nio_loc,*) size(S%d2)
         write(nio_loc,*) S%d2
       END IF
-      IF (allocated(S%d3)) THEN
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
         write(nio_loc,*) 'S%d3'
         write(nio_loc,*) size(S%d3)
         write(nio_loc,*) S%d3
@@ -975,7 +980,7 @@ CONTAINS
       fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
       write(nio_loc,fformat) ' 0   derivative',S%d0
 
-      IF (allocated(S%d1)) THEN
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
         IF (nVar > 99) THEN
           fformat = '(a,(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
@@ -986,7 +991,7 @@ CONTAINS
           write(nio_loc,fformat) ' 1st derivative',i,S%d1(i)
         END DO
       END IF
-      IF (allocated(S%d2)) THEN
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
         IF (nVar > 99) THEN
           fformat = '(a,2(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
@@ -998,7 +1003,7 @@ CONTAINS
         END DO
         END DO
       END IF
-      IF (allocated(S%d3)) THEN
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
         IF (nVar > 99) THEN
           fformat = '(a,3(1x,i0),1x,sp,' // Rfmt_loc // ')'
         ELSE
@@ -1015,7 +1020,7 @@ CONTAINS
     END IF
 
   END SUBROUTINE AD_Write_dnS_file
-  SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt)
+  SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt,nderiv)
     USE QDUtil_m, ONLY : Rkind, TO_string, out_unit
     IMPLICIT NONE
 
@@ -1024,8 +1029,9 @@ CONTAINS
     character(len=*), intent(in), optional :: info
     logical,          intent(in), optional :: all_type,FOR_test
     character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
 
-    integer :: i,j,k
+    integer :: i,j,k,nderiv_loc
     logical :: all_type_loc,FOR_test_loc
     character (len=:), allocatable :: fformat,Rfmt_loc
 
@@ -1036,22 +1042,25 @@ CONTAINS
     FOR_test_loc = .FALSE.
     IF (present(FOR_test)) FOR_test_loc = FOR_test
 
+    nderiv_loc = S%nderiv
+    IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
+
     IF (all_type_loc) THEN ! write all variables
       IF (present(info)) string = string // info // new_line('a')
       string = string // '-------------------------------------------' // new_line('a') // &
          'Write_dnS (all)' // new_line('a') //                                  &
          'nderiv' // TO_string(S%nderiv) // new_line('a') //                  &
          'S%d0' // TO_string(S%d0) // new_line('a')
-      IF (allocated(S%d1)) THEN
+      IF (allocated(S%d1) .AND. nderiv_loc > 0 ) THEN
         string = string // 'S%d1:'
         DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
           string = string // ' ' // TO_string(S%d1(i))
         END DO
         string = string // new_line('a')
       ELSE
-        string = string // 'S%d1: not allocated' // new_line('a')
+        string = string // 'S%d1: not allocated or not printed' // new_line('a')
       END IF
-      IF (allocated(S%d2)) THEN
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
         string = string // 'S%d2:'
         DO j=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
         DO i=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
@@ -1060,9 +1069,9 @@ CONTAINS
         END DO
         string = string // new_line('a')
       ELSE
-        string = string // 'S%d2: not allocated' // new_line('a')
+        string = string // 'S%d2: not allocated or not printed' // new_line('a')
       END IF
-      IF (allocated(S%d3)) THEN
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
         string = string // 'S%d3:'
         DO k=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
         DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
@@ -1073,7 +1082,7 @@ CONTAINS
         END DO
         string = string // new_line('a')
       ELSE
-        string = string // 'S%d3: not allocated' // new_line('a')
+        string = string // 'S%d3: not allocated or not printed' // new_line('a')
       END IF
       string = string // 'END Write_dnS (all)' // new_line('a') //              &
             '-------------------------------------------' // new_line('a')

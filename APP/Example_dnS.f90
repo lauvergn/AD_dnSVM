@@ -61,6 +61,8 @@ PROGRAM Example_dnS
   TYPE (dnS_t)                  :: X,Y,Z,f,r,th
   TYPE (dnS_t),     allocatable :: Vec(:),VecXY(:)
   real(kind=Rkind), allocatable :: JacNewOld(:,:) ! JacNewOld(iN,iO). iN and iO are the index of the new and old coordinates
+  real(kind=Rkind), allocatable :: DeltaQ(:),Q(:)
+  real(kind=Rkind) :: ValExact,ValTayl
 
   integer                     :: i
   integer                     :: nderiv = 1
@@ -70,16 +72,37 @@ PROGRAM Example_dnS
 
   write(out_unit,'(a)') "== Example_dnS =="
 
-  Vec = Variable([HALF,ONE,TWO], nderiv=1 )
+  Vec = Variable([HALF,ONE,TWO], nderiv=3)
 
 
-  CALL Write_dnS(Vec(1),info='X: 1st variable. Value: 0.5')
-  CALL Write_dnS(Vec(2),info='Y: 2d  variable. Value: 1.0')
-  CALL Write_dnS(Vec(3),info='Z: 3d  variable. Value: 2.0')
+  CALL Write_dnS(Vec(1),info='X: 1st variable. Value: 0.5',nderiv=1)
+  CALL Write_dnS(Vec(2),info='Y: 2d  variable. Value: 1.0',nderiv=1)
+  CALL Write_dnS(Vec(3),info='Z: 3d  variable. Value: 2.0',nderiv=1)
 
   f = ONE + cos(Vec(1))**2 + sin(Vec(2)*Vec(3))
 
-  CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945')
+  CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945',nderiv=1)
+
+  write(out_unit,*)
+  write(out_unit,*)
+  write(out_unit,*) 'Talylor expansion:'
+  Q = get_d0(Vec)
+  deltaQ = [ONE,ONE,ONE]*ONETENTH**2
+  Q = Q + deltaQ
+
+  ValExact = (ONE + cos(Q(1))**2 + sin(Q(2)*Q(3)))
+  write(out_unit,*) 'Val (exact)',ValExact
+
+  ValTayl = TO_Taylor(f,DeltaQ,nderiv=0)
+  write(out_unit,*) 'Val (order 0), diff', ValTayl,ValExact-ValTayl
+  ValTayl = TO_Taylor(f,DeltaQ,nderiv=1)
+  write(out_unit,*) 'Val (order 1), diff', ValTayl,ValExact-ValTayl
+  ValTayl = TO_Taylor(f,DeltaQ,nderiv=2)
+  write(out_unit,*) 'Val (order 2), diff', ValTayl,ValExact-ValTayl
+  ValTayl = TO_Taylor(f,DeltaQ,nderiv=3)
+  write(out_unit,*) 'Val (order 3), diff', ValTayl,ValExact-ValTayl
+  write(out_unit,*)
+  write(out_unit,*)
 
   write(out_unit,'(a)') "== Jacobian matrix (polar transformation) =="
   r  = Variable( Val=TWO,  nVar=2, iVar=1, nderiv=1 )
