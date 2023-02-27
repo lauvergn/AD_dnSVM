@@ -236,6 +236,7 @@ zip: cleanall
 	cp -r * $(ExtLibSAVEDIR)/$(BaseName)_devloc
 	cd $(ExtLibSAVEDIR) ; zip -r Save_$(BaseName)_devloc.zip $(BaseName)_devloc
 	cd $(ExtLibSAVEDIR) ; rm -rf $(BaseName)_devloc
+	cd $(ExtLibSAVEDIR) ; ./cp_AD_dnSVM.sh
 	@echo "  done zip"
 #===============================================
 #===============================================
