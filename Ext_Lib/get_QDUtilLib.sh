@@ -9,6 +9,10 @@ echo "In get_"$BaseName".sh"
 SAVE_version="Save_"$BaseName"_devloc"
 LOC_version=$BaseName
 
+if (test -d $LOC_version) then
+  echo $LOC_version directory exist
+  exit 0
+fi
 
 rm -rf $BaseName* #always remove the link
 
