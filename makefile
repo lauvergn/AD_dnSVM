@@ -305,8 +305,12 @@ ifeq ($(FFC),ifort)
   FFLAGS += -I$(QDMOD_DIR)
 
   FLIB    = $(QDLIBA)
+
   ifeq ($(LLAPACK),1)
-    FLIB += -mkl -lpthread
+    #FLIB += -mkl -lpthread
+    #FLIB += -qmkl -lpthread
+    FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
+             ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
   else
     FLIB += -lpthread
   endif
