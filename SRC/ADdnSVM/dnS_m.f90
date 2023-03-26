@@ -498,47 +498,109 @@ CONTAINS
   !! @param nVar               integer (optional):    number of variables (coordiantes) for the derivatives.
   !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
   !! @param iVar                 integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
-    FUNCTION AD_init_Tab_OF_dnS(TabVal,nderiv) RESULT(TabdnS)
+  FUNCTION AD_init_Tab_OF_dnS_old(TabVal,nderiv) RESULT(TabdnS)
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnS_t), ALLOCATABLE        :: TabdnS(:)
+    real (kind=Rkind), intent(in)    :: TabVal(:)
+    integer, optional, intent(in)    :: nderiv
+
+    integer :: err_dnS_loc
+    character (len=*), parameter :: name_sub='AD_init_Tab_OF_dnS_old'
+
+    integer :: nVar,iVar,nderiv_loc,i
+
+
+    nVar = size(TabVal)
+    IF (nVar < 1) RETURN
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+    ELSE
+      nderiv_loc = 0
+    END IF
+
+    allocate(TabdnS(nVar))
+
+    DO iVar=1,nVar
+      CALL AD_alloc_dnS(TabdnS(iVar),nVar,nderiv_loc,err_dnS_loc)
+      IF (err_dnS_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' Problem in alloc_dnS CALL'
+        STOP 'Problem Problem in AD_alloc_dnS CALL in AD_init_Tab_OF_dnS'
+      END IF
+
+      TabdnS(iVar) = ZERO
+
+      TabdnS(iVar)%d0 = TabVal(iVar)
+      IF (nderiv_loc > 0) TabdnS(iVar)%d1(iVar) = ONE
+    END DO
+
+  END FUNCTION AD_init_Tab_OF_dnS_old
+  FUNCTION AD_init_Tab_OF_dnS(TabVal,nVar,nderiv,iVar) RESULT(TabdnS)
       USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
       IMPLICIT NONE
 
       TYPE (dnS_t), ALLOCATABLE        :: TabdnS(:)
       real (kind=Rkind), intent(in)    :: TabVal(:)
-      integer, optional, intent(in)    :: nderiv
+      integer, optional, intent(in)    :: nderiv,nVar
+      integer, optional, intent(in)    :: iVar(:)
 
       integer :: err_dnS_loc
       character (len=*), parameter :: name_sub='AD_init_Tab_OF_dnS'
 
-      integer :: nVar,iVar,nderiv_loc,i
+    integer :: nVar_loc,nderiv_loc,iV,nVec
 
+    nVec = size(TabVal)
 
-      nVar = size(TabVal)
-      IF (nVar < 1) RETURN
-
-      ! test nderiv
-      IF (present(nderiv)) THEN
-        nderiv_loc = max(0,nderiv)
-      ELSE
-        nderiv_loc = 0
+    IF (present(nVar)) THEN
+      IF (nVar < nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' nVar is present and < size(TabVal)'
+        write(out_unit,*) ' nVar        ',nVar
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_Tab_OF_dnS: nVar is present and < size(TabVal) '
       END IF
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = nVec
+    END IF
+    IF (nVar_loc < 1) RETURN
 
-      allocate(TabdnS(nVar))
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+    ELSE
+      nderiv_loc = 0
+    END IF
 
-      DO iVar=1,nVar
-        CALL AD_alloc_dnS(TabdnS(iVar),nVar,nderiv_loc,err_dnS_loc)
-        IF (err_dnS_loc /= 0) THEN
-          write(out_unit,*) ' ERROR in ',name_sub
-          write(out_unit,*) ' Problem in alloc_dnS CALL'
-          STOP 'Problem Problem in AD_alloc_dnS CALL in AD_init_Tab_OF_dnS'
-        END IF
+    IF (present(iVar)) THEN
+      IF (size(iVar) /= nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' iVar(:) is present and sizes of TabVal and ivar are different'
+        write(out_unit,*) ' size(iVar)  ',size(iVar)
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_Tab_OF_dnS: size(iVar) /= size(TabVal) '
+      END IF
+    END IF
 
-        TabdnS(iVar) = ZERO
+    allocate(TabdnS(nVec))
 
-        TabdnS(iVar)%d0 = TabVal(iVar)
-        IF (nderiv_loc > 0) TabdnS(iVar)%d1(iVar) = ONE
+    IF (present(iVar)) THEN
+      DO iV=1,nVec
+        TabdnS(iV) = Variable(TabVal(iV),nVar=nVar_loc,nderiv=nderiv_loc,iVar=iVar(iV))
       END DO
+    ELSE
+      DO iV=1,nVec
+        TabdnS(iV) = Variable(TabVal(iV),nVar=nVar_loc,nderiv=nderiv_loc,iVar=iV)
+      END DO
+    END IF
 
-    END FUNCTION AD_init_Tab_OF_dnS
+  END FUNCTION AD_init_Tab_OF_dnS
 !> @brief Public subroutine which initializes a derived type dnS.
 !!
 !> @author David Lauvergnat

@@ -432,7 +432,46 @@ PROGRAM TEST_dnS
     CALL Write_dnS(Vec_dnS(3),string=test_var%test_log,info='Vec_dnS(3)')
     CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
   END IF
+  CALL Flush_Test(test_var)
 
+  write(6,*) 'coucou' ; flush(6)
+  Vec_dnS = Variable([x,ZERO],nVar=3,iVar=[1,2],nderiv=nderiv)
+  dnZ =     Variable(z,nVar=3,iVar=3,nderiv=nderiv)
+
+  Sana    = Vec_dnS(1)*dnZ ! It is equivalent to a 3D function f(x,y,z) = x*z
+  CALL set_dnS(dnXZ,d0=     x*z,                             &
+                    d1=        [z,   ZERO,x],                &
+                    d2=reshape([ZERO,ZERO,ONE,               &
+                                ZERO,ZERO,ZERO,              &
+                                ONE, ZERO,ZERO],shape=[3,3]))
+
+  res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='Vec_dnS(1)*Vec_dnS(3)-dnS_Result==0?')
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Vec_dnS(1),string=test_var%test_log,info='Vec_dnS(1)')
+    CALL Write_dnS(dnZ,string=test_var%test_log,info='dnZ')
+    CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
+  END IF
+
+
+  write(6,*) 'coucou2' ; flush(6)
+  Vec_dnS = Variable([x,ZERO],nVar=3,nderiv=nderiv)
+  dnZ =     Variable(z,nVar=3,iVar=3,nderiv=nderiv)
+
+  Sana    = Vec_dnS(1)*dnZ ! It is equivalent to a 3D function f(x,y,z) = x*z
+  CALL set_dnS(dnXZ,d0=     x*z,                             &
+                    d1=        [z,   ZERO,x],                &
+                    d2=reshape([ZERO,ZERO,ONE,               &
+                                ZERO,ZERO,ZERO,              &
+                                ONE, ZERO,ZERO],shape=[3,3]))
+
+  res_test = AD_Check_dnS_IS_ZERO(Sana-dnXZ,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='Vec_dnS(1)*Vec_dnS(3)-dnS_Result==0?')
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Vec_dnS(1),string=test_var%test_log,info='Vec_dnS(1)')
+    CALL Write_dnS(dnZ,string=test_var%test_log,info='dnZ')
+    CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
+  END IF
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')
@@ -768,7 +807,7 @@ CONTAINS
       SELECT CASE(arg)
       CASE("-p","--print")
         read(arg2,*) prt_lev
-        CALL set_print_level(prt_lev)
+        CALL set_print_level(prt_lev,force=.TRUE.)
 
       CASE Default
         write(out_unit,*) ' ERROR in read_arg'

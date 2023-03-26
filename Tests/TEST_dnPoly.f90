@@ -289,7 +289,7 @@ CONTAINS
       SELECT CASE(arg)
       CASE("-p","--print")
         read(arg2,*) prt_lev
-        CALL set_print_level(prt_lev)
+        CALL set_print_level(prt_lev,force=.TRUE.)
       CASE Default
         write(out_unit,*) ' ERROR in read_arg'
         write(out_unit,*) ' Wrong TEST_dnPoly argument!'

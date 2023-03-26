@@ -88,6 +88,22 @@ Instead of several variable initializations, one can initialize a vector:
   JacNewOld = get_Jacobian( VecNew )                  ! JacNewOld(inew,iold)=[ dQinew/dQiold ]
 ```
 
+The vector intialization has optional arguments:
+
+- `nVar`: the total number of the independent variables. It must be larger or equal to the vector size.
+- `iVar(:)`: a table with the indices of the the independent variables. It size must be equal to the the vector size.
+
+```Fortran
+  VecOld = Variable([r,th], nVar=3, iVar=[1,2], nderiv=2 )
+```
+
+### 1c) Special functions/subroutines
+
+- Subroutine `set_dnS(S,d0,d1,d2,d3)`to set the corresponding derivatives of `S` (`dnS_t`). `d0` is real (scalar), `d1` is a vector of real, `d2` is a matrix of real and `d3` has a rank 3. `d0`, `d1`, `d2` and `d3` are optional. `nderiv` is defined accordingly to the presence of  `d0`, `d1`, `d2` or `d3`.
+
+- Functions `get_d0`, `get_d1`, `get_d2` and `get_d3` to get, respectively, the corresponding derivatives, `dnS%d0`, `dnS%d1(:)`, `dnS%d2(:,:)` and `dnS%d3(:,:,:)`.
+- Function `get_Flatten` to get all `dnS` derivatives (`dnS%d0`, `dnS%d1(:)` ...) in a single real vector.
+
 ## 2) Installation
 
 ### a) With fpm:

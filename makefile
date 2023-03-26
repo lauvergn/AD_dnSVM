@@ -15,7 +15,7 @@ OPT = 1
 OMP = 1
 ## Lapack/blas/mkl? Empty: default with Lapack; 0: without Lapack; 1 with Lapack
 LAPACK = 1
-## how to get external libraries;  "loc" (default): from local zip file, Empty or something else (v0.5): from github
+## how to get external libraries;  "loc" (default): from local zip file, Empty or something else, from github
 EXTLIB_TYPE = loc
 #=================================================================================
 ifeq ($(FC),)
@@ -231,11 +231,7 @@ BaseName := AD_dnSVM
 .PHONY: zip
 zip: cleanall
 	test -d $(ExtLibSAVEDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
-	cd $(ExtLibSAVEDIR) ; rm -rf $(BaseName)_devloc
-	mkdir $(ExtLibSAVEDIR)/$(BaseName)_devloc
-	cp -r * $(ExtLibSAVEDIR)/$(BaseName)_devloc
-	cd $(ExtLibSAVEDIR) ; zip -r Save_$(BaseName)_devloc.zip $(BaseName)_devloc
-	cd $(ExtLibSAVEDIR) ; rm -rf $(BaseName)_devloc
+	$(ExtLibSAVEDIR)/makezip.sh $(BaseName)
 	cd $(ExtLibSAVEDIR) ; ./cp_AD_dnSVM.sh
 	@echo "  done zip"
 #===============================================
