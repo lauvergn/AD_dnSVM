@@ -195,7 +195,7 @@ MODULE ADdnSVM_dnS_m
      MODULE PROCEDURE AD_dealloc_dnS
   END INTERFACE
   INTERFACE set_dnS
-     MODULE PROCEDURE AD_set_dnS
+     MODULE PROCEDURE AD_set_dnS,AD_set_dnS_with_ider
   END INTERFACE
   INTERFACE Write_dnS
      MODULE PROCEDURE AD_Write_dnS_file,AD_Write_dnS_string
@@ -207,7 +207,7 @@ MODULE ADdnSVM_dnS_m
      MODULE PROCEDURE AD_get_nVar_FROM_dnS
   END INTERFACE
   INTERFACE sub_get_dn
-     MODULE PROCEDURE AD_sub_get_dn_FROM_dnS
+     MODULE PROCEDURE AD_get_dn_FROM_dnS
   END INTERFACE
   INTERFACE get_d0
      MODULE PROCEDURE AD_get_d0_FROM_dnS
@@ -661,6 +661,60 @@ CONTAINS
     END IF
 
   END SUBROUTINE AD_set_dnS
+  SUBROUTINE AD_set_dnS_with_ider(S,val,ider)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    real (kind=Rkind),   intent(in)     :: val
+    integer,             intent(in)     :: ider(:)
+
+    TYPE (dnS_t),        intent(inout)  :: S
+
+    integer :: nderiv,i1,i2,i3
+
+    character (len=*), parameter :: name_sub='AD_set_dnS_with_ider'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+
+    IF (debug) THEN
+      write(out_unit,*) ' BEGINNNING ',name_sub
+      write(out_unit,*) ' val ',val
+      write(out_unit,*) ' ider ',ider
+      flush(out_unit)
+   END IF
+
+    nderiv = count(ider > 0)
+    IF (debug) write(out_unit,*) ' nderiv ',nderiv
+
+    IF (size(ider) /= nderiv .AND. nderiv > 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' incompatible ider(:) values. ider(:)',ider
+      write(out_unit,*) ' no zero or negative values are possible'
+      write(out_unit,*) ' Except ider = [0] for nderiv=0'
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_set_dnS_with_ider: incompatible ider(:) values'
+    END IF
+
+    SELECT CASE (nderiv)
+    CASE (0)
+      S%d0                          = val
+    CASE (1)
+      S%d1(ider(1))                 = val
+    CASE (2)
+      S%d2(ider(1),ider(2))         = val
+    CASE (3)
+      S%d3(ider(1),ider(2),ider(3)) = val
+    CASE Default
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' incompatible ider(:) values. ider(:)',ider
+      write(out_unit,*) ' more than 3 values (nderiv >3)'
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_set_dnS_with_ider: incompatible ider(:) values'
+    END SELECT
+
+    IF (debug) write(out_unit,*) ' END ',name_sub 
+
+  END SUBROUTINE AD_set_dnS_with_ider
   SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1(S1,S2,list_act)
     USE QDUtil_m, ONLY : out_unit
     IMPLICIT NONE
@@ -903,14 +957,14 @@ CONTAINS
   !!
   !! @param S                  TYPE (dnS_t):          derived type which deals with the derivatives of a scalar functions.
   !! @param d0,d1,d2,d3                 real:         NOT allocatable
-  SUBROUTINE AD_sub_get_dn_FROM_dnS(S,d0,d1,d2,d3)
+  SUBROUTINE AD_get_dn_FROM_dnS(S,d0,d1,d2,d3)
     USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
     IMPLICIT NONE
 
       TYPE (dnS_t),        intent(in)              :: S
       real (kind=Rkind),   intent(inout), optional :: d0,d1(:),d2(:,:),d3(:,:,:)
 
-      character (len=*), parameter :: name_sub='AD_sub_get_dn_FROM_dnS'
+      character (len=*), parameter :: name_sub='AD_get_dn_FROM_dnS'
 
       IF (present(d0)) THEN
         d0 = S%d0
@@ -937,7 +991,7 @@ CONTAINS
         END IF
       END IF
 
-  END SUBROUTINE AD_sub_get_dn_FROM_dnS
+  END SUBROUTINE AD_get_dn_FROM_dnS
 !> @brief Public subroutine which prints a derived type dnS.
 !!
 !> @author David Lauvergnat

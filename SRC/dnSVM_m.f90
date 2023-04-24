@@ -38,6 +38,7 @@ MODULE ADdnSVM_m
   USE ADdnSVM_dnFunc_m
   USE ADdnSVM_dnS_Op_m
   USE ADdnSVM_dnMat_m
+  USE ADdnSVM_dnVec_m
   IMPLICIT NONE
 
   PRIVATE ADdnSVM_dnS_TO_TaylorDeltaQ, ADdnSVM_dnS_TO_TaylordnDeltaQ

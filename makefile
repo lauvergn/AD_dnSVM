@@ -138,7 +138,7 @@ $(info ***********************************************************************)
 
 VPATH = $(MAIN_DIR):$(TESTS_DIR):$(SRC_DIR):$(SRC_DIR)/ADdnSVM
 
-SRCFILES=dnSVM_m.f90 dnMat_m.f90 dnFunc_m.f90 dnPoly_m.f90 dnS_Op_m.f90 dnS_m.f90
+SRCFILES=dnSVM_m.f90 dnMat_m.f90 dnVec_m.f90 dnFunc_m.f90 dnPoly_m.f90 dnS_Op_m.f90 dnS_m.f90
 
 OBJ0=${SRCFILES:.f90=.o}
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -147,6 +147,8 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 #
 TEST_dnSEXE    = Test_dnS.x
 TEST_dnPolyEXE = Test_dnPoly.x
+TEST_dnVecEXE  = Test_dnVec.x
+
 EXA_dnSEXE     = Exa_dnS.x
 LIBADshort     = libAD_dnSVM
 LIBAD          = libAD_dnSVM$(ext_obj)
@@ -177,6 +179,13 @@ dnpoly dnPoly testdnpoly testdnPoly: $(TEST_dnPolyEXE)
 $(TEST_dnPolyEXE): $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a
 	$(FFC) $(FFLAGS)   -o $(TEST_dnPolyEXE) $(OBJ_DIR)/TEST_dnPoly.o $(LIBAD).a $(FLIB)
 	echo "dnPoly compilation: OK"
+# Test dnVec
+.PHONY: dnV dnv tesdnVec tesdnV tesdnv
+dnV dnv tesdnVec tesdnV tesdnv:$(TEST_dnVecEXE)
+	echo "dnVec compilation: OK"
+$(TEST_dnVecEXE): $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a
+	$(FFC) $(FFLAGS)   -o $(TEST_dnVecEXE) $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a $(FLIB)
+	echo "dnVec compilation: OK"
 #
 #===============================================
 #================ unitary tests ================
@@ -255,15 +264,17 @@ $(QDLIBA):
 $(OBJ_DIR)/Example_dnS.o:      $(LIBAD).a
 $(OBJ_DIR)/TEST_dnS.o:         $(LIBAD).a
 $(OBJ_DIR)/TEST_dnPoly.o:      $(LIBAD).a
+$(OBJ_DIR)/TEST_dnVec.o:       $(LIBAD).a
 $(LIBAD).a:                    $(OBJ_lib)
 #
 $(OBJ_DIR)/dnSVM_m.o:          $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/dnPoly_m.o \
                                $(OBJ_DIR)/dnFunc_m.o $(OBJ_DIR)/dnS_Op_m.o \
-                               $(OBJ_DIR)/dnMat_m.o
+                               $(OBJ_DIR)/dnVec_m.o $(OBJ_DIR)/dnMat_m.o
 #
 $(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
 $(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
+$(OBJ_DIR)/dnVec_m.o:          $(OBJ_DIR)/dnS_m.o
 #
 $(OBJ_DIR)/dnS_m.o:            $(QDLIBA)
 #
