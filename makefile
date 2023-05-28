@@ -193,6 +193,7 @@ $(TEST_dnVecEXE): $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a
 ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE)
 	@./$(TEST_dnSEXE) > Test.log
 	@./$(TEST_dnPolyEXE) >> Test.log
+	@./$(TEST_dnVecEXE) >> Test.log
 	@grep -F TESTING Test.log| grep -F Number
 	@echo "  done with the unitary tests"
 #===============================================
