@@ -1,6 +1,6 @@
 # AD_dnSVM
 
-**AD_dnSVM** is a Fortran Automatic Differentiation library using forward mode for scalars.
+**AD_dnSVM** is a Fortran Automatic Differentiation library using forward mode for scalars, vectors and matrices.
 Its features are:
 
 - no limit in terms of the number of independent variables (this number is defined at runtime)
@@ -15,7 +15,7 @@ date: 17/12/2022
 
 *Originally, it has been developed for Quantum Model Lib (QML):* <https://github.com/lauvergn/QuantumModelLib>
 
-## 1) Utilisation
+## 1) Utilisation with scalars
 
 This library enables to get the derivatives (up to third order) of a function of several variables (type(dnS_t)).
 See the APP/Example_dnS.f90 file.
@@ -41,7 +41,7 @@ X, Y and Z are, respectively, the first, the second and the third variables (iVa
 Their derivatives are defined up to the 1st order (nderiv=1).
 The variable values are set with Val.
 
-Remark: for Y, it value is ONE, the three 1st derivatives are [ZERO,ONE,ZERO] and all 2d derivatives are null.
+Remark: for Y (the second variable), its value is ONE, the three 1st derivatives are [ZERO,ONE,ZERO] and all 2d derivatives are null.
 
 Operations with X, Y and Z:
 
@@ -69,7 +69,7 @@ gives:
  1st derivative  3         -0.416E+00
  ```
 
-### 1b) Vector !nitialization and Jacobian matrix
+### 1b) Vector initialization and Jacobian matrix
 
 Instead of several variable initializations, one can initialize a vector:
 
@@ -120,24 +120,26 @@ make all
 ```
 
 It will make the library, the executable tests and example.
-You can change the compiler, Lapack flag, the OpenMP flag and the compiler optimization falg either in the makefile or when calling make:
+You can change the compiler, Lapack flag, the OpenMP flag, the compiler optimization flag and the default integer either in the makefile or when calling make:
 
 ```bash
-make all FC=ifort OMP=0 OPT=0 LAPACK=0
+make all FC=ifort OMP=0 OPT=0 LAPACK=0 INT=4
   # FC=ifort to change the compiller to ifort
   # OMP=0/1 to turn off/on the OpenMP fortran flag.
   # OPT=0/1 to turn off/on the fortran optimization.
   # LAPACK=0/1 to turn off/on the lapack use
+  # INT=4/8 to change the default integer
 ```
 
-The library, **libAD_dnSVM_XXX_oppy_ompz_lapackw.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
+The library, **libAD_dnSVM_XXX_oppY_ompZ_lapackW_intV.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
 Remarks : 
 - XXX is the compiller (gfortran, ifort ...)
-- y is 0 or 1 (opt0 / opt1: compiler optimization)
-- z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
-- w is 0 or 1 (lapack0 / lapack1: whitout/with lapack)
+- Y is 0 or 1 (opt0 / opt1: compiler optimization)
+- Z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
+- W is 0 or 1 (lapack0 / lapack1: whitout/with lapack)
+- V is 4 or 8 (int4 / int8)
 
-If needed, the .mod files are in the **OBJ/obj_XXX_oppy_ompz_lapackw** directory.
+If needed, the .mod files are in the **OBJ/obj_XXX_oppY_ompZ_lapackW_intV** directory.
 
 ## 3) run the tests
 
@@ -146,6 +148,7 @@ With **fpm**
 ```bash
     fpm test dnPoly
     fpm test dnS
+    fpm test dnVec
 ```
 
 or in the Tests directory, run the scripts

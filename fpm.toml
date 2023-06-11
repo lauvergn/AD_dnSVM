@@ -18,6 +18,11 @@ name="dnPoly"
 source-dir="Tests"
 main="TEST_dnPoly.f90"
 
+[[ test ]]
+name="dnVec"
+source-dir="Tests"
+main="TEST_dnVec.f90"
+
 [[ executable ]]
 name="Exa_dnS"
 source-dir="APP"

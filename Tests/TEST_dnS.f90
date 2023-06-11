@@ -832,7 +832,8 @@ CONTAINS
     USE, INTRINSIC :: ieee_exceptions
     IMPLICIT NONE
 
-      logical                          :: flag_NAN
+      logical (kind=Ik4)                          :: flagik4_NAN
+      logical                                     :: flag_NAN
 
 
       character (len=*), parameter :: name_sub_loc='TEST_EXCEPTION'
@@ -846,35 +847,35 @@ CONTAINS
       dnX = Variable(x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
       IF (print_level > 0) CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
 
-      CALL ieee_set_halting_mode(ieee_invalid, .FALSE.)
+      CALL ieee_set_halting_mode(ieee_invalid,.FALSE._Ik4)
 
       dnY = log(dnX)
-      CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
-      CALL Logical_Test(test_var,test1=flag_NAN,              info='log(-1.)            =>    NAN')
+      CALL  IEEE_GET_FLAG(ieee_invalid, flagik4_NAN) ; flag_NAN = flagik4_NAN
+      CALL Logical_Test(test_var,test1=flag_NAN,info='log(-1.)            =>    NAN')
       IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='log(-1.)')
 
       ! reset the NAN exception
-      CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
+      CALL  IEEE_SET_FLAG(ieee_invalid,.FALSE._Ik4)
 
       dnY = cos(dnX)
-      CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
+      CALL  IEEE_GET_FLAG(ieee_invalid, flagik4_NAN)  ; flag_NAN = flagik4_NAN
       CALL Logical_Test(test_var,test1=flag_NAN,test2=.FALSE.,info='cos(-1.)            => no NAN')
       IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='cos(-1.)')
 
       ! reset the NAN exception
-      CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
+      CALL  IEEE_SET_FLAG(ieee_invalid,.FALSE._Ik4)
 
       dnY = log(dnX)
       dnY = cos(dnX)
-      CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
+      CALL  IEEE_GET_FLAG(ieee_invalid, flagik4_NAN) ; flag_NAN = flagik4_NAN
       CALL Logical_Test(test_var,test1=flag_NAN,              info='cos(-1.) ; log(-1.) =>    NAN')
 
       ! reset the NAN exception
-      CALL  IEEE_SET_FLAG(ieee_invalid, .FALSE.)
+      CALL  IEEE_SET_FLAG(ieee_invalid,.FALSE._Ik4)
       dnX = Variable(ZERO  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
       !IF (print_level > 0) CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
       dnY = sqrt(dnX)
-      CALL  IEEE_GET_FLAG(ieee_invalid, flag_NAN)
+      CALL  IEEE_GET_FLAG(ieee_invalid, flagik4_NAN) ; flag_NAN = flagik4_NAN
       CALL Logical_Test(test_var,test1=flag_NAN,              info='sqrt(0.0)           =>    NAN')
       IF (print_level > 0) CALL Write_dnS(dnY,string=test_var%test_log,info='sqrt(0.0)')
 

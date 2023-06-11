@@ -15,6 +15,9 @@ OPT = 1
 OMP = 1
 ## Lapack/blas/mkl? Empty: default with Lapack; 0: without Lapack; 1 with Lapack
 LAPACK = 1
+## force the default integer (without kind) during the compillation.
+## default 4: , INT=8 (for kind=8)
+INT = 4
 ## how to get external libraries;  "loc" (default): from local zip file, Empty or something else, from github
 EXTLIB_TYPE = loc
 #=================================================================================
@@ -46,7 +49,7 @@ OS:=$(shell uname)
 #=================================================================================
 # extansion for the library (.a), objects and modules directory
 #=================================================================================
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
 
 #=================================================================================
 # Directories
@@ -83,6 +86,11 @@ ifeq ($(FFC),gfortran)
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
     #FFLAGS = -O0 -fbounds-check -Wuninitialized
+  endif
+
+  # integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -fdefault-integer-8
   endif
 
   # where to store .mod files
@@ -129,6 +137,7 @@ $(info ***********COMPILER:     $(FFC))
 $(info ***********COMPILER_VER: $(FC_VER))
 $(info ***********OPTIMIZATION: $(OOPT))
 $(info ***********OpenMP:       $(OOMP))
+$(info ***********INT:          $(INT))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
@@ -156,7 +165,7 @@ LIBAD          = libAD_dnSVM$(ext_obj)
 #============= Main programs: tests + example ==
 #
 .PHONY: all
-all: dnS dnPoly exa
+all: dnS dnPoly dnV exa
 
 # Example dnS
 .PHONY: exa exa_dnS Exa_dnS
@@ -190,7 +199,7 @@ $(TEST_dnVecEXE): $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a
 #===============================================
 #================ unitary tests ================
 .PHONY: ut UT
-ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE)
+ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE) $(TEST_dnVecEXE)
 	@./$(TEST_dnSEXE) > Test.log
 	@./$(TEST_dnPolyEXE) >> Test.log
 	@./$(TEST_dnVecEXE) >> Test.log
@@ -222,8 +231,8 @@ $(LIBAD).a: $(OBJ)
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
-	rm -f  $(TEST_dnSEXE) $(TEST_dnPolyEXE) $(EXA_dnSEXE) $(LIBAD).a
-	rm -f  dnSca.txt comp.log dnS.log dnPoly.log Test.log
+	rm -f  $(TEST_dnSEXE) $(TEST_dnPolyEXE) $(TEST_dnVecEXE) $(EXA_dnSEXE) $(LIBAD).a
+	rm -f  dnSca.txt comp.log dnS.log dnPoly.log dnVec.log Test.log
 	rm -fr *.dSYM
 	rm -fr build
 	cd $(OBJ_DIR) ; rm -f *.o *.mod *.MOD
@@ -252,7 +261,7 @@ $(QDLIBA):
 	@test -d $(ExtLibDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
 	@test -d $(QD_DIR) || (cd $(ExtLibDIR) ; ./get_QDUtilLib.sh $(EXTLIB_TYPE))
 	@test -d $(QD_DIR) || (echo $(QD_DIR) "does not exist" ; exit 1)
-	cd $(QD_DIR) ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) ExtLibDIR=$(ExtLibDIR)
+	cd $(QD_DIR) ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR)
 	@echo "  done " $(QDLIBA) " in "$(BaseName)
 #
 #===============================================
@@ -298,6 +307,11 @@ ifeq ($(FFC),ifort)
       FFLAGS = -O0 -check all -g -traceback
   endif
 
+# integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -i8
+  endif
+
   # where to store the modules
   FFLAGS +=-module $(MOD_DIR)
 
@@ -316,9 +330,9 @@ ifeq ($(FFC),ifort)
 
   ifeq ($(LLAPACK),1)
     #FLIB += -mkl -lpthread
-    #FLIB += -qmkl -lpthread
-    FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
-             ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
+    FLIB += -qmkl -lpthread
+    #FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
+    #         ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
   else
     FLIB += -lpthread
   endif
@@ -328,3 +342,63 @@ ifeq ($(FFC),ifort)
 endif
 #=================================================================================
 #=================================================================================
+#=================================================================================
+#=================================================================================
+#===============================================================================
+# nag compillation (nagfor)
+#===============================================================================
+ifeq ($(FFC),nagfor)
+
+  # opt management
+  ifeq ($(OOPT),1)
+      FFLAGS = -O4 -o -compatible -kind=byte -Ounroll=4 -s
+  else
+    ifeq ($(OOMP),0)
+      ifeq ($(LLAPACK),0)
+          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf -C=undefined
+      else
+          FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf
+      endif
+    else
+          FFLAGS = -O0 -g        -kind=byte -C -C=alias -C=intovf
+    endif
+  endif
+
+  # integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -i8
+  endif
+
+ # where to store the .mod files
+  FFLAGS +=-mdir $(MOD_DIR)
+
+# where to look the .mod files
+  FFLAGS +=-I $(MOD_DIR)
+
+  # omp management
+  ifeq ($(OOMP),1)
+    FFLAGS += -openmp
+  endif
+
+  # lapack management with cpreprocessing
+  FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
+
+  # where to look .mod files
+  FFLAGS += -I$(QDMOD_DIR)
+
+  FLIB    = $(QDLIBA)
+
+  # lapact management (default with openmp), with cpreprocessing
+  ifeq ($(LLAPACK),1)
+    ifeq ($(OS),Darwin)    # OSX
+      # OSX libs (included lapack+blas)
+      FLIB += -framework Accelerate
+    else                   # Linux
+      # linux libs
+      FLIB += -llapack -lblas
+    endif
+  endif
+
+  FC_VER = $(shell $(FFC) -V 3>&1 1>&2 2>&3 | head -1 )
+
+endif
