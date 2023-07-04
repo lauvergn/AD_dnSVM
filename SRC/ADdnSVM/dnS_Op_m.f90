@@ -40,11 +40,14 @@ MODULE ADdnSVM_dnS_Op_m
 
   PRIVATE
 
-  PUBLIC :: dot_product,product,sum,matmul,transpose
+  PUBLIC :: dot_product,cross_product,product,sum,matmul,transpose
 
 
   INTERFACE dot_product
     MODULE PROCEDURE AD_dot_product_VecOFdnS,AD_dot_product_Vec_VecOFdnS,AD_dot_product_VecOFdnS_Vec
+  END INTERFACE
+  INTERFACE cross_product
+    MODULE PROCEDURE AD_cross_product_VecOFdnS
   END INTERFACE
   INTERFACE product
     MODULE PROCEDURE AD_product_VecOFdnS
@@ -165,6 +168,22 @@ CONTAINS
       END DO
 
     END FUNCTION AD_dot_product_Vec_VecOFdnS
+
+
+    FUNCTION AD_cross_product_VecOFdnS(V1,V2) RESULT(V3)
+      IMPLICIT NONE
+  
+      TYPE (dnS_t),        intent(in)    :: V1(:),V2(:)
+      TYPE (dnS_t), allocatable          :: V3(:)
+  
+      allocate(V3(3))
+  
+      v3(1) = v1(2)*v2(3) - v1(3)*v2(2)
+      v3(2) =-v1(1)*v2(3) + v1(3)*v2(1)
+      v3(3) = v1(1)*v2(2) - v1(2)*v2(1)
+  
+    END FUNCTION AD_cross_product_VecOFdnS
+
     FUNCTION AD_product_VecOFdnS(Vec) RESULT(Sres)
       USE QDUtil_m
 
