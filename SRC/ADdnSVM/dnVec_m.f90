@@ -547,7 +547,7 @@ MODULE ADdnSVM_dnVec_m
        dnVec1%d1 = dnVec2%d1(lb:ub,:)
        dnVec1%d2 = dnVec2%d2(lb:ub,:,:)
        dnVec1%d3 = dnVec2%d3(lb:ub,:,:,:)
-
+    ELSE
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
       write(out_unit,*) 'It should never append! Check the source'
