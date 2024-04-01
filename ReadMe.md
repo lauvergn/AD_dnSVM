@@ -91,7 +91,7 @@ Instead of several variable initializations, one can initialize a vector:
 The vector intialization has optional arguments:
 
 - `nVar`: the total number of the independent variables. It must be larger or equal to the vector size.
-- `iVar(:)`: a table with the indices of the the independent variables. It size must be equal to the the vector size.
+- `iVar(:)`: a table with the indices of the independent variables. It size must be equal to the vector size.
 
 ```Fortran
   VecOld = Variable([r,th], nVar=3, iVar=[1,2], nderiv=2 )

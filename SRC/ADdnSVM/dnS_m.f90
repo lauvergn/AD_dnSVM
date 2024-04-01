@@ -185,6 +185,9 @@ MODULE ADdnSVM_dnS_m
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
 
+  INTERFACE Variable_dnS
+    MODULE PROCEDURE AD_init_dnS, AD_init_Tab_OF_dnS
+  END INTERFACE
   INTERFACE Variable
      MODULE PROCEDURE AD_init_dnS, AD_init_Tab_OF_dnS
   END INTERFACE

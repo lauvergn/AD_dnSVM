@@ -84,6 +84,26 @@ PROGRAM TEST_dnS
   END IF
   CALL Flush_Test(test_var)
 
+  x = 0.5_Rkind
+  z = 2.0_Rkind
+  dnV1 = Variable_dnVec([x,ZERO,z],nderiv=nderiv)
+  CALL set_dnVec(dnV2,d0=[x,ZERO,z],                           &
+                      d1=reshape([ONE ,ZERO,ZERO,              &
+                                  ZERO,ONE ,ZERO,              &
+                                  ZERO, ZERO,ONE],shape=[3,3]),&
+                      d2=reshape([(ZERO,i=1,27)],shape=[3,3,3]))
+
+  res_test = Check_dnVec_IS_ZERO(dnV2-dnV1,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='dnV1-dnV2==0?')
+  res_test = Check_dnVec_IS_ZERO(dnV2-dnV1,dnSerr_test)
+  CALL Append_Test(test_var,'test: dnVec = Variable_dnVec, dnVec2 - dnVec1, set_dnVec, Write_dnVec')
+
+  IF (print_level > 0) THEN
+    CALL Write_dnVec(dnV1,info='dnV1')
+    CALL Write_dnVec(dnV2,info='dnV2')
+  END IF
+  CALL Flush_Test(test_var)
+
   dnV1     = ZERO
   FlatdnS  = get_Flatten(dnV1)
   res_test = maxval(abs(FlatdnS-[(ZERO,i=1,size(FlatdnS))])) < ZeroTresh

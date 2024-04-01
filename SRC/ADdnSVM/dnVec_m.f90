@@ -66,15 +66,13 @@ MODULE ADdnSVM_dnVec_m
      real (kind=Rkind), allocatable :: d3(:,:,:,:)
 
   CONTAINS
-    PROCEDURE, PRIVATE :: AD_dnVec2_TO_dnVec1
     PROCEDURE, PRIVATE :: AD_set_dnVec_TO_R
     PROCEDURE, PRIVATE :: AD_set_dnVec_FROM_VecOFdnS
-    GENERIC,   PUBLIC  :: assignment(=) => AD_dnVec2_TO_dnVec1,                &
-                                           AD_set_dnVec_TO_R,                  &
+    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnVec_TO_R,                  &
                                            AD_set_dnVec_FROM_VecOFdnS
   END TYPE dnVec_t
 
-  PUBLIC :: dnVec_t,alloc_dnVec,dealloc_dnVec,Write_dnVec
+  PUBLIC :: Variable_dnVec,dnVec_t,alloc_dnVec,dealloc_dnVec,Write_dnVec
   PUBLIC :: Check_NotAlloc_dnVec,CheckInit
 
   PUBLIC :: operator (*),operator (**),operator (+),operator (-)
@@ -99,6 +97,10 @@ MODULE ADdnSVM_dnVec_m
   INTERFACE operator (-)
     MODULE PROCEDURE AD_dnVec2_MINUS_dnVec1,AD_dnVec_MINUS_R,AD_R_MINUS_dnVec, &
                      AD_MINUS_dnVec
+  END INTERFACE
+
+  INTERFACE Variable_dnVec
+    MODULE PROCEDURE AD_init_dnVec
   END INTERFACE
 
   INTERFACE alloc_dnVec
@@ -204,6 +206,7 @@ MODULE ADdnSVM_dnVec_m
 
 
     err_dnVec_loc = 0 ! no error
+    IF (present(err_dnVec)) err_dnVec = 0
 
     CALL AD_dealloc_dnVec(vec,err_dnVec_loc)
     IF (err_dnVec_loc /= 0) THEN
@@ -218,6 +221,7 @@ MODULE ADdnSVM_dnVec_m
         STOP 'Problem in AD_dealloc_dnVec CALL in AD_alloc_dnVec'
       END IF
     END IF
+    !write(out_unit,*) 'err_dnVec_loc (dealloc)',err_dnVec_loc
 
     ! test SizeVec
     IF (present(SizeVec)) THEN
@@ -258,6 +262,7 @@ MODULE ADdnSVM_dnVec_m
         STOP 'Problem with allocate in AD_alloc_dnVec'
       END IF
     END IF
+    !write(out_unit,*) 'err_dnVec_loc (d0)',err_dnVec_loc
 
     IF (nderiv_loc >= 1) THEN
       allocate(vec%d1(SizeVec_loc,nVar_loc),stat=err_dnVec_loc)
@@ -276,6 +281,7 @@ MODULE ADdnSVM_dnVec_m
         END IF
       END IF
     END IF
+    !write(out_unit,*) 'err_dnVec_loc (d1)',err_dnVec_loc
 
     IF (nderiv_loc >= 2) THEN
       allocate(vec%d2(SizeVec_loc,nVar_loc,nVar_loc),stat=err_dnVec_loc)
@@ -294,6 +300,7 @@ MODULE ADdnSVM_dnVec_m
         END IF
       END IF
     END IF
+    !write(out_unit,*) 'err_dnVec_loc (d2)',err_dnVec_loc
 
     IF (nderiv_loc >= 3) THEN
       allocate(vec%d3(SizeVec_loc,nVar_loc,nVar_loc,nVar_loc),stat=err_dnVec_loc)
@@ -312,6 +319,8 @@ MODULE ADdnSVM_dnVec_m
         END IF
       END IF
     END IF
+    !write(out_unit,*) 'err_dnVec_loc (d3)',err_dnVec_loc
+    !IF (present(err_dnVec)) write(out_unit,*) 'err_dnVec',err_dnVec
 
   END SUBROUTINE AD_alloc_dnVec
 !> @brief Public subroutine which deallocates a derived type dnVec.
@@ -394,6 +403,79 @@ MODULE ADdnSVM_dnVec_m
 
   END SUBROUTINE AD_dealloc_dnVec
 
+  FUNCTION AD_init_dnVec(TabVal,nVar,nderiv,iVar) RESULT(Vec)
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                   :: Vec
+
+    real (kind=Rkind), intent(in)    :: TabVal(:)
+    integer, optional, intent(in)    :: nderiv,nVar
+    integer, optional, intent(in)    :: iVar(:)
+
+    integer :: err_dnVec
+    character (len=*), parameter :: name_sub='AD_init_dnVec'
+
+    integer :: nVar_loc,nderiv_loc,iV,nVec
+
+    nVec = size(TabVal)
+  
+    IF (present(nVar)) THEN
+      IF (nVar < nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' nVar is present and < size(TabVal)'
+        write(out_unit,*) ' nVar        ',nVar
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_dnVec: nVar is present and < size(TabVal) '
+      END IF
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = nVec
+    END IF
+    IF (nVar_loc < 1) RETURN
+  
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+    ELSE
+      nderiv_loc = 0
+    END IF
+  
+    IF (present(iVar)) THEN
+      IF (size(iVar) /= nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' iVar(:) is present and sizes of TabVal and ivar are different'
+        write(out_unit,*) ' size(iVar)  ',size(iVar)
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_dnVec: size(iVar) /= size(TabVal) '
+      END IF
+    END IF
+
+    CALL alloc_dnVec(Vec,nVec,nVar_loc,nderiv_loc,'vec',name_sub,err_dnVec)
+    IF (err_dnVec /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Problem with the allocation in "alloc_dnVec"'
+      write(out_unit,*) ' nVec,nVar_loc,nderiv_loc',nVec,nVar_loc,nderiv_loc
+      STOP 'ERROR in AD_init_dnVec: Problem with the allocation in "alloc_dnVec"'
+    END IF
+
+    CALL AD_set_dnVec_TO_R(Vec,ZERO)
+    Vec%d0(:) = TabVal
+    IF (nderiv_loc > 0) THEN
+      IF (present(iVar)) THEN
+        DO iV=1,nVec
+          Vec%d1(iV,iVar(iV)) = ONE
+        END DO
+      ELSE
+        DO iV=1,nVec
+          Vec%d1(iV,iV) = ONE
+        END DO
+      END IF
+    END IF
+
+  END FUNCTION 
   SUBROUTINE AD_set_dnVec(Vec,d0,d1,d2,d3)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
