@@ -41,7 +41,7 @@
 !!  TYPE (dnVec_t) :: V
 !!
 !!
-!! Some standard fortran operators (= + - * **) are overloaded (!!! not /):
+!! Some standard fortran operators (= + - * / **) are overloaded:
 !!
 !! For instance the sum (+) of two dnVec variables, V1 and V2 correspond to:
 !! @li (V1+V2)                 => V1%d0    + V2%d0
@@ -68,35 +68,44 @@ MODULE ADdnSVM_dnVec_m
   CONTAINS
     PROCEDURE, PRIVATE :: AD_set_dnVec_TO_R
     PROCEDURE, PRIVATE :: AD_set_dnVec_FROM_VecOFdnS
+    PROCEDURE, PRIVATE :: AD_set_dnVec_TO_VecOfR
     GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnVec_TO_R,                  &
-                                           AD_set_dnVec_FROM_VecOFdnS
+                                           AD_set_dnVec_FROM_VecOFdnS,         &
+                                           AD_set_dnVec_TO_VecOfR
   END TYPE dnVec_t
 
   PUBLIC :: Variable_dnVec,dnVec_t,alloc_dnVec,dealloc_dnVec,Write_dnVec
-  PUBLIC :: Check_NotAlloc_dnVec,CheckInit
+  PUBLIC :: Check_NotAlloc_dnVec,Check_Alloc_dnVec,CheckInit
 
-  PUBLIC :: operator (*),operator (**),operator (+),operator (-)
-  PUBLIC :: subvector_dnVec2_TO_dnVec1,dnS_TO_dnVec,dnVec_TO_dnS
+  PUBLIC :: operator (*),operator (/),operator (**),operator (+),operator (-)
+  PUBLIC :: subvector_dnVec2_TO_dnVec1,dnVec2_TO_subvector_dnVec1,dnS_TO_dnVec,dnVec_TO_dnS
   PUBLIC :: Vec_wADDTO_dnVec2_ider
   PUBLIC :: Check_dnVec_IS_ZERO,get_maxval_OF_dnVec
   PUBLIC :: get_nderiv,get_nVar,get_size
   PUBLIC :: get_d0,get_d1,get_d2,get_d3,get_Flatten
   PUBLIC :: set_dnVec
-  PUBLIC :: dot_product
+  PUBLIC :: dot_product,cross_product
 
   INTERFACE operator (*)
     MODULE PROCEDURE AD_dnVec_TIME_R,AD_R_TIME_dnVec
+    MODULE PROCEDURE AD_dnVec_TIME_dnS,AD_dnS_TIME_dnVec
+  END INTERFACE
+  INTERFACE operator (/)
+    MODULE PROCEDURE AD_dnVec_OVER_R
+    MODULE PROCEDURE AD_dnVec_OVER_dnS
   END INTERFACE
   INTERFACE operator (**)
     MODULE PROCEDURE AD_dnVec_EXP_R
   END INTERFACE
   INTERFACE operator (+)
-    MODULE PROCEDURE AD_dnVec2_PLUS_dnVec1,AD_dnVec_PLUS_R,AD_R_PLUS_dnVec, &
-                     AD_PLUS_dnVec
+    MODULE PROCEDURE AD_dnVec2_PLUS_dnVec1, AD_dnVec_PLUS_R, AD_R_PLUS_dnVec, &
+                     AD_PLUS_dnVec, AD_dnVec_PLUS_Vec, AD_Vec_PLUS_dnVec,     &
+                     AD_dnVec_PLUS_VecOFdnS, AD_VecOFdnS_PLUS_dnVec
   END INTERFACE
   INTERFACE operator (-)
-    MODULE PROCEDURE AD_dnVec2_MINUS_dnVec1,AD_dnVec_MINUS_R,AD_R_MINUS_dnVec, &
-                     AD_MINUS_dnVec
+    MODULE PROCEDURE AD_dnVec2_MINUS_dnVec1, AD_dnVec_MINUS_R, AD_R_MINUS_dnVec, &
+                     AD_MINUS_dnVec, AD_dnVec_MINUS_Vec, AD_Vec_MINUS_dnVec,     &
+                     AD_dnVec_MINUS_VecOFdnS, AD_VecOFdnS_MINUS_dnVec
   END INTERFACE
 
   INTERFACE Variable_dnVec
@@ -121,6 +130,9 @@ MODULE ADdnSVM_dnVec_m
   INTERFACE subvector_dnVec2_TO_dnVec1
     MODULE PROCEDURE AD_Reduced_dnVec2_TO_dnVec1
   END INTERFACE
+  INTERFACE dnVec2_TO_subvector_dnVec1
+    MODULE PROCEDURE AD_dnVec2_TO_Reduced_dnVec1
+  END INTERFACE
   INTERFACE dnS_TO_dnVec
     MODULE PROCEDURE AD_dnS_TO_dnVec
   END INTERFACE
@@ -142,8 +154,11 @@ MODULE ADdnSVM_dnVec_m
   INTERFACE Check_NotAlloc_dnVec
     MODULE PROCEDURE AD_Check_NotAlloc_dnVec
   END INTERFACE
+  INTERFACE Check_Alloc_dnVec
+    MODULE PROCEDURE AD_Check_Alloc_dnVec
+  END INTERFACE
   INTERFACE CheckInit
-    MODULE PROCEDURE AD_CheckInit_dnVec1_dnVec1
+    MODULE PROCEDURE AD_CheckInit_dnVec1_dnVec2
   END INTERFACE
   
   INTERFACE get_nderiv
@@ -175,7 +190,9 @@ MODULE ADdnSVM_dnVec_m
   INTERFACE dot_product
      MODULE PROCEDURE AD_dot_product_dnVec
   END INTERFACE
-  
+  INTERFACE cross_product
+    MODULE PROCEDURE AD_cross_product_dnVec
+  END INTERFACE
   CONTAINS
 !> @brief Public subroutine which allocates a derived type dnVec.
 !!
@@ -636,7 +653,63 @@ MODULE ADdnSVM_dnVec_m
       STOP
     END IF
   END SUBROUTINE AD_Reduced_dnVec2_TO_dnVec1
-!> @brief Public subroutine which copies a dnS derived type to one element of dnVec derived type.
+  SUBROUTINE AD_dnVec2_TO_Reduced_dnVec1(dnVec1,dnVec2,lb,ub)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    CLASS (dnVec_t),  intent(inout) :: dnVec1
+    CLASS (dnVec_t),  intent(in)    :: dnVec2
+    integer,          intent(in)    :: lb,ub
+
+    integer :: nderiv,SizeVec1,SizeVec2,nVar
+    integer :: err_dnVec_loc
+    character (len=*), parameter :: name_sub='AD_dnVec2_TO_Reduced_dnVec1'
+
+    !write(out_unit,*) 'in ',name_sub,' nVar,SizeVec,nderiv',nVar_loc,SizeVec_loc,nderiv_loc
+
+    IF (.NOT. Check_Alloc_dnVec(dnVec1)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' dnVec1 MUST be allocated'
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnVec2_TO_Reduced_dnVec1: dnVec1 MUST be allocated'
+    END IF
+    IF (.NOT. Check_Alloc_dnVec(dnVec2)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' dnVec2 MUST be allocated'
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnVec2_TO_Reduced_dnVec1: dnVec2 MUST be allocated'
+    END IF
+
+    SizeVec2 = get_Size(dnVec2)
+    nVar     = get_nVar(dnVec2)
+
+    SizeVec1 = get_Size(dnVec1)
+
+
+    IF (lb < 1 .OR. ub > SizeVec1 .OR. lb > ub) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The indexes lb and ub are wrong.'
+      write(out_unit,*) 'lb,ub',lb,ub
+      write(out_unit,*) 'The range of dnVec1 is [1...',to_string(SizeVec1),']'
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnVec2_TO_Reduced_dnVec1: lb or ub are wrong'
+    END IF
+    IF (ub-lb+1 /= SizeVec2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The indexes lb and ub are wrong.'
+      write(out_unit,*) 'lb,ub',lb,ub
+      write(out_unit,*) 'The size of dnVec2 MUST be equal to the size of [',to_string(lb),':',to_string(ub),']'
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnVec2_TO_Reduced_dnVec1: lb or ub are wrong'
+    END IF
+
+    IF (allocated(dnVec2%d0) .AND. allocated(dnVec2%d0) )   dnVec1%d0(lb:ub)       = dnVec2%d0
+    IF (allocated(dnVec2%d1) .AND. allocated(dnVec2%d1) )   dnVec1%d1(lb:ub,:)     = dnVec2%d1
+    IF (allocated(dnVec2%d2) .AND. allocated(dnVec2%d2) )   dnVec1%d2(lb:ub,:,:)   = dnVec2%d2
+    IF (allocated(dnVec2%d3) .AND. allocated(dnVec2%d3) )   dnVec1%d3(lb:ub,:,:,:) = dnVec2%d3
+
+  END SUBROUTINE AD_dnVec2_TO_Reduced_dnVec1
+  !> @brief Public subroutine which copies a dnS derived type to one element of dnVec derived type.
 !!
 !> @author David Lauvergnat
 !! @date 25/06/2018
@@ -1050,7 +1123,52 @@ MODULE ADdnSVM_dnVec_m
       STOP
     END IF
   END SUBROUTINE AD_set_dnVec_TO_R
-!> @brief Public function which calculate dnVec*R (and derivatives).
+  SUBROUTINE AD_set_dnVec_TO_VecOfR(dnVec,Vec)
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
+    IMPLICIT NONE
+
+    CLASS (dnVec_t),   intent(inout) :: dnVec
+    real (kind=Rkind), intent(in)    :: Vec(:)
+
+    integer :: nderiv_loc,SizeVec_loc,nVar_loc
+    integer :: err_dnVec_loc
+    character (len=*), parameter :: name_sub='AD_set_dnVec_TO_VecOfR'
+
+    nderiv_loc = AD_get_nderiv_FROM_dnVec(dnVec)
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    IF (size(dnVec%d0) /= size(Vec)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Sizes of dnVec and Vec differ'
+      write(out_unit,*) ' size(dnVec%d0), size(Vec)',size(dnVec%d0),size(Vec)
+      write(out_unit,*) '  Check the source'
+      STOP
+    END IF
+
+
+
+    IF (nderiv_loc == 0) THEN
+       dnVec%d0 = Vec
+    ELSE IF (nderiv_loc == 1) THEN
+       dnVec%d0 = Vec
+       dnVec%d1 = ZERO
+    ELSE IF (nderiv_loc == 2) THEN
+       dnVec%d0 = Vec
+       dnVec%d1 = ZERO
+       dnVec%d2 = ZERO
+    ELSE IF (nderiv_loc == 3) THEN
+       dnVec%d0 = Vec
+       dnVec%d1 = ZERO
+       dnVec%d2 = ZERO
+       dnVec%d3 = ZERO
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 or nderiv < 0 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END SUBROUTINE AD_set_dnVec_TO_VecOfR
+  !> @brief Public function which calculate dnVec*R (and derivatives).
 !!
 !> @author David Lauvergnat
 !! @date 03/08/2017
@@ -1160,6 +1278,137 @@ MODULE ADdnSVM_dnVec_m
       STOP
     END IF
   END FUNCTION AD_R_TIME_dnVec
+  FUNCTION AD_dnVec_TIME_dnS(dnVec,dnS) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: dnS
+
+    integer :: nderiv_loc,SizeVec_loc,nVar_loc
+    integer :: err_dnVec_loc
+    integer :: i,j,k
+    real (kind=Rkind)              :: d0
+    real (kind=Rkind), allocatable :: d1(:)
+    real (kind=Rkind), allocatable :: d2(:,:)
+    real (kind=Rkind), allocatable :: d3(:,:,:)
+    character (len=*), parameter :: name_sub='AD_dnVec_TIME_dnS'
+
+    nderiv_loc  = min(get_nderiv(dnVec),get_nderiv(dnS))
+    SizeVec_loc = get_Size(dnVec)
+    nVar_loc    = get_nVar(dnVec)
+    IF (nVar_loc /= get_nVar(dnS)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar of dnS and dnVec are different'
+      write(out_unit,*) ' nVar of dnS and dnVec: ',get_nVar(dnS),get_nVar(dnVec)
+      STOP 'ERROR in AD_dnVec_TIME_dnS: nVar of dnS and dnVec are different'
+    END IF
+
+    !write(out_unit,*) 'nVar,SizeVec,nderiv',nVar_loc,SizeVec_loc,nderiv_loc
+
+    CALL AD_alloc_dnVec(dnVecRes,SizeVec_loc,nVar_loc,nderiv_loc,&
+                        name_var='dnVecRes',name_sub=name_sub)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+
+    IF (nderiv_loc == 0) THEN
+      dnVecRes%d0(:) = dnVec%d0(:) * get_d0(dnS)
+
+    ELSE IF (nderiv_loc == 1) THEN
+      d0 = get_d0(dnS)
+      d1 = get_d1(dnS)
+
+      dnVecRes%d0(:) = dnVec%d0(:) * d0
+      DO i=1,nVar_loc
+        dnVecRes%d1(:,i) = dnVec%d1(:,i)*d0 + dnVec%d0(:) * d1(i)
+      END DO
+    ELSE IF (nderiv_loc == 2) THEN
+      d0 = get_d0(dnS)
+      d1 = get_d1(dnS)
+      d2 = get_d2(dnS)
+
+      dnVecRes%d0(:) = dnVec%d0(:) * d0
+      DO i=1,nVar_loc
+        dnVecRes%d1(:,i) = dnVec%d1(:,i)*d0 + dnVec%d0(:) * d1(i)
+      END DO
+      DO i=1,nVar_loc
+      DO j=1,nVar_loc
+        dnVecRes%d2(:,j,i) = dnVec%d2(:,j,i)*d0 + dnVec%d1(:,i)*d1(j) + dnVec%d1(:,j)*d1(i) + dnVec%d0(:) * d2(j,i)
+      END DO
+      END DO
+
+    ELSE IF (nderiv_loc == 3) THEN
+      d0 = get_d0(dnS)
+      d1 = get_d1(dnS)
+      d2 = get_d2(dnS)
+      d3 = get_d3(dnS)
+
+      dnVecRes%d0(:) = dnVec%d0(:) * d0
+      DO i=1,nVar_loc
+        dnVecRes%d1(:,i) = dnVec%d1(:,i)*d0 + dnVec%d0(:) * d1(i)
+      END DO
+      DO i=1,nVar_loc
+      DO j=1,nVar_loc
+        dnVecRes%d2(:,j,i) = dnVec%d2(:,j,i)*d0 + dnVec%d1(:,i)*d1(j) + dnVec%d1(:,j)*d1(i) + dnVec%d0(:) * d2(j,i)
+      END DO
+      END DO
+      DO i=1,nVar_loc
+      DO j=1,nVar_loc
+      DO k=1,nVar_loc
+            dnVecRes%d3(:,k,j,i) = dnVec%d3(:,k,j,i)*d0  + &
+                                   dnVec%d2(:,i,k)*d1(j) + dnVec%d2(:,k,j)*d1(i) + dnVec%d2(:,j,i)*d1(k) + &
+                                   dnVec%d1(:,j)*d2(i,k) + dnVec%d1(:,i)*d2(k,j) + dnVec%d1(:,k)*d2(j,i) + &
+                                   dnVec%d0(:)*d3(k,j,i)
+      END DO
+      END DO
+      END DO
+
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_dnVec_TIME_dnS
+  FUNCTION AD_dnS_TIME_dnVec(dnS,dnVec) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: dnS
+
+    dnVecRes = dnVec*dnS
+
+  END FUNCTION AD_dnS_TIME_dnVec
+
+  FUNCTION AD_dnVec_OVER_R(dnVec,R) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: R
+
+    dnVecRes = dnVec * (ONE/R)
+
+  END FUNCTION AD_dnVec_OVER_R
+  FUNCTION AD_dnVec_OVER_dnS(dnVec,dnS) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, ONE, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: dnS
+
+    dnVecRes = dnVec * (ONE/dnS)
+
+  END FUNCTION AD_dnVec_OVER_dnS
 !> @brief Public function which calculate dnVec1+dnVec2 (and derivatives).
 !!
 !> @author David Lauvergnat
@@ -1269,6 +1518,68 @@ MODULE ADdnSVM_dnVec_m
     ! the derivatives of R are zero
 
   END FUNCTION AD_R_PLUS_dnVec
+  FUNCTION AD_dnVec_PLUS_Vec(dnVec,Vec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: Vec(:)
+
+    character (len=*), parameter :: name_sub='AD_dnVec_PLUS_Vec'
+
+
+    dnVecRes    = dnVec
+
+    dnVecRes%d0 = dnVecRes%d0 + Vec
+
+  END FUNCTION AD_dnVec_PLUS_Vec
+  FUNCTION AD_Vec_PLUS_dnVec(Vec,dnVec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: Vec(:)
+
+    character (len=*), parameter :: name_sub='AD_Vec_PLUS_dnVec'
+
+
+    dnVecRes    = dnVec
+
+    dnVecRes%d0 = dnVecRes%d0 + Vec
+
+  END FUNCTION AD_Vec_PLUS_dnVec
+  FUNCTION AD_dnVec_PLUS_VecOFdnS(dnVec,VecOFdnS)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: VecOFdnS(:)
+
+    character (len=*), parameter :: name_sub='AD_dnVec_PLUS_VecOFdnS'
+
+    dnVecRes = VecOFdnS
+    dnVecRes = dnVecRes + dnVec
+
+  END FUNCTION AD_dnVec_PLUS_VecOFdnS
+  FUNCTION AD_VecOFdnS_PLUS_dnVec(VecOFdnS,dnVec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: VecOFdnS(:)
+
+    character (len=*), parameter :: name_sub='AD_VecOFdnS_PLUS_dnVec'
+
+    dnVecRes = VecOFdnS
+    dnVecRes = dnVecRes + dnVec
+
+  END FUNCTION AD_VecOFdnS_PLUS_dnVec
   FUNCTION AD_PLUS_dnVec(dnVec) RESULT (Vres)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
@@ -1423,6 +1734,68 @@ MODULE ADdnSVM_dnVec_m
     END IF
 
   END FUNCTION AD_R_MINUS_dnVec
+  FUNCTION AD_dnVec_MINUS_Vec(dnVec,Vec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: Vec(:)
+
+    character (len=*), parameter :: name_sub='AD_dnVec_MINUS_Vec'
+
+
+    dnVecRes    = dnVec
+
+    dnVecRes%d0 = dnVecRes%d0 - Vec
+
+  END FUNCTION AD_dnVec_MINUS_Vec
+  FUNCTION AD_Vec_MINUS_dnVec(Vec,dnVec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: Vec(:)
+
+    character (len=*), parameter :: name_sub='AD_Vec_MINUS_dnVec'
+
+
+    dnVecRes    = -dnVec
+
+    dnVecRes%d0 = dnVecRes%d0 + Vec
+
+  END FUNCTION AD_Vec_MINUS_dnVec
+  FUNCTION AD_dnVec_MINUS_VecOFdnS(dnVec,VecOFdnS)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: VecOFdnS(:)
+
+    character (len=*), parameter :: name_sub='AD_dnVec_MINUS_VecOFdnS'
+
+    dnVecRes = VecOFdnS
+    dnVecRes = -dnVecRes + dnVec
+
+  END FUNCTION AD_dnVec_MINUS_VecOFdnS
+  FUNCTION AD_VecOFdnS_MINUS_dnVec(VecOFdnS,dnVec)  RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    TYPE (dnS_t),      intent(in)  :: VecOFdnS(:)
+
+    character (len=*), parameter :: name_sub='AD_VecOFdnS_MINUS_dnVec'
+
+    dnVecRes = VecOFdnS
+    dnVecRes = dnVecRes - dnVec
+
+  END FUNCTION AD_VecOFdnS_MINUS_dnVec
   FUNCTION AD_MINUS_dnVec(V) RESULT(Vres)
     USE QDUtil_m
 
@@ -1959,8 +2332,15 @@ MODULE ADdnSVM_dnVec_m
     NotAlloc = NotAlloc .OR. (nderiv >= 3 .AND. .NOT. allocated(vec%d3))
 
   END FUNCTION AD_Check_NotAlloc_dnVec
+  FUNCTION AD_Check_Alloc_dnVec(vec) RESULT(Alloc)
 
-  FUNCTION AD_CheckInit_dnVec1_dnVec1(vec1,vec2,with_nderiv) RESULT(check)
+    logical                       :: Alloc
+    TYPE (dnVec_t), intent(in)    :: vec
+
+    Alloc = allocated(vec%d0) .OR. allocated(vec%d1) .OR. allocated(vec%d2) .OR. allocated(vec%d3)
+
+  END FUNCTION AD_Check_Alloc_dnVec
+  FUNCTION AD_CheckInit_dnVec1_dnVec2(vec1,vec2,with_nderiv) RESULT(check)
 
     logical                                 :: check
     TYPE (dnVec_t), intent(in)              :: vec1,vec2
@@ -1991,7 +2371,7 @@ MODULE ADdnSVM_dnVec_m
       check = check .AND. (nder1 >= 0  .AND. nder1  == nder2)
     END IF
 
-  END FUNCTION AD_CheckInit_dnVec1_dnVec1
+  END FUNCTION AD_CheckInit_dnVec1_dnVec2
 
   FUNCTION AD_dot_product_dnVec(Vec1,Vec2) RESULT(Sres)
     USE QDUtil_m
@@ -2068,4 +2448,105 @@ MODULE ADdnSVM_dnVec_m
 
   END FUNCTION AD_dot_product_dnVec
 
+  FUNCTION AD_cross_product_dnVec(Vec1,Vec2) RESULT(Vres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                       :: Vres
+    TYPE (dnVec_t),        intent(in)    :: Vec1,Vec2
+
+    integer           :: nsize1,nVar1,nderiv1,nsize2,nVar2,nderiv2,i,j,k
+    logical           :: check
+    character (len=*), parameter :: name_sub='AD_cross_product_dnVec'
+
+    IF (.NOT. CheckInit(Vec1,Vec2)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Vec1 and Vec2 are not initilalized ...'
+      write(out_unit,*) '    or'
+      write(out_unit,*) '  Vec1 and Vec2 intializations are different'
+      nderiv1 = get_nderiv(Vec1)
+      nsize1  = get_Size(Vec1)
+      nVar1   = get_nVar(Vec1)
+      write(out_unit,*) '  nsize1,nVar1,nderiv1',nsize1,nVar1,nderiv1
+      nderiv2 = get_nderiv(Vec2)
+      nsize2  = get_Size(Vec2)
+      nVar2   = get_nVar(Vec2)
+      write(out_unit,*) '  nsize2,nVar2,nderiv2',nsize2,nVar2,nderiv2
+      write(out_unit,*) '  nsize2, check',(nsize1 > 0 .AND. nsize1 == nsize2)
+      write(out_unit,*) '  nVar2,  check',(nVar1 > 0  .AND. nVar1  == nVar2)
+      write(out_unit,*) '  nderiv2,check',(nderiv1 >= 0  .AND. nderiv1  == nderiv2)
+      STOP 'ERROR in AD_cross_product_dnVec: Vec1 and Vec2 intializations are different'
+    END IF
+
+    nsize1  = get_Size(Vec1)
+    IF (nsize1 /= 3) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 and Vec2 are not equal to 3.'
+      nsize1  = get_Size(Vec1)
+      write(out_unit,*) '  nsize1,nsize2',nsize1
+      STOP 'ERROR in AD_cross_product_dnVec: the sizes of Vec1 and Vec2 are not equal to 3.'
+    END IF
+
+    nderiv1 = get_nderiv(Vec1)
+    nVar1   = get_nVar(Vec1)
+
+    CALL alloc_dnVec(Vres,SizeVec=nsize1,nVar=nVar1,nderiv=nderiv1)
+
+    IF (nderiv1 >= 0) THEN
+      Vres%d0 = AD_cross_product(Vec1%d0,Vec2%d0)
+    END IF
+
+    IF (nderiv1 >= 1) THEN
+      DO i=1,nVar1
+        Vres%d1(:,i) = AD_cross_product(Vec1%d1(:,i),Vec2%d0) + &
+                       AD_cross_product(Vec1%d0,Vec2%d1(:,i))
+      END DO
+    END IF
+
+    IF (nderiv1 >= 2) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+        Vres%d2(:,j,i) = AD_cross_product(Vec1%d2(:,j,i),Vec2%d0)    + &
+                         AD_cross_product(Vec1%d0,Vec2%d2(:,j,i))    + &
+                         AD_cross_product(Vec1%d1(:,j),Vec2%d1(:,i)) + &
+                         AD_cross_product(Vec1%d1(:,i),Vec2%d1(:,j))
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv1 >= 3) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+      DO k=1,nVar1
+        Vres%d3(:,k,j,i) = AD_cross_product(Vec1%d3(:,k,j,i),Vec2%d0)    + &
+                           AD_cross_product(Vec1%d0,Vec2%d3(:,k,j,i))    + &
+                           AD_cross_product(Vec1%d2(:,j,i),Vec2%d1(:,k)) + &
+                           AD_cross_product(Vec1%d1(:,k),Vec2%d2(:,j,i)) + &
+                           AD_cross_product(Vec1%d2(:,k,j),Vec2%d1(:,i)) + &
+                           AD_cross_product(Vec1%d1(:,i),Vec2%d2(:,k,j)) + &
+                           AD_cross_product(Vec1%d1(:,j),Vec2%d2(:,k,i)) + &
+                           AD_cross_product(Vec1%d2(:,k,i),Vec2%d1(:,j))
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_cross_product_dnVec
+  !================================================================
+!       produit vectoriel
+!================================================================
+  FUNCTION AD_cross_product(v1,v2) RESULT(v3)
+    IMPLICIT NONE
+
+    real (kind=Rkind) :: v3(3)
+
+    real (kind=Rkind), intent(in)    :: v1(3)
+    real (kind=Rkind), intent(in)    :: v2(3)
+
+    v3(1) = v1(2)*v2(3) - v1(3)*v2(2)
+    v3(2) =-v1(1)*v2(3) + v1(3)*v2(1)
+    v3(3) = v1(1)*v2(2) - v1(2)*v2(1)
+
+  END FUNCTION AD_cross_product
 END MODULE ADdnSVM_dnVec_m
