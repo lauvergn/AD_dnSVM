@@ -58,7 +58,7 @@ PROGRAM Example_dnS
   USE ADdnSVM_m
   IMPLICIT NONE
 
-  TYPE (dnS_t)                  :: X,Y,Z,f,r,th
+  TYPE (dnS_t)                  :: X,Y,Z,f,r,th,g
   TYPE (dnS_t),     allocatable :: Vec(:),VecXY(:)
   real(kind=Rkind), allocatable :: JacNewOld(:,:) ! JacNewOld(iN,iO). iN and iO are the index of the new and old coordinates
   real(kind=Rkind), allocatable :: DeltaQ(:),Q(:)
@@ -124,6 +124,17 @@ PROGRAM Example_dnS
   write(out_unit,*) 'analytical: [dx/dr, dx/dth]:   [0.5,     -1.732...]'
   write(out_unit,*) 'analytical: [dy/dr, dy/dth]:   [0.866..,  1.      ]'
 
+  write(out_unit,*) '== derivative of dnS =='
+  write(out_unit,*) ' f=2*x**2 * y ;  g=(df/dx)**2 * x/y'
+  write(out_unit,*) ' x = 1. , y=2.'
+  Vec   = Variable([ONE,TWO], nderiv=2 ) ! Vec(1) : x, Vec(2) : y
+  X = Vec(1) ; Y=Vec(2)
+  f     = TWO * X**2 * Y
+  g     = deriv(f,ider=1)
+  CALL Write_dnS(g,info='df/dx=4*x*y, value: 8')
+
+  g     = deriv(f,ider=1)**2 * X/Y
+  CALL Write_dnS(g,info='g=16 * x**3 * y, value: 32')
 
   write(out_unit,*) '== Box(x,i) [0,Pi] =='
   write(out_unit,*) ' [sin(x)/sqrt(pi/2), sin(2x)/sqrt(pi/2), sin(3x)/sqrt(pi/2) ...]'
@@ -134,5 +145,7 @@ PROGRAM Example_dnS
   DO i=1,size(Vec)
     CALL Write_dnS(Vec(i),out_unit,info='dnBox_' // int_TO_char(i))
   END DO
+
+ 
 
 END PROGRAM Example_dnS
