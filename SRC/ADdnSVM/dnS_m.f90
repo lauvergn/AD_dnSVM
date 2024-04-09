@@ -177,6 +177,7 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh,atan2
 
   PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,Write_dnS
+  PUBLIC :: deriv
 
   PUBLIC :: get_nderiv,get_nVar
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
@@ -199,6 +200,9 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
   INTERFACE set_dnS
      MODULE PROCEDURE AD_set_dnS,AD_set_dnS_with_ider
+  END INTERFACE
+  INTERFACE deriv
+    MODULE PROCEDURE AD_Deriv_OF_dnS
   END INTERFACE
   INTERFACE Write_dnS
      MODULE PROCEDURE AD_Write_dnS_file,AD_Write_dnS_string
@@ -750,7 +754,46 @@ CONTAINS
     IF (allocated(S2%d3)) S1%d3 = S2%d3(list_act,list_act,list_act)
 
   END SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1
+  FUNCTION AD_Deriv_OF_dnS(S,ider) RESULT(dS)
+    USE QDUtil_m, ONLY : Rkind, out_unit, ZERO, TO_string
+    IMPLICIT NONE
 
+    TYPE (dnS_t)                               :: dS
+    TYPE (dnS_t),                  intent(in)  :: S
+    integer,                       intent(in)  :: ider
+
+    integer :: nderiv,nVar
+    real (kind=Rkind), allocatable :: d1(:),d2(:,:),d3(:,:,:)
+    character (len=*), parameter :: name_sub='AD_Deriv_OF_dnS'
+
+    nderiv = get_nderiv(S)
+    nVar   = get_nVar(S)
+
+    IF (ider > nVar .OR. ider < 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' ider is not in the [1:',TO_string(nVar),'] range.'
+      write(out_unit,*) ' ider',ider
+      STOP 'ERROR in AD_Deriv_OF_dnS: wrong ider'
+    END IF
+
+    SELECT CASE (nderiv)
+    CASE (1)
+      d1 = get_d1(S)
+      CALL set_dnS(dS,d0=d1(ider))
+    CASE (2)
+      d1 = get_d1(S)
+      d2 = get_d2(S)
+      CALL set_dnS(dS,d0=d1(ider),d1=d2(:,ider))
+    CASE (3)
+      d1 = get_d1(S)
+      d2 = get_d2(S)
+      d3 = get_d3(S)
+      CALL set_dnS(dS,d0=d1(ider),d1=d2(:,ider),d2=d3(:,:,ider))
+    CASE default ! nderiv = 0 or <0
+      CALL set_dnS(dS,d0=ZERO)
+    END SELECT
+
+  END FUNCTION AD_Deriv_OF_dnS
 !> @brief Public function to get d0 from a derived type dnS.
 !!
 !> @author David Lauvergnat
@@ -1424,12 +1467,12 @@ CONTAINS
 
       Snum%d0 = f0
       Snum%d1 = ( THREE/FOUR*(fp-fm) - &
-                 THREE/20_Rkind*(fpp-fmm) + &
-                 ONE/60_Rkind*(fppp-fmmm) )/step
+                 THREE/20._Rkind*(fpp-fmm) + &
+                 ONE/60._Rkind*(fppp-fmmm) )/step
 
-      Snum%d2 = (-30_Rkind*f0+16_Rkind*(fp+fm)-(fpp+fmm))/(TWELVE*step**2)
+      Snum%d2 = (-30._Rkind*f0+16._Rkind*(fp+fm)-(fpp+fmm))/(TWELVE*step**2)
 
-      Snum%d3 = (-13_Rkind*(fp-fm)+EIGHT*(fpp-fmm)-(fppp-fmmm))/(EIGHT*step**3)
+      Snum%d3 = (-13._Rkind*(fp-fm)+EIGHT*(fpp-fmm)-(fppp-fmmm))/(EIGHT*step**3)
 
     END SELECT
 

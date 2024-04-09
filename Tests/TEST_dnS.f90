@@ -34,7 +34,7 @@ PROGRAM TEST_dnS
   IMPLICIT NONE
 
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
-    TYPE (dnS_t)                     :: dnA,dnB,dnDiff
+    TYPE (dnS_t)                     :: dnA,dnB,dnC,dnDiff
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
     TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
@@ -761,11 +761,46 @@ PROGRAM TEST_dnS
   write(out_unit,*) 'size FlatdnS',size(FlatdnS)
   CALL Flush_Test(test_var)
 
-  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
-  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
-  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL dealloc_dnS(dnX)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
 
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : deriv of dnS')
+  CALL Append_Test(test_var,'============================================')
+  CALL Flush_Test(test_var)
+
+  nderiv = 3
+  x=ONE
+  y=TWO
+  z=THREE
+  Vec_dnS     = Variable([x,y,z],nderiv=nderiv)
+  dnA         = cos(Vec_dnS(1))+sin(Vec_dnS(2))+Vec_dnS(3)
+  dnB         = deriv(dnA,ider=1)
+  CALL Write_dnS(dnB,string=test_var%test_log,info="cos'(x)")
+  CALL set_dnS(dnC,                                        &
+               d0=     -sin(x),                            &
+               d1=        [-cos(x),   ZERO,ZERO],          &
+               d2=reshape([sin(x),ZERO,ZERO,               &
+                           ZERO,ZERO,ZERO,                 &
+                           ZERO, ZERO,ZERO],shape=[3,3]))
+
+  res_test = (dnB == dnC)
+  CALL Logical_Test(test_var,test1=res_test,info='deriv of dnS (nderiv=3)  ==0?')
+  CALL Flush_Test(test_var)
+
+  dnA = deriv(dnB,ider=1)
+  CALL Write_dnS(dnA,string=test_var%test_log,info="cos''(x)")
+  CALL set_dnS(dnC,d0=-cos(x),d1=[sin(x),   ZERO,ZERO])
+  res_test = (dnA == dnC)
+  CALL Logical_Test(test_var,test1=res_test,info='deriv^2 of dnS (nderiv=3)  ==0?')
+  CALL Flush_Test(test_var)
+
+  CALL dealloc_dnS(dnX)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
 
   ! end the normal tests
 

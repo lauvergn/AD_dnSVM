@@ -43,6 +43,7 @@ The variable values are set with Val.
 
 Remark: for Y (the second variable), its value is ONE, the three 1st derivatives are [ZERO,ONE,ZERO] and all 2d derivatives are null.
 
+### 1b) Variable operations
 Operations with X, Y and Z:
 
 ```Fortran
@@ -69,7 +70,16 @@ gives:
  1st derivative  3         -0.416E+00
  ```
 
-### 1b) Vector initialization and Jacobian matrix
+ One can define a new function from the first derivative with respect to a variable (defined by the ider index) of a function:
+
+ ```Fortran
+ df = deriv(f,ider=1)
+```
+
+Here, df constains df/dX. 
+WARNING: the nderiv of df is reduced by one with respect to nderiv of f.
+
+### 1c) Vector initialization and Jacobian matrix
 
 Instead of several variable initializations, one can initialize a vector:
 
@@ -97,7 +107,7 @@ The vector intialization has optional arguments:
   VecOld = Variable([r,th], nVar=3, iVar=[1,2], nderiv=2 )
 ```
 
-### 1c) Special functions/subroutines
+### 1d) Special functions/subroutines
 
 - Subroutine `set_dnS(S,d0,d1,d2,d3)`to set the corresponding derivatives of `S` (`dnS_t`). `d0` is real (scalar), `d1` is a vector of real, `d2` is a matrix of real and `d3` has a rank 3. `d0`, `d1`, `d2` and `d3` are optional. `nderiv` is defined accordingly to the presence of  `d0`, `d1`, `d2` or `d3`.
 
