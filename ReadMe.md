@@ -45,6 +45,7 @@ Remark: for Y (the second variable), its value is ONE, the three 1st derivatives
 
 ### 1b) Variable operations
 Operations with X, Y and Z:
+Remarks: X, Y, Z, f, df, gradf are of dnS_t type and gradf is a table.
 
 ```Fortran
     f = ONE + cos(X)**2 + sin(Y*Z)
@@ -72,12 +73,17 @@ gives:
 
  One can define a new function from the first derivative with respect to a variable (defined by the ider index) of a function:
 
- ```Fortran
+```Fortran
  df = deriv(f,ider=1)
 ```
 
 Here, df constains df/dX. 
 WARNING: the nderiv of df is reduced by one with respect to nderiv of f.
+
+The gradient is also possible, the result is in a table of dnS. It has the same limitation with nderiv (reduction of nderiv)/
+```Fortran
+ gradf = grad(f)
+```
 
 ### 1c) Vector initialization and Jacobian matrix
 

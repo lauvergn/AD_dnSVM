@@ -776,7 +776,7 @@ PROGRAM TEST_dnS
   y=TWO
   z=THREE
   Vec_dnS     = Variable([x,y,z],nderiv=nderiv)
-  dnA         = cos(Vec_dnS(1))+sin(Vec_dnS(2))+Vec_dnS(3)
+  dnA         = cos(Vec_dnS(1))+sin(Vec_dnS(2))+Vec_dnS(3)**2
   dnB         = deriv(dnA,ider=1)
   CALL Write_dnS(dnB,string=test_var%test_log,info="cos'(x)")
   CALL set_dnS(dnC,                                        &
@@ -797,7 +797,41 @@ PROGRAM TEST_dnS
   CALL Logical_Test(test_var,test1=res_test,info='deriv^2 of dnS (nderiv=3)  ==0?')
   CALL Flush_Test(test_var)
 
-  CALL dealloc_dnS(dnX)
+
+
+  Vec_dnS     = Variable([x,y,z],nderiv=nderiv)
+  dnA         = cos(Vec_dnS(1))+sin(Vec_dnS(2))+Vec_dnS(3)**2
+  Vres_dnS    = grad(dnA)
+  if (allocated(Vana_dnS)) deallocate(Vana_dnS)
+  allocate(Vana_dnS(size(Vres_dnS)))
+
+  CALL Write_dnS(Vres_dnS(1),string=test_var%test_log,info="cos'(x)")
+  CALL set_dnS(Vana_dnS(1),                                &
+               d0=     -sin(x),                            &
+               d1=        [-cos(x),   ZERO,ZERO],          &
+               d2=reshape([sin(x),ZERO,ZERO,               &
+                           ZERO,ZERO,ZERO,                 &
+                           ZERO, ZERO,ZERO],shape=[3,3]))
+  
+  CALL Write_dnS(Vres_dnS(2),string=test_var%test_log,info="sin'(y)")
+  CALL set_dnS(Vana_dnS(2),                                &
+               d0=     cos(y),                             &
+               d1=        [ZERO,-sin(y),ZERO],             &
+               d2=reshape([ZERO,ZERO,ZERO,                 &
+                           ZERO,-cos(y),ZERO,                 &
+                           ZERO,ZERO,ZERO],shape=[3,3]))
+
+  CALL Write_dnS(Vres_dnS(3),string=test_var%test_log,info="z'")
+  CALL set_dnS(Vana_dnS(3),                                &
+               d0=     TWO*z,                              &
+               d1=        [ZERO,ZERO,TWO],                 &
+               d2=reshape([ZERO,ZERO,ZERO,                 &
+                           ZERO,ZERO,ZERO,                 &
+                           ZERO,ZERO,ZERO],shape=[3,3]))
+  
+  res_test = (all(Vres_dnS == Vres_dnS))
+  CALL Logical_Test(test_var,test1=res_test,info='grad of dnS (nderiv=3)  ==0?')
+  CALL Flush_Test(test_var)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)

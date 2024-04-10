@@ -177,7 +177,7 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh,atan2
 
   PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,Write_dnS
-  PUBLIC :: deriv
+  PUBLIC :: deriv,grad
 
   PUBLIC :: get_nderiv,get_nVar
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
@@ -203,6 +203,9 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
   INTERFACE deriv
     MODULE PROCEDURE AD_Deriv_OF_dnS
+  END INTERFACE
+  INTERFACE grad
+    MODULE PROCEDURE AD_Grad_OF_dnS
   END INTERFACE
   INTERFACE Write_dnS
      MODULE PROCEDURE AD_Write_dnS_file,AD_Write_dnS_string
@@ -794,7 +797,25 @@ CONTAINS
     END SELECT
 
   END FUNCTION AD_Deriv_OF_dnS
-!> @brief Public function to get d0 from a derived type dnS.
+  FUNCTION AD_Grad_OF_dnS(S) RESULT(TabdS)
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnS_t), ALLOCATABLE   :: TabdS(:)
+    TYPE (dnS_t), intent(in)    :: S
+
+    character (len=*), parameter :: name_sub='AD_Grad_OF_dnS'
+
+  integer :: iV,nVar
+
+  nVar = get_nVar(S)
+  allocate(TabdS(nVar))
+  DO iV=1,nVar
+    TabdS(iV) = Deriv(S,iV)
+  END DO
+
+END FUNCTION AD_Grad_OF_dnS
+  !> @brief Public function to get d0 from a derived type dnS.
 !!
 !> @author David Lauvergnat
 !! @date 03/08/2017
