@@ -35,6 +35,7 @@ PROGRAM TEST_dnS
 
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
     TYPE (dnS_t)                     :: dnA,dnB,dnC,dnDiff
+    TYPE (dnS_t)                     :: dnMX,dnMXana
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
     TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
@@ -434,7 +435,6 @@ PROGRAM TEST_dnS
   END IF
   CALL Flush_Test(test_var)
 
-  write(6,*) 'coucou' ; flush(6)
   Vec_dnS = Variable([x,ZERO],nVar=3,iVar=[1,2],nderiv=nderiv)
   dnZ =     Variable(z,nVar=3,iVar=3,nderiv=nderiv)
 
@@ -454,7 +454,6 @@ PROGRAM TEST_dnS
   END IF
 
 
-  write(6,*) 'coucou2' ; flush(6)
   Vec_dnS = Variable([x,ZERO],nVar=3,nderiv=nderiv)
   dnZ =     Variable(z,nVar=3,iVar=3,nderiv=nderiv)
 
@@ -696,7 +695,7 @@ PROGRAM TEST_dnS
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')
-  CALL Append_Test(test_var,'new tests : flatten dnS')
+  CALL Append_Test(test_var,'new tests : flatten dnS and set_d0')
   CALL Append_Test(test_var,'============================================')
   CALL Flush_Test(test_var)
 
@@ -710,7 +709,17 @@ PROGRAM TEST_dnS
   CALL Flush_Test(test_var)
 
   dnX         = Variable(TWO,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
+  CALL set_d0S(dnX,ZERO)
+  FlatdnS     = get_Flatten(dnX)
+  FlatdnS_ref = [ZERO,  ONE,ZERO,  ZERO,ZERO,ZERO,ZERO,  ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
+  res_test = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
+  CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref + set_d0 (nderiv=3)  ==0?')
+  write(out_unit,*) 'FlatdnS',FlatdnS
+  CALL Flush_Test(test_var)
+
+  dnX         = Variable(TWO,nVar=2,nderiv=nderiv,iVar=1) ! to set up the derivatives
   FlatdnS     = get_Flatten(dnX,all_der=.TRUE.)
+  FlatdnS_ref = [TWO,  ONE,ZERO,  ZERO,ZERO,ZERO,ZERO,  ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO,ZERO]
   res_test    = all(abs(FlatdnS-FlatdnS_ref) < ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='FlatdnS-FlatdnS_ref (all)       ==0?')
   write(out_unit,*) 'FlatdnS',FlatdnS
@@ -836,6 +845,48 @@ PROGRAM TEST_dnS
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
 
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : mod ... of dnS')
+  CALL Append_Test(test_var,'============================================')
+  CALL Flush_Test(test_var)
+
+  nderiv = 3
+  x=pi*(TEN+HALF)
+
+  dnX         = Variable(x,nderiv=nderiv)
+  dnMX        = mod(dnX,TWO*pi)
+  dnMXana     = Variable(mod(x,TWO*pi),nderiv=nderiv)
+  CALL Append_Test(test_var,'mod(10.5*pi,2pi)=' // to_string(mod(x,TWO*pi)),Print_res=.FALSE.)
+  res_test = AD_Check_dnS_IS_ZERO(dnMX - dnMXana,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='mod of dnS (nderiv=3)  ==0?')
+  CALL Flush_Test(test_var)
+
+  dnX         = Variable(-x,nderiv=nderiv)
+  dnMX        = mod(dnX,TWO*pi)
+  dnMXana     = Variable(mod(-x,TWO*pi),nderiv=nderiv)
+  CALL Append_Test(test_var,'mod(-10.5*pi,2pi)=' // to_string(mod(-x,TWO*pi)),Print_res=.FALSE.)
+  res_test = AD_Check_dnS_IS_ZERO(dnMX - dnMXana,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='mod of dnS (nderiv=3)  ==0?')
+  CALL Flush_Test(test_var)
+
+  dnX         = Variable(x,nderiv=nderiv)
+  dnMX        = modulo(dnX,TWO*pi)
+  dnMXana     = Variable(modulo(x,TWO*pi),nderiv=nderiv)
+  CALL Append_Test(test_var,'modulo(10.5*pi,2pi)=' // to_string(modulo(x,TWO*pi)),Print_res=.FALSE.)
+  res_test = AD_Check_dnS_IS_ZERO(dnMX - dnMXana,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='modulo of dnS (nderiv=3)  ==0?')
+
+  dnX         = Variable(-x,nderiv=nderiv)
+  dnMX        = modulo(dnX,TWO*pi)
+  dnMXana     = Variable(modulo(-x,TWO*pi),nderiv=nderiv)
+  CALL Append_Test(test_var,'modulo(-10.5*pi,2pi)=' // to_string(modulo(-x,TWO*pi)),Print_res=.FALSE.)
+  res_test = AD_Check_dnS_IS_ZERO(dnMX - dnMXana,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='modulo of dnS (nderiv=3)  ==0?')
+
+  CALL Flush_Test(test_var)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   ! end the normal tests
 
   CALL TEST_EXCEPTION()

@@ -175,8 +175,9 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: sqrt
   PUBLIC :: exp,abs,log,log10
   PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh,atan2
+  PUBLIC :: mod,modulo
 
-  PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,Write_dnS
+  PUBLIC :: Variable,alloc_dnS,dealloc_dnS,set_dnS,set_d0S,Write_dnS
   PUBLIC :: deriv,grad
 
   PUBLIC :: get_nderiv,get_nVar
@@ -200,6 +201,9 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
   INTERFACE set_dnS
      MODULE PROCEDURE AD_set_dnS,AD_set_dnS_with_ider
+  END INTERFACE
+  INTERFACE set_d0S
+    MODULE PROCEDURE AD_set_d0S
   END INTERFACE
   INTERFACE deriv
     MODULE PROCEDURE AD_Deriv_OF_dnS
@@ -298,6 +302,12 @@ MODULE ADdnSVM_dnS_m
      MODULE PROCEDURE AD_get_ATANH_dnS
   END INTERFACE
 
+  INTERFACE mod
+    MODULE PROCEDURE AD_get_MOD_dnS
+  END INTERFACE
+  INTERFACE modulo
+    MODULE PROCEDURE AD_get_MODULO_dnS
+  END INTERFACE
 CONTAINS
 !> @brief Public subroutine which allocates a derived type dnS.
 !!
@@ -671,6 +681,19 @@ CONTAINS
     END IF
 
   END SUBROUTINE AD_set_dnS
+  SUBROUTINE AD_set_d0S(S,d0)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    real (kind=Rkind),   intent(in)     :: d0
+    TYPE (dnS_t),        intent(inout)  :: S
+
+
+    character (len=*), parameter :: name_sub='AD_set_d0S'
+
+    S%d0 = d0
+
+  END SUBROUTINE AD_set_d0S
   SUBROUTINE AD_set_dnS_with_ider(S,val,ider)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
@@ -2685,5 +2708,34 @@ END FUNCTION AD_Grad_OF_dnS
     Sres = AD_get_F_dnS(S,d0f,d1f,d2f,d3f)
 
   END FUNCTION AD_get_ATANH_dnS
+  ELEMENTAL FUNCTION AD_get_MOD_dnS(S,R) RESULT(Sres)
+  USE QDUtil_m
 
+  TYPE (dnS_t)                       :: Sres
+  TYPE (dnS_t),        intent(in)    :: S
+  real (kind=Rkind),   intent(in)    :: R
+
+  integer :: err_dnS_loc
+  real(kind=Rkind) :: d0f,d1f,d2f,d3f
+  character (len=*), parameter :: name_sub='AD_get_MOD_dnS'
+
+  Sres    = S
+  Sres%d0 = mod(Sres%d0,R)
+
+END FUNCTION AD_get_MOD_dnS
+ELEMENTAL FUNCTION AD_get_MODULO_dnS(S,R) RESULT(Sres)
+USE QDUtil_m
+
+TYPE (dnS_t)                       :: Sres
+TYPE (dnS_t),        intent(in)    :: S
+real (kind=Rkind),   intent(in)    :: R
+
+integer :: err_dnS_loc
+real(kind=Rkind) :: d0f,d1f,d2f,d3f
+character (len=*), parameter :: name_sub='AD_get_MODULO_dnS'
+
+Sres    = S
+Sres%d0 = modulo(Sres%d0,R)
+
+END FUNCTION AD_get_MODULO_dnS
 END MODULE ADdnSVM_dnS_m

@@ -188,10 +188,10 @@ MODULE ADdnSVM_dnVec_m
      MODULE PROCEDURE AD_get_Flatten_dnVec
   END INTERFACE
   INTERFACE dot_product
-     MODULE PROCEDURE AD_dot_product_dnVec
+     MODULE PROCEDURE AD_dot_product_dnVec,AD_dot_product_dnVec_Vec,AD_dot_product_Vec_dnVec
   END INTERFACE
   INTERFACE cross_product
-    MODULE PROCEDURE AD_cross_product_dnVec
+    MODULE PROCEDURE AD_cross_product_dnVec,AD_cross_product_Vec_dnVec,AD_cross_product_dnVec_vec
   END INTERFACE
   CONTAINS
 !> @brief Public subroutine which allocates a derived type dnVec.
@@ -2349,6 +2349,7 @@ MODULE ADdnSVM_dnVec_m
     integer :: nder1,nsize1,nVar1
     integer :: nder2,nsize2,nVar2
     logical :: with_nderiv_loc
+    logical :: check_size,check_nVar
 
 
     nsize1 = get_Size(Vec1)
@@ -2356,8 +2357,9 @@ MODULE ADdnSVM_dnVec_m
     nsize2 = get_Size(Vec2)
     nVar2  = get_nVar(Vec2)
 
-    check =             (nsize1 > 0 .AND. nsize1 == nsize2)
-    check = check .AND. (nVar1 > 0  .AND. nVar1  == nVar2)
+    check_size = (nsize1 > 0 .AND. nsize1 == nsize2)
+    check_nVar = (nVar1  == nVar2) .AND. (nVar1 >= 0)
+    check = check_size .AND. check_nVar
 
     IF (present(with_nderiv)) THEN
       with_nderiv_loc = with_nderiv
@@ -2447,10 +2449,134 @@ MODULE ADdnSVM_dnVec_m
     END IF
 
   END FUNCTION AD_dot_product_dnVec
-
-  FUNCTION AD_cross_product_dnVec(Vec1,Vec2) RESULT(Vres)
+  FUNCTION AD_dot_product_dnVec_Vec(Vec1,Vec2) RESULT(Sres)
     USE QDUtil_m
     USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnS_t)                         :: Sres
+    TYPE (dnVec_t),        intent(in)    :: Vec1
+    real (kind=Rkind),     intent(in)    :: Vec2(:)
+
+    integer           :: nsize1,nVar1,nderiv1,nsize2,i,j,k
+    real (kind=Rkind) :: val
+    character (len=*), parameter :: name_sub='AD_dot_product_dnVec_Vec'
+
+    nderiv1 = get_nderiv(Vec1)
+    nVar1   = get_nVar(Vec1)
+    nsize1  = get_Size(Vec1)
+
+    nsize2  = size(Vec2)
+
+    IF (nsize1 /= nsize2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 or Vec2 are not equal.'
+      write(out_unit,*) '  nsize1,nsize2',nsize1,nsize2
+      STOP 'ERROR in AD_dot_product_dnVec_Vec: the sizes of Vec1 or Vec2 are not equal.'
+    END IF
+
+ 
+    CALL alloc_dnS(Sres,nVar=nVar1,nderiv=nderiv1)
+    Sres = ZERO
+
+    IF (nderiv1 >= 0) THEN
+      val = dot_product(Vec1%d0,Vec2)
+      CALL Set_dnS(Sres,val=val,ider=[0])
+    END IF
+
+    IF (nderiv1 >= 1) THEN
+      DO i=1,nVar1
+        val = dot_product(Vec1%d1(:,i),Vec2)
+        CALL Set_dnS(Sres,val=val,ider=[i])
+      END DO
+    END IF
+
+    IF (nderiv1 >= 2) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+        val = dot_product(Vec1%d2(:,j,i),Vec2)
+        CALL Set_dnS(Sres,val=val,ider=[j,i])
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv1 >= 3) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+      DO k=1,nVar1
+        val = dot_product(Vec1%d3(:,k,j,i),Vec2)
+        CALL Set_dnS(Sres,val=val,ider=[k,j,i])
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dot_product_dnVec_Vec
+  FUNCTION AD_dot_product_Vec_dnVec(Vec1,Vec2) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnS_t)                         :: Sres
+    real (kind=Rkind),     intent(in)    :: Vec1(:)
+    TYPE (dnVec_t),        intent(in)    :: Vec2
+
+    integer           :: nsize1,nVar1,nderiv1,nsize2,nVar2,nderiv2,i,j,k
+    logical           :: check
+    real (kind=Rkind) :: val
+    character (len=*), parameter :: name_sub='AD_dot_product_Vec_dnVec'
+
+    nderiv2 = get_nderiv(Vec2)
+    nsize2  = get_Size(Vec2)
+    nVar2   = get_nVar(Vec2)
+    
+    nsize1  = size(Vec1)
+
+    IF (nsize1 /= nsize2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 or Vec2 are not equal.'
+      write(out_unit,*) '  nsize1,nsize2',nsize1,nsize2
+      STOP 'ERROR in AD_dot_product_Vec_dnVec: the sizes of Vec1 or Vec2 are not equal.'
+    END IF
+
+    CALL alloc_dnS(Sres,nVar=nVar2,nderiv=nderiv2)
+    Sres = ZERO
+
+    IF (nderiv2 >= 0) THEN
+      val = dot_product(Vec1,Vec2%d0)
+      CALL Set_dnS(Sres,val=val,ider=[0])
+    END IF
+
+    IF (nderiv2 >= 1) THEN
+      DO i=1,nVar2
+        val = dot_product(Vec1,Vec2%d1(:,i))
+        CALL Set_dnS(Sres,val=val,ider=[i])
+      END DO
+    END IF
+
+    IF (nderiv2 >= 2) THEN
+      DO i=1,nVar2
+      DO j=1,nVar2
+        val = dot_product(Vec1,Vec2%d2(:,j,i))
+        CALL Set_dnS(Sres,val=val,ider=[j,i])
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv2 >= 3) THEN
+      DO i=1,nVar2
+      DO j=1,nVar2
+      DO k=1,nVar2
+        val = dot_product(Vec1,Vec2%d3(:,k,j,i))
+        CALL Set_dnS(Sres,val=val,ider=[k,j,i])
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dot_product_Vec_dnVec
+  FUNCTION AD_cross_product_dnVec(Vec1,Vec2) RESULT(Vres)
+    USE QDUtil_m
     IMPLICIT NONE
 
     TYPE (dnVec_t)                       :: Vres
@@ -2474,7 +2600,7 @@ MODULE ADdnSVM_dnVec_m
       nVar2   = get_nVar(Vec2)
       write(out_unit,*) '  nsize2,nVar2,nderiv2',nsize2,nVar2,nderiv2
       write(out_unit,*) '  nsize2, check',(nsize1 > 0 .AND. nsize1 == nsize2)
-      write(out_unit,*) '  nVar2,  check',(nVar1 > 0  .AND. nVar1  == nVar2)
+      write(out_unit,*) '  nVar2,  check',(nVar1  == nVar2),(nVar1 >= 0)
       write(out_unit,*) '  nderiv2,check',(nderiv1 >= 0  .AND. nderiv1  == nderiv2)
       STOP 'ERROR in AD_cross_product_dnVec: Vec1 and Vec2 intializations are different'
     END IF
@@ -2533,6 +2659,119 @@ MODULE ADdnSVM_dnVec_m
     END IF
 
   END FUNCTION AD_cross_product_dnVec
+
+  FUNCTION AD_cross_product_dnVec_Vec(Vec1,Vec2) RESULT(Vres)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                       :: Vres
+    TYPE (dnVec_t),        intent(in)    :: Vec1
+    real (kind=Rkind),     intent(in)    :: Vec2(:)
+
+    integer           :: nsize1,nVar1,nderiv1,nsize2,i,j,k
+    logical           :: check
+    character (len=*), parameter :: name_sub='AD_cross_product_dnVec_Vec'
+
+    nderiv1 = get_nderiv(Vec1)
+    nsize1  = get_Size(Vec1)
+    nVar1   = get_nVar(Vec1)
+    nsize2  = size(vec2)
+
+    IF (nsize1 /= 3 .OR. nsize2 /= 3) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 or Vec2 are not equal to 3.'
+      write(out_unit,*) '  nsize1,nsize2',nsize1,nsize2
+      STOP 'ERROR in AD_cross_product_dnVec_Vec: the sizes of Vec1 or Vec2 are not equal to 3.'
+    END IF
+
+    CALL alloc_dnVec(Vres,SizeVec=nsize1,nVar=nVar1,nderiv=nderiv1)
+
+    IF (nderiv1 >= 0) THEN
+      Vres%d0 = AD_cross_product(Vec1%d0,Vec2)
+    END IF
+
+    IF (nderiv1 >= 1) THEN
+      DO i=1,nVar1
+        Vres%d1(:,i) = AD_cross_product(Vec1%d1(:,i),Vec2)
+      END DO
+    END IF
+
+    IF (nderiv1 >= 2) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+        Vres%d2(:,j,i) = AD_cross_product(Vec1%d2(:,j,i),Vec2)
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv1 >= 3) THEN
+      DO i=1,nVar1
+      DO j=1,nVar1
+      DO k=1,nVar1
+        Vres%d3(:,k,j,i) = AD_cross_product(Vec1%d3(:,k,j,i),Vec2)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_cross_product_dnVec_Vec
+
+  FUNCTION AD_cross_product_Vec_dnVec(Vec1,Vec2) RESULT(Vres)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                       :: Vres
+    real (kind=Rkind),     intent(in)    :: Vec1(:)
+    TYPE (dnVec_t),        intent(in)    :: Vec2
+
+    integer           :: nsize1,nsize2,nVar2,nderiv2,i,j,k
+    character (len=*), parameter :: name_sub='AD_cross_product_Vec_dnVec'
+
+
+    nderiv2 = get_nderiv(Vec2)
+    nsize2  = get_Size(Vec2)
+    nVar2   = get_nVar(Vec2)
+
+    nsize1  = size(Vec1)
+
+    IF (nsize1 /= 3 .OR. nsize2 /= 3) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 or Vec2 are not equal to 3.'
+      write(out_unit,*) '  nsize1,nsize2',nsize1,nsize2
+      STOP 'ERROR in AD_cross_product_Vec_dnVec: the sizes of Vec1 and Vec2 are not equal to 3.'
+    END IF
+
+    CALL alloc_dnVec(Vres,SizeVec=nsize2,nVar=nVar2,nderiv=nderiv2)
+
+    IF (nderiv2 >= 0) THEN
+      Vres%d0 = AD_cross_product(Vec1,Vec2%d0)
+    END IF
+
+    IF (nderiv2 >= 1) THEN
+      DO i=1,nVar2
+        Vres%d1(:,i) = AD_cross_product(Vec1,Vec2%d1(:,i))
+      END DO
+    END IF
+
+    IF (nderiv2 >= 2) THEN
+      DO i=1,nVar2
+      DO j=1,nVar2
+        Vres%d2(:,j,i) = AD_cross_product(Vec1,Vec2%d2(:,j,i))
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv2 >= 3) THEN
+      DO i=1,nVar2
+      DO j=1,nVar2
+      DO k=1,nVar2
+        Vres%d3(:,k,j,i) = AD_cross_product(Vec1,Vec2%d3(:,k,j,i))
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_cross_product_Vec_dnVec
   !================================================================
 !       produit vectoriel
 !================================================================
