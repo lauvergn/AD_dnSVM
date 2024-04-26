@@ -36,6 +36,7 @@ PROGRAM TEST_dnS
     TYPE (dnS_t)                     :: dnX,dn2X,dnY,dnZ,Sana,Snum,dnXZ
     TYPE (dnS_t)                     :: dnA,dnB,dnC,dnDiff
     TYPE (dnS_t)                     :: dnMX,dnMXana
+    TYPE (dnS_t)                     :: dnF,dnFX,dnFY
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
     TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
@@ -887,6 +888,33 @@ PROGRAM TEST_dnS
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+
+
+  CALL Append_Test(test_var,'============================================')
+  CALL Append_Test(test_var,'new tests : function combination')
+  CALL Append_Test(test_var,'============================================')
+  CALL Flush_Test(test_var)
+
+  nderiv = 2
+  x=ONE
+
+  dnX         = Variable(x,nderiv=nderiv) ! 1D for the function
+  dnF         = cos(dnX)
+
+  dnY         = Variable(x,iVar=2,nVar=4,nderiv=nderiv)
+
+  dnFY        = dnF_OF_dnS(dnF,dnX)
+  dnFX        = cos(dnY)
+  res_test = AD_Check_dnS_IS_ZERO(dnFX - dnFX,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='function combination  ==0?')
+  CALL Flush_Test(test_var)
+
+  CALL Flush_Test(test_var)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
+  ! end the normal tests
+
   ! end the normal tests
 
   CALL TEST_EXCEPTION()

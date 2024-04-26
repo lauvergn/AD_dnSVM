@@ -184,6 +184,7 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
   PUBLIC :: get_Flatten
   PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1
+  PUBLIC :: dnf_OF_dnS
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
 
@@ -245,6 +246,10 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
   INTERFACE ReduceDerivatives_dnS2_TO_dnS1
      MODULE PROCEDURE AD_ReduceDerivatives_dnS2_TO_dnS1
+  END INTERFACE
+
+  INTERFACE dnf_OF_dnS
+    MODULE PROCEDURE AD_dnF_OF_dnS
   END INTERFACE
 
   INTERFACE sqrt
@@ -2324,6 +2329,60 @@ END FUNCTION AD_Grad_OF_dnS
 
 
   END FUNCTION AD_get_F_dnS
+
+  FUNCTION AD_dnF_OF_dnS(f,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnS_t)                       :: Sres
+    TYPE (dnS_t),        intent(in)    :: S,f
+
+    integer :: nderiv,id,jd,kd
+    character (len=*), parameter :: name_sub='AD_dnF_OF_dnS'
+
+    CALL AD_dealloc_dnS(Sres)
+
+    IF (get_nVar(f) /= 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar of f is not 1'
+      write(out_unit,*) '  nVar',get_nVar(f)
+      STOP 'ERROR in AD_dnF_OF_dnS: nVar of f is not 1'
+    END IF
+
+    nderiv = min(get_nderiv(f),get_nderiv(S))
+
+    CALL alloc_dnS(Sres, nVar=get_nVar(S), nderiv=nderiv)
+
+    !Sres%nderiv = S%nderiv
+
+    Sres%d0 = f%d0 ! f%d0 = func(s%d0)
+
+    IF (allocated(Sres%d1)) THEN
+      Sres%d1 =  f%d1(1) * S%d1
+    END IF
+
+    IF (allocated(Sres%d2)) THEN
+      Sres%d2 = f%d1(1) * S%d2
+      DO id=1,size(S%d1)
+      DO jd=1,size(S%d1)
+        Sres%d2(jd,id) = Sres%d2(jd,id) + f%d2(1,1) * S%d1(id)*S%d1(jd)
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d3)) THEN
+      Sres%d3 = f%d1(1) * S%d3
+      DO id=1,size(S%d1)
+      DO jd=1,size(S%d1)
+      DO kd=1,size(S%d1)
+        Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + &
+                            f%d2(1,1) * (S%d1(id)*S%d2(kd,jd) + S%d1(jd)*S%d2(kd,id) + S%d1(kd)*S%d2(jd,id)) + &
+                            f%d3(1,1,1) * S%d1(id)*S%d1(jd)*S%d1(kd)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dnF_OF_dnS
 
   ELEMENTAL FUNCTION AD_dnS_EXP_R(S,R) RESULT(Sres)
     USE QDUtil_m
