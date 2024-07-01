@@ -67,11 +67,11 @@ MODULE ADdnSVM_dnVec_m
 
   CONTAINS
     PROCEDURE, PRIVATE :: AD_set_dnVec_TO_R
-    PROCEDURE, PRIVATE :: AD_set_dnVec_FROM_VecOFdnS
+    PROCEDURE, PRIVATE :: AD_VecOFdnS_TO_dnVec
+    PROCEDURE, PRIVATE, PASS(vec) :: AD_dnVec_TO_VecOFdnS
     PROCEDURE, PRIVATE :: AD_set_dnVec_TO_VecOfR
     GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnVec_TO_R,                  &
-                                           AD_set_dnVec_FROM_VecOFdnS,         &
-                                           AD_set_dnVec_TO_VecOfR
+              AD_dnVec_TO_VecOFdnS, AD_VecOFdnS_TO_dnVec, AD_set_dnVec_TO_VecOfR
   END TYPE dnVec_t
 
   PUBLIC :: Variable_dnVec,dnVec_t,alloc_dnVec,dealloc_dnVec,Write_dnVec
@@ -904,7 +904,7 @@ MODULE ADdnSVM_dnVec_m
 !!
 !! @param vec                   TYPE (dnVec_t):  derived type which deals with the derivatives of a vector.
 !! @param VecOFS                TYPE(dnS):       vector of derived type which deals with the derivatives of a scalar.
-  SUBROUTINE AD_set_dnVec_FROM_VecOFdnS(vec,VecOFS)
+  SUBROUTINE AD_VecOFdnS_TO_dnVec(vec,VecOFS)
     USE QDUtil_m
     USE ADdnSVM_dnS_m
     IMPLICIT NONE
@@ -916,7 +916,7 @@ MODULE ADdnSVM_dnVec_m
     integer :: i,iv
 
     integer :: err_dnVec_loc
-    character (len=*), parameter :: name_sub='AD_set_dnVec_FROM_VecOFdnS'
+    character (len=*), parameter :: name_sub='AD_VecOFdnS_TO_dnVec'
 
     i = lbound(VecOFS,dim=1)
     SizeVec = size(VecOFS)
@@ -930,7 +930,35 @@ MODULE ADdnSVM_dnVec_m
       CALL AD_dnS_TO_dnVec(VecOFS(i),vec,iv)
     END DO
 
-  END SUBROUTINE AD_set_dnVec_FROM_VecOFdnS
+  END SUBROUTINE AD_VecOFdnS_TO_dnVec
+  SUBROUTINE AD_dnVec_TO_VecOFdnS(VecOFS,vec)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnS_t), allocatable,   intent(inout)  :: VecOFS(:)
+    CLASS (dnVec_t),             intent(in)     :: vec
+
+    integer :: SizeVec,nVar,nderiv
+    integer :: i
+
+    integer :: err_dnVec_loc
+    character (len=*), parameter :: name_sub='AD_dnVec_TO_VecOFdnS'
+
+    SizeVec = get_size(vec)
+    nVar    = get_nVar(vec)
+    nderiv  = get_nderiv(vec)
+
+    CALL dealloc_dnS(VecOFS)
+    deallocate(VecOFS)
+
+    allocate(VecOFS(SizeVec))
+
+    DO i=1,SizeVec
+      CALL AD_dnVec_TO_dnS(Vec,VecOFS(i),i)
+    END DO
+
+  END SUBROUTINE AD_dnVec_TO_VecOFdnS
   SUBROUTINE AD_vec_wADDTO_dnVec2_ider(vec1,w1,dnVec2,ider)
     USE QDUtil_m, ONLY : Rkind, out_unit
     USE ADdnSVM_dnS_m

@@ -66,6 +66,8 @@ PROGRAM TEST_dnS
   Vec_dnS = Variable([x,ZERO,z],nderiv=nderiv)
 
   dnV1 = Vec_dnS
+  Vec_dnS = dnV1
+  dnV1 = Vec_dnS
 
   CALL set_dnVec(dnV2,d0=[x,ZERO,z],                           &
                       d1=reshape([ONE ,ZERO,ZERO,              &
@@ -76,7 +78,7 @@ PROGRAM TEST_dnS
   res_test = Check_dnVec_IS_ZERO(dnV2-dnV1,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='dnV1-dnV2==0?')
   res_test = Check_dnVec_IS_ZERO(dnV2-dnV1,dnSerr_test)
-  CALL Append_Test(test_var,'test: dnVec = VecOFdnS, dnVec2 - dnVec1, set_dnVec, Write_dnVec')
+  CALL Append_Test(test_var,'test: dnVec = VecOFdnS, VecOFdnS = dnVec, dnVec2 - dnVec1, set_dnVec, Write_dnVec')
 
   IF (print_level > 0) THEN
     CALL Write_dnVec(dnV1,info='dnV1')
