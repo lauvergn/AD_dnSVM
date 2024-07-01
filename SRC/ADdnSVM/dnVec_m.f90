@@ -949,8 +949,10 @@ MODULE ADdnSVM_dnVec_m
     nVar    = get_nVar(vec)
     nderiv  = get_nderiv(vec)
 
-    CALL dealloc_dnS(VecOFS)
-    deallocate(VecOFS)
+    IF (allocated(VecOFS)) THEN
+      CALL dealloc_dnS(VecOFS)
+      deallocate(VecOFS)
+    END IF
 
     allocate(VecOFS(SizeVec))
 
