@@ -2,7 +2,7 @@
 #=================================================================================
 # Compiler?
 #Possible values: (Empty: gfortran)
-#                ifort (version: 19. linux)
+#                ifort (version: 19. linux) or ifx
 #                gfortran (version: 9. linux and osx)
 #                nagfor (version 7.0, osx)
  FC = gfortran
@@ -295,13 +295,12 @@ $(OBJ_DIR)/dnS_m.o:            | $(QDLIBA)
 
 #=================================================================================
 #=================================================================================
-# ifort compillation v17 v18 with mkl
+# ifort compillation v17 v18 with mkl or ifx
 #=================================================================================
-ifeq ($(FFC),ifort)
+ifeq ($(FFC),$(filter $(FFC),ifort ifx))
 
   # opt management
   ifeq ($(OOPT),1)
-      #F90FLAGS = -O -parallel -g -traceback
       FFLAGS = -O  -g -traceback -heap-arrays
   else
       FFLAGS = -O0 -check all -g -traceback
@@ -329,10 +328,11 @@ ifeq ($(FFC),ifort)
   FLIB    = $(QDLIBA)
 
   ifeq ($(LLAPACK),1)
-    #FLIB += -mkl -lpthread
-    FLIB += -qmkl -lpthread
-    #FLIB +=  ${MKLROOT}/lib/libmkl_blas95_ilp64.a ${MKLROOT}/lib/libmkl_lapack95_ilp64.a ${MKLROOT}/lib/libmkl_intel_ilp64.a \
-    #         ${MKLROOT}/lib/libmkl_intel_thread.a ${MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl
+    ifeq ($(FFC),ifort)
+      FLIB += -mkl -lpthread
+    else # ifx
+      FLIB += -qmkl -lpthread
+    endif
   else
     FLIB += -lpthread
   endif
