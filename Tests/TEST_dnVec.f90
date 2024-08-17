@@ -43,7 +43,7 @@ PROGRAM TEST_dnS
 
     real (kind=Rkind)                :: x,y,z,r,th,err,maxdiff,maxdnS
     real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
-    real (kind=Rkind), allocatable   :: FlatdnS(:),FlatdnS_ref(:)
+    real (kind=Rkind), allocatable   :: FlatdnS(:),FlatdnS_ref(:),Mat(:,:)
 
     integer                          :: nderiv,nio_test
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
@@ -172,6 +172,38 @@ PROGRAM TEST_dnS
     CALL Write_dnVec(dnV2,info='dnV2')
   END IF
   CALL Flush_Test(test_var)
+
+
+
+  ! matmul
+  dnV1 = Variable_dnVec([HALF,TWO],nderiv=1)
+  Mat = reshape([ONE,TWO,  THREE,FOUR,  FIVE,SIX],shape=[3,2])
+  dnV2 = matmul(Mat,dnV1)
+
+  FlatdnS = get_Flatten(dnV2)
+  FlatdnS_ref = [real(kind=Rkind) :: 8.5,11.,13.5, 1.,2.,3., 4.,5.,6. ]
+  res_test = maxval(abs(FlatdnS-FlatdnS_ref)) < ZeroTresh
+  CALL Logical_Test(test_var,test1=res_test,info='matmul(mat,dnVec) dnV1-dnV2==0?')
+  IF (print_level > 0) THEN
+    CALL Write_dnVec(dnV1,info='dnV1')
+    CALL Write_mat(Mat,nio=out_unit,info='Mat',nbcol=5)
+    CALL Write_dnVec(dnV2,info='dnV2 (from matmul)')
+  END IF
+  CALL Flush_Test(test_var)
+
+  Mat = transpose(Mat)
+  dnV2 = matmul(dnV1,Mat)
+  FlatdnS = get_Flatten(dnV2)
+  FlatdnS_ref = [real(kind=Rkind) :: 8.5,11.,13.5, 1.,2.,3., 4.,5.,6. ]
+  res_test = maxval(abs(FlatdnS-FlatdnS_ref)) < ZeroTresh
+  CALL Logical_Test(test_var,test1=res_test,info='matmul(dnVec,mat) dnV1-dnV2==0?')
+  IF (print_level > 0) THEN
+    CALL Write_dnVec(dnV1,info='dnV1')
+    CALL Write_mat(Mat,nio=out_unit,info='Mat',nbcol=5)
+    CALL Write_dnVec(dnV2,info='dnV2 (from matmul)')
+  END IF
+  CALL Flush_Test(test_var)
+
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)

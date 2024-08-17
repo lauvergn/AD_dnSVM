@@ -84,7 +84,7 @@ MODULE ADdnSVM_dnVec_m
   PUBLIC :: get_nderiv,get_nVar,get_size
   PUBLIC :: get_d0,get_d1,get_d2,get_d3,get_Flatten
   PUBLIC :: set_dnVec
-  PUBLIC :: dot_product,cross_product
+  PUBLIC :: dot_product,cross_product,matmul
 
   INTERFACE operator (*)
     MODULE PROCEDURE AD_dnVec_TIME_R,AD_R_TIME_dnVec
@@ -189,6 +189,9 @@ MODULE ADdnSVM_dnVec_m
   END INTERFACE
   INTERFACE dot_product
      MODULE PROCEDURE AD_dot_product_dnVec,AD_dot_product_dnVec_Vec,AD_dot_product_Vec_dnVec
+  END INTERFACE
+  INTERFACE matmul
+    MODULE PROCEDURE AD_matmul_Mat_dnVec,AD_matmul_dnVec_Mat
   END INTERFACE
   INTERFACE cross_product
     MODULE PROCEDURE AD_cross_product_dnVec,AD_cross_product_Vec_dnVec,AD_cross_product_dnVec_vec
@@ -2605,6 +2608,125 @@ MODULE ADdnSVM_dnVec_m
     END IF
 
   END FUNCTION AD_dot_product_Vec_dnVec
+
+  FUNCTION AD_matmul_Mat_dnVec(Mat1,Vec2) RESULT(Vres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                       :: Vres
+    TYPE (dnVec_t),        intent(in)    :: Vec2
+    real (kind=Rkind),     intent(in)    :: Mat1(:,:)
+
+    integer           :: nderivVec,nVarVec,nsizeVec,nsizeM1,nsizeM2,i,j,k
+    character (len=*), parameter :: name_sub='AD_matmul_Mat_dnVec'
+
+    nderivVec = get_nderiv(Vec2)
+    nVarVec   = get_nVar(Vec2)
+    nsizeVec  = get_Size(Vec2)
+
+    nsizeM2  = size(Mat1,dim=2)
+    nsizeM1  = size(Mat1,dim=1)
+
+    IF (nsizeVec /= nsizeM2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec2 and of the second dim of Mat1 are not equal.'
+      write(out_unit,*) '  nsizeVec,nsizeM2',nsizeVec,nsizeM2
+      STOP 'ERROR in AD_matmul_Mat_dnVec: the sizes of Vec and Mat are compatible.'
+    END IF
+
+ 
+    CALL alloc_dnVec(Vres,SizeVec=nsizeM1,nVar=nVarVec,nderiv=nderivVec)
+
+    IF (nderivVec >= 0) THEN
+      Vres%d0 = matmul(Mat1,Vec2%d0)
+    END IF
+
+    IF (nderivVec >= 1) THEN
+      DO i=1,nVarVec
+        Vres%d1(:,i) = matmul(Mat1,Vec2%d1(:,i))
+      END DO
+    END IF
+
+    IF (nderivVec >= 2) THEN
+      DO i=1,nVarVec
+      DO j=1,nVarVec
+        Vres%d2(:,j,i) = matmul(Mat1,Vec2%d2(:,j,i))
+      END DO
+      END DO
+    END IF
+
+    IF (nderivVec >= 3) THEN
+      DO i=1,nVarVec
+      DO j=1,nVarVec
+      DO k=1,nVarVec
+        Vres%d3(:,k,j,i) = matmul(Mat1,Vec2%d3(:,k,j,i))
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_matmul_Mat_dnVec
+
+  FUNCTION AD_matmul_dnVec_Mat(Vec1,Mat2) RESULT(Vres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                       :: Vres
+    TYPE (dnVec_t),        intent(in)    :: Vec1
+    real (kind=Rkind),     intent(in)    :: Mat2(:,:)
+
+    integer           :: nderivVec,nVarVec,nsizeVec,nsizeM1,nsizeM2,i,j,k
+    character (len=*), parameter :: name_sub='AD_matmul_dnVec_Mat'
+
+    nderivVec = get_nderiv(Vec1)
+    nVarVec   = get_nVar(Vec1)
+    nsizeVec  = get_Size(Vec1)
+
+    nsizeM2  = size(Mat2,dim=2)
+    nsizeM1  = size(Mat2,dim=1)
+
+    IF (nsizeVec /= nsizeM1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the sizes of Vec1 and of the first dim of Mat2 are not equal.'
+      write(out_unit,*) '  nsizeVec,nsizeM2',nsizeVec,nsizeM1
+      STOP 'ERROR in AD_matmul_dnVec_Mat: the sizes of Vec1 and Mat2 are compatible.'
+    END IF
+
+ 
+    CALL alloc_dnVec(Vres,SizeVec=nsizeM2,nVar=nVarVec,nderiv=nderivVec)
+
+    IF (nderivVec >= 0) THEN
+      Vres%d0 = matmul(Vec1%d0,Mat2)
+    END IF
+
+    IF (nderivVec >= 1) THEN
+      DO i=1,nVarVec
+        Vres%d1(:,i) = matmul(Vec1%d1(:,i),Mat2)
+      END DO
+    END IF
+
+    IF (nderivVec >= 2) THEN
+      DO i=1,nVarVec
+      DO j=1,nVarVec
+        Vres%d2(:,j,i) = matmul(Vec1%d2(:,j,i),Mat2)
+      END DO
+      END DO
+    END IF
+
+    IF (nderivVec >= 3) THEN
+      DO i=1,nVarVec
+      DO j=1,nVarVec
+      DO k=1,nVarVec
+        Vres%d3(:,k,j,i) = matmul(Vec1%d3(:,k,j,i),Mat2)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_matmul_dnVec_Mat
+
   FUNCTION AD_cross_product_dnVec(Vec1,Vec2) RESULT(Vres)
     USE QDUtil_m
     IMPLICIT NONE
