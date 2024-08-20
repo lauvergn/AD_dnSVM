@@ -9,7 +9,7 @@ Its features are:
 It is similar to Auto_Deriv fortran module:
   <http://www.autodiff.org/?module=Tools&tool=AUTO_DERIV>
 
-date: 17/12/2022
+date: 20/08/2024
 
   Copyright 2021 David Lauvergnat [1]
 
@@ -156,6 +156,12 @@ Remarks :
 - V is 4 or 8 (int4 / int8)
 
 If needed, the .mod files are in the **OBJ/obj_XXX_oppY_ompZ_lapackW_intV** directory.
+
+It has been tested with:
+
+- gfortran (14.1.0_2 on macos, 12 on linux)
+- ifx/ifort (2023 on linux)
+- nagor (7.1 on linux)
 
 ## 3) run the tests
 

@@ -6,8 +6,10 @@ ifeq ($(FFC),gfortran)
   # optimization management (default without optimization)
   ifeq ($(OOPT),1)
     FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
+    CFLAGS = -O5 -g             -funroll-loops -ftree-vectorize -falign-loops=16
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
+    CFLAGS = -O0 -g                         -fwhole-file -Wuninitialized
   endif
 
   # integer kind management
@@ -18,12 +20,13 @@ ifeq ($(FFC),gfortran)
   # where to store .mod files
   FFLAGS +=-J$(MOD_DIR)
 
-  # where to look .mod files
-  FFLAGS += $(EXTMod)
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
   ifeq ($(OOMP),1)
     FFLAGS += -fopenmp
+    CFLAGS += -fopenmp
   endif
 
   # lapack management with cpreprocessing
@@ -63,8 +66,8 @@ ifeq ($(FFC),lfortran)
   # where to store .mod files
   FFLAGS +=-J$(MOD_DIR)
 
-  # where to look .mod files
-  FFLAGS += $(EXTMod)
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
   ifeq ($(OOMP),1)
@@ -96,8 +99,10 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # opt management
   ifeq ($(OOPT),1)
     FFLAGS = -O  -g -traceback -heap-arrays
+    CFLAGS = -O  -g -traceback -heap-arrays
   else
     FFLAGS = -O0 -check all -g -traceback
+    CFLAGS = -O0            -g -traceback
   endif
 
   # integer kind management
@@ -108,15 +113,17 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # where to store the modules
   FFLAGS +=-module $(MOD_DIR)
 
-  # where to look .mod files
-  FFLAGS += $(EXTMod)
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management
   ifeq ($(OOMP),1)
     ifeq ($(FFC),ifort)
       FFLAGS += -qopenmp -parallel
+      CFLAGS += -qopenmp -parallel
     else # ifx
       FFLAGS += -qopenmp
+      CFLAGS += -qopenmp
     endif
   endif
 
@@ -164,8 +171,8 @@ ifeq ($(FFC),nagfor)
   # where to store the .mod files
   FFLAGS +=-mdir $(MOD_DIR)
 
-  # where to look .mod files
-  FFLAGS += $(EXTMod)
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management
   ifeq ($(OOMP),1)
