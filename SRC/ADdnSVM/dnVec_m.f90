@@ -26,7 +26,7 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-!> @brief Module which deals with derivatives of a vector (as function of coordinates).
+!> @brief Module which deals with derivatives of a vector.
 !!
 !! This module deals with operations or functions of a vector function and its derivatives, dnVec.
 !!
@@ -202,7 +202,7 @@ MODULE ADdnSVM_dnVec_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param Vec                TYPE (dnVec_t):        derived type which deals with the derivatives of a vector (as function of coordinates).
+!! @param Vec                TYPE (dnVec_t):        derived type which deals with the derivatives of a vector.
 !! @param SizeVec            integer (optional):    size of the vector.
 !! @param nVar               integer (optional):    number of coordinates (for the derivatives).
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 2).
@@ -348,7 +348,7 @@ MODULE ADdnSVM_dnVec_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param vec                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector (as function of coordinates).
+!! @param vec                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector.
 !! @param err_dnVec       integer (optional):    to handle the errors errors (0: no error).
   SUBROUTINE AD_dealloc_dnVec(vec,err_dnVec)
     USE QDUtil_m
@@ -555,8 +555,8 @@ MODULE ADdnSVM_dnVec_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param dnVec1                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector (as function of coordinates).
-!! @param dnVec2                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector (as function of coordinates).
+!! @param dnVec1                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector.
+!! @param dnVec2                TYPE (dnVec_t):     derived type which deals with the derivatives of a vector.
   SUBROUTINE AD_dnVec2_TO_dnVec1(dnVec1,dnVec2)
     USE QDUtil_m
     IMPLICIT NONE
@@ -2050,7 +2050,7 @@ MODULE ADdnSVM_dnVec_m
 !> @author David Lauvergnat
 !! @date 25/06/2018
 !!
-!! @param vec                         TYPE (dnVec_t):     derived type which deals with the derivatives of a vector (as function of coordinates).
+!! @param vec                         TYPE (dnVec_t):     derived type which deals with the derivatives of a vector.
 !! @param get_nderiv_FROM_dnVec    integer  (result):  nderiv value, check against vec%nderiv
   FUNCTION AD_get_nderiv_FROM_dnVec(vec) RESULT(nderiv)
     USE QDUtil_m, ONLY : out_unit
@@ -2087,7 +2087,7 @@ MODULE ADdnSVM_dnVec_m
 !> @author David Lauvergnat
 !! @date 25/06/2018
 !!
-!! @param vec                         TYPE (dnVec_t):     derived type which deals with the derivatives of a vector (as function of coordinates).
+!! @param vec                         TYPE (dnVec_t):     derived type which deals with the derivatives of a vector.
 !! @param AD_get_Size_FROM_dnVec   integer  (result):  SizeVec value
   FUNCTION AD_get_Size_FROM_dnVec(vec) RESULT(SizeVec)
 

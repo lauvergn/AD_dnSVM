@@ -26,7 +26,7 @@
 ! SOFTWARE.
 !===============================================================================
 !===============================================================================
-!> @brief Module which deals with derivatives of a matrix (as function of coordinates).
+!> @brief Module which deals with derivatives of a matrix.
 !!
 !! This module deals with operations or functions of a matrix function and its derivatives, dnMat.
 !!
@@ -180,7 +180,7 @@ MODULE ADdnSVM_dnMat_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix (as function of coordinates).
+!! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix.
 !! @param nsurf              integer (optional):    number of electronic surfaces.
 !! @param nVar               integer (optional):    number of coordinates (for the derivatives).
 !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 2).
@@ -319,7 +319,7 @@ MODULE ADdnSVM_dnMat_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix (as function of coordinates).
+!! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix.
 !! @param err_dnMat       integer (optional):    to handle the errors errors (0: no error).
   SUBROUTINE AD_dealloc_dnMat(Mat,err_dnMat)
     USE QDUtil_m
@@ -398,8 +398,8 @@ MODULE ADdnSVM_dnMat_m
 !> @author David Lauvergnat
 !! @date 21/06/2018
 !!
-!! @param dnMat1                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
-!! @param dnMat2                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
+!! @param dnMat1                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix.
+!! @param dnMat2                TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix.
   SUBROUTINE AD_sub_dnMat2_TO_dnMat1(dnMat1,dnMat2)
     USE QDUtil_m
     IMPLICIT NONE
@@ -1768,7 +1768,7 @@ MODULE ADdnSVM_dnMat_m
 !> @author David Lauvergnat
 !! @date 25/06/2018
 !!
-!! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
+!! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix.
 !! @param get_nderiv_FROM_dnMat    integer  (result):  nderiv value, check against Mat%nederiv
   FUNCTION AD_get_nderiv_FROM_dnMat(Mat) RESULT(nderiv)
     USE QDUtil_m, ONLY : out_unit
@@ -1805,7 +1805,7 @@ MODULE ADdnSVM_dnMat_m
 !> @author David Lauvergnat
 !! @date 25/06/2018
 !!
-!! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix (as function of coordinates).
+!! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix.
 !! @param get_nderiv_FROM_dnMat    integer  (result):  nderiv value
   FUNCTION AD_get_nsurf_FROM_dnMat(Mat) RESULT(nsurf)
 
