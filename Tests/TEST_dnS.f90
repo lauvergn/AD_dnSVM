@@ -996,6 +996,7 @@ CONTAINS
       IF (print_level > 0) CALL Write_dnS(dnX,string=test_var%test_log,info='dnX')
 
       CALL ieee_set_halting_mode(ieee_invalid,.FALSE._Ik4)
+      CALL ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO,.FALSE._Ik4) ! this is added because nagfor (7.1.29) need that!!! Why?
 
       dnY = log(dnX)
       CALL  IEEE_GET_FLAG(ieee_invalid, flagik4_NAN) ; flag_NAN = flagik4_NAN
