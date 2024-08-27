@@ -115,6 +115,7 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 TEST_dnSEXE    = Test_dnS.x
 TEST_dnPolyEXE = Test_dnPoly.x
 TEST_dnVecEXE  = Test_dnVec.x
+TEST_dnMatEXE  = Test_dnMat.x
 
 EXA_dnSEXE     = Exa_dnS.x
 LIBADshort     = libAD_dnSVM
@@ -123,7 +124,7 @@ LIBAD          = libAD_dnSVM$(ext_obj)
 #============= Main programs: tests + example ==
 #
 .PHONY: all
-all: dnS dnPoly dnV exa
+all: dnS dnPoly dnV dnM exa
 
 # Example dnS
 .PHONY: exa exa_dnS Exa_dnS
@@ -154,13 +155,22 @@ $(TEST_dnVecEXE): $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a
 	$(FFC) $(FFLAGS)   -o $(TEST_dnVecEXE) $(OBJ_DIR)/TEST_dnVec.o $(LIBAD).a $(EXTLib) $(FLIB)
 	echo "dnVec compilation: OK"
 #
+# Test dnMat
+.PHONY: dnM
+dnM:$(TEST_dnMatEXE)
+	echo "dnVec compilation: OK"
+$(TEST_dnMatEXE): $(OBJ_DIR)/TEST_dnMat.o $(LIBAD).a
+	$(FFC) $(FFLAGS)   -o $(TEST_dnMatEXE) $(OBJ_DIR)/TEST_dnMat.o $(LIBAD).a $(EXTLib) $(FLIB)
+	echo "dnVec compilation: OK"
+#
 #===============================================
 #================ unitary tests ================
 .PHONY: ut UT
-ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE) $(TEST_dnVecEXE)
+ut UT: $(TEST_dnPolyEXE) $(TEST_dnSEXE) $(TEST_dnVecEXE) $(TEST_dnMatEXE)
 	@./$(TEST_dnSEXE) > Test.log
 	@./$(TEST_dnPolyEXE) >> Test.log
 	@./$(TEST_dnVecEXE) >> Test.log
+	@./$(TEST_dnMatEXE) >> Test.log
 	@grep -F TESTING Test.log| grep -F Number
 	@echo "  done with the unitary tests"
 #===============================================

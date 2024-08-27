@@ -69,8 +69,7 @@ MODULE ADdnSVM_dnMat_m
     PROCEDURE, PRIVATE :: AD_sub_dnMat2_TO_dnMat1
     PROCEDURE, PRIVATE :: AD_set_dnMat_TO_R
     PROCEDURE, PRIVATE :: AD_set_dnMat_FROM_MatOFdnS
-    GENERIC,   PUBLIC  :: assignment(=) => AD_sub_dnMat2_TO_dnMat1,            &
-                                           AD_set_dnMat_TO_R,                  &
+    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnMat_TO_R,                  &
                                            AD_set_dnMat_FROM_MatOFdnS
   END TYPE dnMat_t
 
@@ -156,6 +155,12 @@ MODULE ADdnSVM_dnMat_m
   INTERFACE get_nsurf
     MODULE PROCEDURE AD_get_nsurf_FROM_dnMat
   END INTERFACE
+  INTERFACE get_sizeC
+    MODULE PROCEDURE AD_get_sizeC_FROM_dnMat
+  END INTERFACE
+  INTERFACE get_sizeL
+    MODULE PROCEDURE AD_get_sizeL_FROM_dnMat
+  END INTERFACE
 
   INTERFACE get_d0
      MODULE PROCEDURE AD_get_d0_FROM_dnMat
@@ -187,19 +192,22 @@ MODULE ADdnSVM_dnMat_m
 !! @param err_dnMat          integer (optional):    to handle the errors errors (0: no error).
 !! @param name_var           character (optional):  Name of the variable from the calling subroutine (debuging purpose).
 !! @param name_sub           character (optional):  Name of the calling subroutine (debuging purpose).
-  SUBROUTINE AD_alloc_dnMat(Mat,nsurf,nVar,nderiv,name_var,name_sub,err_dnMat)
+  SUBROUTINE AD_alloc_dnMat(Mat,nsurf,sizeL,sizeC,nVar,nderiv,name_var,name_sub,err_dnMat)
     USE QDUtil_m
     IMPLICIT NONE
 
     TYPE (dnMat_t),    intent(inout)         :: Mat   !< derived type, which contains, matrix potential, its derivatives
+
     integer,           intent(in),  optional :: nsurf !< number of electronic surfaces
+    integer,           intent(in),  optional :: sizeL,sizeC !< numbers of lines and columns
+
     integer,           intent(in),  optional :: nVar  !< number of coordinates (for the derivatives)
     integer,           intent(in),  optional :: nderiv  !< order of the derivatives [0,1,2]
     character (len=*), intent(in),  optional :: name_var,name_sub
     integer,           intent(out), optional :: err_dnMat  !< to handle the errors
 
     ! local variables
-    integer :: nsurf_loc,nVar_loc,err_dnMat_loc,nderiv_loc
+    integer :: sizeL_loc,sizeC_loc,nVar_loc,err_dnMat_loc,nderiv_loc
 
 
 
@@ -219,11 +227,52 @@ MODULE ADdnSVM_dnMat_m
       END IF
     END IF
 
-    ! test nsurf
+    ! test nsurf, sizeL, sizeL
+    IF (present(nsurf) .AND. (present(sizeL) .OR. present(sizeC))) THEN
+      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+      write(out_unit,*) ' nsurf and sizeL or sizeC are present. It is not possible'
+      write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      write(out_unit,*) 'present(sizeC): ',present(sizeC)
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_alloc_dnMat: nsurf and sizeL or sizeC are present'
+      END IF
+    END IF
+    IF (.NOT. (present(sizeL) .AND. present(sizeC))) THEN
+      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+      write(out_unit,*) ' sizeL or sizeC are not present. It is not possible'
+      write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      write(out_unit,*) 'present(sizeC): ',present(sizeC)
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_alloc_dnMat: sizeL or sizeC are not present'
+      END IF
+    END IF
+
     IF (present(nsurf)) THEN
-      nsurf_loc = nsurf
+      sizeL_loc = nsurf
+      sizeC_loc = nsurf
+    ELSE IF (present(sizeL) .AND. present(sizeC)) THEN
+      sizeL_loc = sizeL
+      sizeC_loc = sizeC
     ELSE
-      nsurf_loc = 1
+      sizeL_loc = 1
+      sizeC_loc = 1
+    END IF
+    IF (sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
+      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+      write(out_unit,*) '  sizeL_loc < 0 or sizeC_loc < 0',sizeL_loc,sizeC_loc
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_alloc_dnMat: sizeL < 0 or sizeC < 0'
+      END IF
     END IF
 
     ! test nVar
@@ -244,11 +293,10 @@ MODULE ADdnSVM_dnMat_m
 
     !write(out_unit,*) 'Mat%nderiv in alloc_dnMat',Mat%nderiv
 
-    allocate(Mat%d0(nsurf_loc,nsurf_loc),stat=err_dnMat_loc)
-    IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1) THEN
+    allocate(Mat%d0(sizeL_loc,sizeC_loc),stat=err_dnMat_loc)
+    IF (err_dnMat_loc /= 0) THEN
       write(out_unit,*) ' ERROR in AD_alloc_dnMat'
       write(out_unit,*) '  Problem with allocate of Mat%d0'
-      write(out_unit,*) '  nsurf > 0?',nsurf_loc
       IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
       IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
       IF (present(err_dnMat)) THEN
@@ -260,11 +308,10 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     IF (nderiv_loc >= 1) THEN
-      allocate(Mat%d1(nsurf_loc,nsurf_loc,nVar_loc),stat=err_dnMat_loc)
-      IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
+      allocate(Mat%d1(sizeL_loc,sizeC_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
         write(out_unit,*) ' ERROR in AD_alloc_dnMat'
         write(out_unit,*) '  Problem with allocate of Mat%d1'
-        write(out_unit,*) '  nsurf > 0?',nsurf_loc
         write(out_unit,*) '  nVar > 0?',nVar_loc
         IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
         IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
@@ -278,11 +325,10 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     IF (nderiv_loc >= 2) THEN
-      allocate(Mat%d2(nsurf_loc,nsurf_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
-      IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
+      allocate(Mat%d2(sizeL_loc,sizeC_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
         write(out_unit,*) ' ERROR in AD_alloc_dnMat'
         write(out_unit,*) '  Problem with allocate of Mat%d2'
-        write(out_unit,*) '  nsurf > 0',nsurf_loc
         write(out_unit,*) '  nVar > 0',nVar_loc
         IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
         IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
@@ -296,11 +342,10 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     IF (nderiv_loc >= 3) THEN
-      allocate(Mat%d3(nsurf_loc,nsurf_loc,nVar_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
-      IF (err_dnMat_loc /= 0 .OR. nsurf_loc < 1 .OR. nVar_loc < 1) THEN
+      allocate(Mat%d3(sizeL_loc,sizeC_loc,nVar_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
         write(out_unit,*) ' ERROR in AD_alloc_dnMat'
         write(out_unit,*) '  Problem with allocate of Mat%d2'
-        write(out_unit,*) '  nsurf > 0',nsurf_loc
         write(out_unit,*) '  nVar > 0',nVar_loc
         IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
         IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
@@ -407,22 +452,21 @@ MODULE ADdnSVM_dnMat_m
     CLASS (dnMat_t), intent(inout) :: dnMat1
     CLASS (dnMat_t), intent(in)    :: dnMat2
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
+    integer :: nderiv_loc,sizeL_loc,sizeC_loc,nVar_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat2_TO_dnMat1'
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat2)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat2)
+    sizeL_loc  = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC_loc  = AD_get_sizeC_FROM_dnMat(dnMat2)
     nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat2)
 
-    !write(out_unit,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
+    !write(out_unit,*) 'in ',name_sub,' nVar,sizeL,sizeC,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
 
-    IF (nderiv_loc < 0 .OR. nsurf_loc < 1 .OR. (nderiv_loc > 0  .AND. nVar_loc < 1)) RETURN
+    IF (nderiv_loc < 0 .OR. sizeL_loc < 1 .OR. sizeC_loc < 1 .OR. (nderiv_loc > 0  .AND. nVar_loc < 1)) RETURN
 
-
-    CALL AD_alloc_dnMat(dnMat1,nsurf_loc,nVar_loc,nderiv_loc,name_var='dnMat1',name_sub=name_sub)
-
+    dnMat1%nderiv = dnMat2%nderiv
 
     IF (nderiv_loc == 0) THEN
        dnMat1%d0 = dnMat2%d0
@@ -475,8 +519,7 @@ MODULE ADdnSVM_dnMat_m
       STOP 'ERROR in AD_sub_Reduced_dnMat2_TO_dnMat1: lb or ub are wrong'
     END IF
 
-    CALL AD_alloc_dnMat(dnMat1,ub-lb+1,nVar_loc,nderiv_loc,name_var='dnMat1',name_sub=name_sub)
-
+    dnMat1%nderiv = dnMat2%nderiv
 
     IF (nderiv_loc == 0) THEN
        dnMat1%d0 = dnMat2%d0(lb:ub,lb:ub)
@@ -516,7 +559,7 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnS_t),       intent(in)    :: S
     integer, optional,  intent(in)    :: i,j
 
-    integer :: nderiv_dnMat,nsurf_dnMat,nVar_dnMat,nderiv_dnS,nVar_dnS
+    integer :: nderiv_dnMat,sizeL_loc,sizeC_loc,nVar_dnMat,nderiv_dnS,nVar_dnS
     integer :: i_loc,j_loc
 
     integer :: err_dnMat_loc
@@ -527,7 +570,8 @@ MODULE ADdnSVM_dnMat_m
     nVar_dnS   = get_nVar(S)
 
     nderiv_dnMat = AD_get_nderiv_FROM_dnMat(Mat)
-    nsurf_dnMat  = AD_get_nsurf_FROM_dnMat(Mat)
+    sizeL_loc    = AD_get_sizeL_FROM_dnMat(Mat)
+    sizeC_loc    = AD_get_sizeC_FROM_dnMat(Mat)
     nVar_dnMat   = AD_get_nVar_FROM_dnMat(Mat)
 
     i_loc = 1
@@ -536,9 +580,10 @@ MODULE ADdnSVM_dnMat_m
     IF (present(j)) j_loc = j
 
 
-    IF (i_loc < 1 .OR. i_loc > nsurf_dnMat .OR. j_loc < 1 .OR. j_loc > nsurf_dnMat) THEN
+    IF (i_loc < 1 .OR. i_loc > sizeL_loc .OR. j_loc < 1 .OR. j_loc > sizeC_loc) THEN
       write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
+      write(out_unit,*) ' The matrix line   index, (',i_loc,') is out of range [1...',sizeL_loc,']'
+      write(out_unit,*) ' The matrix column index, (',j_loc,') is out of range [1...',sizeC_loc,']'
       write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
@@ -563,16 +608,16 @@ MODULE ADdnSVM_dnMat_m
 
       IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR.                  &
            nderiv_dnS /= nderiv_dnMat  .OR.  nVar_dnS /= nVar_dnMat .OR.  &
-           nsurf_dnMat < 1 ) THEN
+           sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' dnMat is not allocated or ...'
         write(out_unit,*) '  ... nderiv from dnMat or dnS are different or ...'
         write(out_unit,*) '  ... nVar from dnMat or dnS are different or ...'
-        write(out_unit,*) '  ... nsurf from dnMat is < 1'
+        write(out_unit,*) '  ... sizeL,sizeC from dnMat are < 1'
 
         write(out_unit,*) 'nderiv from dnMat and dnS:',nderiv_dnMat,nderiv_dnS
         write(out_unit,*) 'nVar   from dnMat and dnS:',nVar_dnMat,nVar_dnS
-        write(out_unit,*) 'nsurf  from dnMat        :',nsurf_dnMat
+        write(out_unit,*) 'sizeL,sizeC  from dnMat  :',sizeL_loc,sizeC_loc
 
         write(out_unit,*) 'It should never append! Check the source'
         STOP 'dnMat is not allocated or inconsistent nVar,nderiv parameters.'
@@ -616,7 +661,7 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnS_t),       intent(inout) :: S
     integer, optional,  intent(in)    :: i,j
 
-    integer :: nderiv_dnMat,nsurf_dnMat,nVar_dnMat,nderiv_dnS,nVar_dnS
+    integer :: nderiv_dnMat,sizeL_loc,sizeC_loc,nVar_dnMat,nderiv_dnS,nVar_dnS
     integer :: i_loc,j_loc
 
     integer :: err_dnMat_loc
@@ -627,7 +672,8 @@ MODULE ADdnSVM_dnMat_m
     nVar_dnS   = get_nVar(S)
 
     nderiv_dnMat = AD_get_nderiv_FROM_dnMat(Mat)
-    nsurf_dnMat  = AD_get_nsurf_FROM_dnMat(Mat)
+    sizeL_loc    = AD_get_sizeL_FROM_dnMat(Mat)
+    sizeC_loc    = AD_get_sizeC_FROM_dnMat(Mat)
     nVar_dnMat   = AD_get_nVar_FROM_dnMat(Mat)
 
     i_loc = 1
@@ -636,9 +682,10 @@ MODULE ADdnSVM_dnMat_m
     IF (present(j)) j_loc = j
 
 
-    IF (i_loc < 1 .OR. i_loc > nsurf_dnMat .OR. j_loc < 1 .OR. j_loc > nsurf_dnMat) THEN
+    IF (i_loc < 1 .OR. i_loc > sizeL_loc .OR. j_loc < 1 .OR. j_loc > sizeC_loc) THEN
       write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' The matrix indexes, (',i_loc,j_loc,') are out of range [1...',nsurf_dnMat,']'
+      write(out_unit,*) ' The matrix line   index, (',i_loc,') is out of range [1...',sizeL_loc,']'
+      write(out_unit,*) ' The matrix column index, (',j_loc,') is out of range [1...',sizeC_loc,']'
       write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
@@ -655,11 +702,11 @@ MODULE ADdnSVM_dnMat_m
       !CALL set_dnS_TO_R(S,Mat%d0(i_loc,j_loc))
     ELSE
 
-      IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR. nsurf_dnMat < 1 ) THEN
+      IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR. sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' dnMat is not allocated or ...'
-        write(out_unit,*) '  ... nsurf from dnMat is < 1'
-        write(out_unit,*) 'nsurf  from dnMat        :',nsurf_dnMat
+        write(out_unit,*) '  ... sizeL or sizeC from dnMat are < 1'
+        write(out_unit,*) 'sizeL, sizeC  from dnMat        :',sizeL_loc,sizeC_loc
 
         write(out_unit,*) 'It should never append! Check the source'
         STOP 'dnMat is not allocated or inconsistent nsurf parameter.'
@@ -668,16 +715,16 @@ MODULE ADdnSVM_dnMat_m
       SELECT CASE (nderiv_dnMat)
       CASE (1)
         CALL set_dnS(S, d0=Mat%d0(i_loc,j_loc),       &
-                            d1=Mat%d1(i_loc,j_loc,:))
+                        d1=Mat%d1(i_loc,j_loc,:))
       CASE (2)
         CALL set_dnS(S, d0=Mat%d0(i_loc,j_loc),       &
-                            d1=Mat%d1(i_loc,j_loc,:),     &
-                            d2=Mat%d2(i_loc,j_loc,:,:))
+                        d1=Mat%d1(i_loc,j_loc,:),     &
+                        d2=Mat%d2(i_loc,j_loc,:,:))
       CASE (3)
         CALL set_dnS(S, d0=Mat%d0(i_loc,j_loc),       &
-                            d1=Mat%d1(i_loc,j_loc,:),     &
-                            d2=Mat%d2(i_loc,j_loc,:,:),   &
-                            d3=Mat%d3(i_loc,j_loc,:,:,:))
+                        d1=Mat%d1(i_loc,j_loc,:),     &
+                        d2=Mat%d2(i_loc,j_loc,:,:),   &
+                        d3=Mat%d3(i_loc,j_loc,:,:,:))
       CASE Default ! nderiv_dnS = -1, 0
         CALL set_dnS(S, d0=Mat%d0(i_loc,j_loc))
       END SELECT
@@ -700,22 +747,25 @@ MODULE ADdnSVM_dnMat_m
     CLASS (dnMat_t),   intent(inout) :: Mat
     TYPE (dnS_t),      intent(in)    :: MatOFS(:,:)
 
-    integer :: nderiv_dnMat,nsurf_dnMat,nVar_dnMat,nderiv_dnS,nVar_dnS
+    integer :: sizeL,sizeC,nderiv_dnS,nVar_dnS
     integer :: i,j
 
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_set_dnMat_FROM_MatOFdnS'
 
-    IF (lbound(Mat%d0,dim=1) /= lbound(MatOFS,dim=1) .OR. ubound(Mat%d0,dim=1) /= ubound(MatOFS,dim=1) .OR. &
-        lbound(Mat%d0,dim=2) /= lbound(MatOFS,dim=2) .OR. ubound(Mat%d0,dim=2) /= ubound(MatOFS,dim=2) ) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) '  the matrices have not the same dimensions'
-      write(out_unit,*) 'It should never append! Check the source'
-      STOP
-    END IF
+    i=lbound(MatOFS,dim=1)
+    j=lbound(MatOFS,dim=2)
 
-    DO i=lbound(MatOFS,dim=2),ubound(MatOFS,dim=2)
-    DO j=lbound(MatOFS,dim=1),ubound(MatOFS,dim=1)
+    sizeL = size(MatOFS,dim=1)
+    sizeC = size(MatOFS,dim=2)
+    nVar_dnS   = get_nVar(MatOFS(i,j))
+    nderiv_dnS = get_nderiv(MatOFS(i,j))
+
+
+    CALL alloc_dnMat(Mat,sizeL=sizeL, sizeC=sizeC, nVar=nVar_dnS, nderiv=nderiv_dnS)
+
+    DO j=1,sizeC
+    DO i=1,sizeL
       CALL AD_sub_dnS_TO_dnMat(MatOFS(i,j),Mat,i,j)
     END DO
     END DO
@@ -731,7 +781,7 @@ MODULE ADdnSVM_dnMat_m
     integer,            intent(in),  optional :: ider(:)
     real (kind=Rkind),  intent(in)            :: w1
 
-    integer :: nderiv,nsurf,nVar
+    integer :: nderiv,sizeL,sizeC,nVar
     integer :: i1,i1i,i1f
     integer :: i2,i2i,i2f
     integer :: i3,i3i,i3f
@@ -739,7 +789,8 @@ MODULE ADdnSVM_dnMat_m
     character (len=*), parameter :: name_sub='AD_Mat_wADDTO_dnMat2_ider'
 
     nderiv = AD_get_nderiv_FROM_dnMat(dnMat2)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat2)
+    sizeL  = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC  = AD_get_sizeC_FROM_dnMat(dnMat2)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
 
     IF (.NOT. allocated(dnMat2%d0)) THEN
@@ -863,10 +914,7 @@ MODULE ADdnSVM_dnMat_m
 
     TYPE (dnMat_t), intent(inout) :: dnMat
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
-    integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_set_dnMat_TO_zero'
-
 
     CALL AD_set_dnMat_TO_R(dnMat,ZERO)
 
@@ -886,7 +934,7 @@ MODULE ADdnSVM_dnMat_m
     CLASS (dnMat_t), intent(inout) :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
+    integer :: nderiv_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_set_dnMat_TO_R'
 
@@ -932,21 +980,15 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
+    integer :: nderiv_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat_TIME_R'
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
-
-    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
-
-    CALL AD_alloc_dnMat(sub_dnMat_TIME_R,nsurf_loc,nVar_loc,nderiv_loc,&
-                         name_var='sub_dnMat_TIME_R',name_sub=name_sub)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
+    sub_dnMat_TIME_R%nderiv = dnMat%nderiv
 
     IF (nderiv_loc == 0) THEN
        sub_dnMat_TIME_R%d0 = dnMat%d0 * R
@@ -987,21 +1029,15 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),   intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
+    integer :: nderiv_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_R_TIME_dnMat'
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
-
-    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
-
-    CALL AD_alloc_dnMat(sub_R_TIME_dnMat,nsurf_loc,nVar_loc,nderiv_loc,&
-                         name_var='sub_R_TIME_dnMat',name_sub=name_sub)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
+    sub_R_TIME_dnMat%nderiv = dnMat%nderiv
 
     IF (nderiv_loc == 0) THEN
        sub_R_TIME_dnMat%d0 = dnMat%d0 * R
@@ -1041,22 +1077,48 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t)                :: dnMat2_PLUS_dnMat1
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
-    integer :: nderiv,nsurf,nVar
+    integer :: nderiv
+    integer :: nVar1,nVar2
+    integer :: sizeL1,sizeL2
+    integer :: sizeC1,sizeC2
+
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_dnMat2_PLUS_dnMat1'
 
     nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
-    nsurf  = min(AD_get_nsurf_FROM_dnMat(dnMat1), AD_get_nsurf_FROM_dnMat(dnMat2))
-    nVar   = min(AD_get_nVar_FROM_dnMat(dnMat1),  AD_get_nVar_FROM_dnMat(dnMat2))
+
+    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
+    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+
+    sizeL1   = AD_get_sizeL_FROM_dnMat(dnMat1)
+    sizeL2   = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC1   = AD_get_sizeC_FROM_dnMat(dnMat1)
+    sizeC2   = AD_get_sizeC_FROM_dnMat(dnMat2)
+
 
     !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
     CALL AD_dealloc_dnMat(dnMat2_PLUS_dnMat1)
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+    IF (nVar1 /= nVar2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar1 and nVar2 differ'
+      write(out_unit,*) ' nVar1,nVar2',nVar1,nVar2
+      STOP 'ERROR in AD_dnMat2_PLUS_dnMat1: nVar1 and nVar2 differ'
+    END IF
 
-    CALL AD_alloc_dnMat(dnMat2_PLUS_dnMat1,nsurf,nVar,nderiv,          &
-                         name_var='dnMat2_PLUS_dnMat1',name_sub=name_sub)
+    IF (nderiv < 0 .OR. (nderiv > 0  .AND. nVar1 < 1)) RETURN
+
+    IF (sizeL1 /= sizeL2 .OR. sizeC1 /= sizeC2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The shapes of the matrices differ.'
+      write(out_unit,*) ' sizeL1,sizeL2',sizeL1,sizeL2
+      write(out_unit,*) ' sizeC1,sizeC2',sizeC1,sizeC2
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnMat2_PLUS_dnMat1: The shapes of the matrices differ'
+    END IF
+
+    dnMat2_PLUS_dnMat1%nderiv = nderiv
 
     IF (nderiv == 0) THEN
        dnMat2_PLUS_dnMat1%d0 = dnMat1%d0 + dnMat2%d0
@@ -1095,7 +1157,6 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat_PLUS_R'
 
@@ -1123,8 +1184,6 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
-    integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_R_PLUS_dnMat'
 
 
@@ -1150,21 +1209,44 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t)                :: dnMat2_MINUS_dnMat1
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
-    integer :: nderiv,nsurf,nVar
+    integer :: nderiv
+    integer :: nVar1,nVar2
+    integer :: sizeL1,sizeL2
+    integer :: sizeC1,sizeC2
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_dnMat2_MINUS_dnMat1'
 
     nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
-    nsurf  = min(AD_get_nsurf_FROM_dnMat(dnMat1), AD_get_nsurf_FROM_dnMat(dnMat2))
-    nVar   = min(AD_get_nVar_FROM_dnMat(dnMat1),  AD_get_nVar_FROM_dnMat(dnMat2))
 
+    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
+    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+
+    sizeL1   = AD_get_sizeL_FROM_dnMat(dnMat1)
+    sizeL2   = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC1   = AD_get_sizeC_FROM_dnMat(dnMat1)
+    sizeC2   = AD_get_sizeC_FROM_dnMat(dnMat2)
+
+    IF (nVar1 /= nVar2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar1 and nVar2 differ'
+      write(out_unit,*) ' nVar1,nVar2',nVar1,nVar2
+      STOP 'ERROR in AD_dnMat2_MINUS_dnMat1: nVar1 and nVar2 differ'
+    END IF
+
+    IF (nderiv < 0 .OR. (nderiv > 0  .AND. nVar1 < 1)) RETURN
+
+    IF (sizeL1 /= sizeL2 .OR. sizeC1 /= sizeC2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The shapes of the matrices differ.'
+      write(out_unit,*) ' sizeL1,sizeL2',sizeL1,sizeL2
+      write(out_unit,*) ' sizeC1,sizeC2',sizeC1,sizeC2
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnMat2_MINUS_dnMat1: The shapes of the matrices differ'
+    END IF
 
     CALL AD_dealloc_dnMat(dnMat2_MINUS_dnMat1)
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
-
-    CALL AD_alloc_dnMat(dnMat2_MINUS_dnMat1,nsurf,nVar,nderiv,         &
-                         name_var='dnMat2_MINUS_dnMat1',name_sub=name_sub)
+    dnMat2_MINUS_dnMat1%nderiv = nderiv
 
     IF (nderiv == 0) THEN
        dnMat2_MINUS_dnMat1%d0 = dnMat1%d0 - dnMat2%d0
@@ -1204,8 +1286,6 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
-    integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat_MINUS_R'
 
 
@@ -1233,18 +1313,13 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc
+    integer :: nderiv_loc
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_R_MINUS_dnMat'
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
 
-    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
-
-    CALL AD_alloc_dnMat(sub_R_MINUS_dnMat,nsurf_loc,nVar_loc,nderiv_loc,&
-                         name_var='sub_R_MINUS_dnMat',name_sub=name_sub)
+    sub_R_MINUS_dnMat%nderiv = nderiv_loc
 
     !write(out_unit,*) 'nderiv',nderiv_loc
     IF (nderiv_loc == 0) THEN
@@ -1291,21 +1366,16 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),    intent(in)  :: dnMat
     real (kind=Rkind), intent(in)  :: R
 
-    integer :: nderiv_loc,nsurf_loc,nVar_loc,id,jd,kd
-    integer :: err_dnMat_loc
+    integer :: nderiv_loc,nVar_loc
+    integer :: id,jd,kd
     character (len=*), parameter :: name_sub='AD_sub_dnMat_EXP_R'
 
     nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat)
-
-    !write(out_unit,*) 'nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
-
-    CALL AD_alloc_dnMat(sub_dnMat_EXP_R,nsurf_loc,nVar_loc,            &
-                nderiv_loc,name_var='sub_dnMat_EXP_R',name_sub=name_sub)
+    nVar_loc = AD_get_nVar_FROM_dnMat(dnMat)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
+    sub_dnMat_EXP_R = dnMat ! for the allocation
 
     IF (nderiv_loc == 0) THEN
        sub_dnMat_EXP_R%d0 = dnMat%d0 ** R
@@ -1375,22 +1445,23 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t)                :: TransdnMat
     TYPE (dnMat_t), intent(in)    :: dnMat
 
-    integer :: nderiv,nsurf,nVar,id,jd,kd
+    integer :: nderiv,sizeL,sizeC,nVar,id,jd,kd
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_TRANSPOSE_dnMat'
 
     nderiv = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat)
+    sizeL  = AD_get_sizeL_FROM_dnMat(dnMat)
+    sizeC  = AD_get_sizeC_FROM_dnMat(dnMat)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat)
+    !write(out_unit,*) 'in ',name_sub,' sizeL,sizeC,nVar,nderiv',sizeL,sizeC,nVar,nderiv
 
-    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
-    CALL AD_dealloc_dnMat(TransdnMat)
+    CALL AD_alloc_dnMat(TransdnMat,sizeL=sizeC,sizeC=sizeL,nVar=nVar,nderiv=nderiv)
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+    nderiv = get_nderiv(TransdnMat)
 
-    CALL AD_alloc_dnMat(TransdnMat,nsurf,nVar,nderiv,                  &
-                         name_var='TransdnMat',name_sub=name_sub)
+    IF (nderiv < 0) RETURN
+
 
     IF (nderiv >= 0) THEN
       TransdnMat%d0(:,:) = transpose(dnMat%d0)
@@ -1420,6 +1491,8 @@ MODULE ADdnSVM_dnMat_m
       END DO
     END IF
 
+    nderiv = get_nderiv(TransdnMat)
+
   END FUNCTION AD_TRANSPOSE_dnMat
 
   FUNCTION AD_SYM_dnMat(dnMat)  RESULT(SymdnMat) ! check with t(t(dnmat))-dnMat
@@ -1443,8 +1516,8 @@ MODULE ADdnSVM_dnMat_m
 
     IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
 
-    CALL AD_alloc_dnMat(SymdnMat,nsurf,nVar,nderiv,                            &
-                         name_var='TransdnMat',name_sub=name_sub)
+    CALL AD_alloc_dnMat(SymdnMat,nsurf=nsurf,nVar=nVar,nderiv=nderiv,      &
+                        name_var='TransdnMat',name_sub=name_sub)
 
     IF (nderiv >= 0) THEN
       SymdnMat%d0(:,:) = HALF*(transpose(dnMat%d0) + dnMat%d0)
@@ -1483,39 +1556,45 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t)                :: MatmuldnMat
     TYPE (dnMat_t), intent(in)    :: dnMat1,dnMat2
 
-    integer :: nderiv,nsurf,nVar,id,jd,kd
+    integer :: nderiv
+    integer :: nVar1,nVar2
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
+    integer :: id,jd,kd
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_MATMUL_dnMat1_dnMat2'
 
 
     nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
-    nsurf  = min(AD_get_nsurf_FROM_dnMat(dnMat1), AD_get_nsurf_FROM_dnMat(dnMat2))
-    nVar   = min(AD_get_nVar_FROM_dnMat(dnMat1),  AD_get_nVar_FROM_dnMat(dnMat2))
 
+    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
+    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+    IF (nVar1 /= nVar2) STOP ' ERROR in AD_MATMUL_dnMat1_dnMat2: nVar1 and nVar2 differ'
 
-    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+    sizeL1  = AD_get_sizeL_FROM_dnMat(dnMat1)
+    sizeC1  = AD_get_sizeC_FROM_dnMat(dnMat1)
+    sizeL2  = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC2  = AD_get_sizeC_FROM_dnMat(dnMat2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_dnMat1_dnMat2: sizeC1 and sizeL2 differ'
 
-    CALL AD_dealloc_dnMat(MatmuldnMat)
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar1 < 1)) RETURN
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
-
-    CALL AD_alloc_dnMat(MatmuldnMat,nsurf,nVar,nderiv,                 &
-                         name_var='MatmuldnMat',name_sub=name_sub)
+    CALL AD_alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar1,nderiv=nderiv,                  &
+                        name_var='MatmuldnMat',name_sub=name_sub)
 
     IF (nderiv >= 0) THEN
       MatmuldnMat%d0(:,:) = matmul(dnMat1%d0,dnMat2%d0)
     END IF
 
     IF (nderiv >= 1) THEN
-      DO id=1,nVar
+      DO id=1,nVar1
         MatmuldnMat%d1(:,:,id) = matmul(dnMat1%d0,dnMat2%d1(:,:,id)) +  &
                                  matmul(dnMat1%d1(:,:,id),dnMat2%d0)
       END DO
     END IF
 
     IF (nderiv >= 2) THEN
-      DO id=1,nVar
-      DO jd=1,nVar
+      DO id=1,nVar1
+      DO jd=1,nVar1
         MatmuldnMat%d2(:,:,jd,id) =                                     &
                     matmul(dnMat1%d0,           dnMat2%d2(:,:,jd,id)) + &
                     matmul(dnMat1%d1(:,:,jd),   dnMat2%d1(:,:,id))    + &
@@ -1527,9 +1606,9 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     IF (nderiv >= 3) THEN
-      DO id=1,nVar
-      DO jd=1,nVar
-      DO kd=1,nVar
+      DO id=1,nVar1
+      DO jd=1,nVar1
+      DO kd=1,nVar1
         MatmuldnMat%d3(:,:,kd,jd,id) =                                  &
              matmul(dnMat1%d0,              dnMat2%d3(:,:,kd,jd,id))  + &
              matmul(dnMat1%d1(:,:,kd),      dnMat2%d2(:,:,jd,id))     + &
@@ -1556,24 +1635,27 @@ MODULE ADdnSVM_dnMat_m
     TYPE (dnMat_t),   intent(in)    :: dnMat1
     real(kind=Rkind), intent(in)    :: Mat2(:,:)
 
-    integer :: nderiv,nsurf,nVar,id,jd,kd
+    integer :: nderiv,nVar,id,jd,kd
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_MATMUL_dnMat1_Mat2'
 
 
     nderiv = AD_get_nderiv_FROM_dnMat(dnMat1)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat1)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat1)
 
+    sizeL1  = AD_get_sizeL_FROM_dnMat(dnMat1)
+    sizeC1  = AD_get_sizeC_FROM_dnMat(dnMat1)
+    sizeL2  = size(Mat2,dim=1)
+    sizeC2  = size(Mat2,dim=2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_dnMat1_Mat2: sizeC1 and sizeL2 differ'
 
     !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
-    CALL AD_dealloc_dnMat(MatmuldnMat)
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
-
-    CALL AD_alloc_dnMat(MatmuldnMat,nsurf,nVar,nderiv,                 &
-                         name_var='MatmuldnMat',name_sub=name_sub)
+    CALL AD_alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar,nderiv=nderiv,                  &
+                        name_var='MatmuldnMat',name_sub=name_sub)
 
     IF (nderiv >= 0) THEN
       MatmuldnMat%d0(:,:) = matmul(dnMat1%d0,Mat2)
@@ -1613,24 +1695,29 @@ MODULE ADdnSVM_dnMat_m
     real(kind=Rkind), intent(in)    :: Mat1(:,:)
     TYPE (dnMat_t),   intent(in)    :: dnMat2
 
-    integer :: nderiv,nsurf,nVar,id,jd,kd
+    integer :: nderiv,nVar,id,jd,kd
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_MATMUL_Mat1_dnMat2'
 
 
     nderiv = AD_get_nderiv_FROM_dnMat(dnMat2)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat2)
     nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
 
 
+    sizeL2  = AD_get_sizeL_FROM_dnMat(dnMat2)
+    sizeC2  = AD_get_sizeC_FROM_dnMat(dnMat2)
+    sizeL1  = size(Mat1,dim=1)
+    sizeC1  = size(Mat1,dim=2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_Mat1_dnMat2: sizeC1 and sizeL2 differ'
+
     !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
-    CALL AD_dealloc_dnMat(MatmuldnMat)
+ 
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
 
-    IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
-
-    CALL AD_alloc_dnMat(MatmuldnMat,nsurf,nVar,nderiv,                 &
-                         name_var='MatmuldnMat',name_sub=name_sub)
+    CALL AD_alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar,nderiv=nderiv,                  &
+                        name_var='MatmuldnMat',name_sub=name_sub)
 
     IF (nderiv >= 0) THEN
       MatmuldnMat%d0(:,:) = matmul(Mat1,dnMat2%d0)
@@ -1677,7 +1764,7 @@ MODULE ADdnSVM_dnMat_m
     integer,          intent(in), optional :: nio
     character(len=*), intent(in), optional :: info
 
-    integer :: i,j,k,nio_loc,nsurf_loc,nVar_loc
+    integer :: i,j,k,nio_loc,sizeL,sizeC,nVar_loc
 
     IF (present(nio)) THEN
       nio_loc = nio
@@ -1685,10 +1772,12 @@ MODULE ADdnSVM_dnMat_m
       nio_loc = out_unit
     END IF
 
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(Mat)
+    sizeL  = AD_get_sizeL_FROM_dnMat(Mat)
+    sizeC  = AD_get_sizeC_FROM_dnMat(Mat)
+
     nVar_loc   = AD_get_nVar_FROM_dnMat(Mat)
 
-    IF (nsurf_loc == 1 .AND. nVar_loc > 1) THEN
+    IF (sizeL == 1 .AND. sizeC == 1 .AND. nVar_loc > 1) THEN
       IF (allocated(Mat%d0)) THEN
         write(nio_loc,'(a,' // RMatIO_format // ')') ' no derivative',Mat%d0
       END IF
@@ -1761,7 +1850,7 @@ MODULE ADdnSVM_dnMat_m
         END DO
       END IF
     END IF
-
+    flush(nio_loc)
   END SUBROUTINE AD_Write_dnMat
 !> @brief Public function to get nderiv from a derived type dnMat.
 !!
@@ -1794,6 +1883,7 @@ MODULE ADdnSVM_dnMat_m
     IF (Mat%nderiv /= nderiv) THEN
       write(out_unit,*) ' ERROR in AD_get_nderiv_FROM_dnMat'
       write(out_unit,*) '  Problem with nderiv in Mat'
+      write(out_unit,*) '  nderiv,Mat%nderiv',nderiv,Mat%nderiv
       CALL AD_Write_dnMat(Mat)
       STOP 'ERROR in AD_get_nderiv_FROM_dnMat'
     END IF
@@ -1808,18 +1898,56 @@ MODULE ADdnSVM_dnMat_m
 !! @param Mat                         TYPE (dnMat_t):     derived type which deals with the derivatives of a matrix.
 !! @param get_nderiv_FROM_dnMat    integer  (result):  nderiv value
   FUNCTION AD_get_nsurf_FROM_dnMat(Mat) RESULT(nsurf)
+    USE QDUtil_m, ONLY : out_unit
 
     integer                       :: nsurf
     TYPE (dnMat_t), intent(in)    :: Mat
 
+    integer :: sizeL_loc,sizeC_loc
+
     IF (.NOT. allocated(Mat%d0)) THEN
-      nsurf = 0
+      sizeL_loc = 0
+      sizeC_loc = 0
     ELSE
-      nsurf = size(Mat%d0(:,1))
+      sizeL_loc = size(Mat%d0,dim=1)
+      sizeC_loc = size(Mat%d0,dim=2)
+    END IF
+    IF (sizeL_loc /= sizeC_loc) THEN
+      write(out_unit,*) ' ERROR in AD_get_nsurf_FROM_dnMat'
+      write(out_unit,*) '  Mat is not a square matrix!'
+      write(out_unit,*) '  shape(mat)',shape(Mat)
+      STOP 'ERROR in AD_get_nsurf_FROM_dnMat: Mat is not a square matrix'
+    ELSE
+      nsurf = sizeL_loc
     END IF
 
     END FUNCTION AD_get_nsurf_FROM_dnMat
+    FUNCTION AD_get_sizeC_FROM_dnMat(Mat) RESULT(sizeC)
 
+      integer                       :: sizeC
+      TYPE (dnMat_t), intent(in)    :: Mat
+  
+  
+      IF (.NOT. allocated(Mat%d0)) THEN
+        sizeC = 0
+      ELSE
+        sizeC = size(Mat%d0,dim=2)
+      END IF
+
+    END FUNCTION AD_get_sizeC_FROM_dnMat
+    FUNCTION AD_get_sizeL_FROM_dnMat(Mat) RESULT(sizeL)
+
+      integer                       :: sizeL
+      TYPE (dnMat_t), intent(in)    :: Mat
+  
+  
+      IF (.NOT. allocated(Mat%d0)) THEN
+        sizeL = 0
+      ELSE
+        sizeL = size(Mat%d0,dim=1)
+      END IF
+
+    END FUNCTION AD_get_sizeL_FROM_dnMat
 !> @brief Public function to get nVar (number of coordinates) from a derived type dnMat.
 !!
 !> @author David Lauvergnat
@@ -1918,8 +2046,9 @@ MODULE ADdnSVM_dnMat_m
       USE QDUtil_m, ONLY : Rkind, out_unit
       IMPLICIT NONE
 
-      TYPE (dnMat_t),       intent(in)    :: Mat
       real (kind=Rkind),    allocatable   :: FlatdnMat(:)
+
+      TYPE (dnMat_t),       intent(in)    :: Mat
       logical,              intent(in), optional :: all_der
       integer,              intent(in), optional :: i_der
 

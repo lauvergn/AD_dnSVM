@@ -23,6 +23,11 @@ name="dnVec"
 source-dir="Tests"
 main="TEST_dnVec.f90"
 
+[[test]]
+name="dnMat"
+source-dir="Tests"
+main="TEST_dnMat.f90"
+
 [[executable]]
 name="Exa_dnS"
 source-dir="APP"
