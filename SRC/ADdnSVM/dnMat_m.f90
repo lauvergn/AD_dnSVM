@@ -69,8 +69,10 @@ MODULE ADdnSVM_dnMat_m
     PROCEDURE, PRIVATE :: AD_sub_dnMat2_TO_dnMat1
     PROCEDURE, PRIVATE :: AD_set_dnMat_TO_R
     PROCEDURE, PRIVATE :: AD_set_dnMat_FROM_MatOFdnS
+    PROCEDURE, PRIVATE :: AD_set_dnMat_FROM_Mat
     GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnMat_TO_R,                  &
-                                           AD_set_dnMat_FROM_MatOFdnS
+                                           AD_set_dnMat_FROM_MatOFdnS,         &
+                                           AD_set_dnMat_FROM_Mat
   END TYPE dnMat_t
 
   PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,Write_dnMat,Check_NotAlloc_dnMat
@@ -771,6 +773,20 @@ MODULE ADdnSVM_dnMat_m
     END DO
 
   END SUBROUTINE AD_set_dnMat_FROM_MatOFdnS
+  SUBROUTINE AD_set_dnMat_FROM_Mat(dnMat,Mat)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    CLASS (dnMat_t),   intent(inout) :: dnMat
+    real (kind=Rkind), intent(in)    :: Mat(:,:)
+
+    character (len=*), parameter :: name_sub='AD_set_dnMat_FROM_Mat'
+
+    dnMat%d0     = Mat
+    dnMat%nderiv = 0
+  
+  END SUBROUTINE AD_set_dnMat_FROM_Mat
   SUBROUTINE AD_Mat_wADDTO_dnMat2_ider(Mat1,w1,dnMat2,ider)
     USE QDUtil_m, ONLY : Rkind, out_unit
     USE ADdnSVM_dnS_m

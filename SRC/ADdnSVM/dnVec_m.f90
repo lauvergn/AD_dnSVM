@@ -1166,6 +1166,12 @@ MODULE ADdnSVM_dnVec_m
     integer :: err_dnVec_loc
     character (len=*), parameter :: name_sub='AD_set_dnVec_TO_VecOfR'
 
+    IF (.NOT. Check_Alloc_dnVec(dnVec)) THEN
+      dnVec%d0     = Vec
+      dnVec%nderiv = 0
+      RETURN
+    END IF
+
     nderiv_loc = AD_get_nderiv_FROM_dnVec(dnVec)
     !write(out_unit,*) 'nderiv',nderiv_loc
 
@@ -1176,8 +1182,6 @@ MODULE ADdnSVM_dnVec_m
       write(out_unit,*) '  Check the source'
       STOP
     END IF
-
-
 
     IF (nderiv_loc == 0) THEN
        dnVec%d0 = Vec

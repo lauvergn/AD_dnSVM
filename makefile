@@ -199,8 +199,9 @@ $(LIBAD).a: $(OBJ)
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
-	rm -f  $(TEST_dnSEXE) $(TEST_dnPolyEXE) $(TEST_dnVecEXE) $(EXA_dnSEXE) $(LIBAD).a
-	rm -f  dnSca.txt comp.log dnS.log dnPoly.log dnVec.log Test.log
+	rm -f  $(TEST_dnSEXE) $(TEST_dnPolyEXE) $(TEST_dnVecEXE) $(TEST_dnMatEXE) $(EXA_dnSEXE)
+	rm -f  $(LIBAD).a
+	rm -f  dnSca.txt *.log
 	rm -fr *.dSYM
 	rm -fr build
 	cd $(OBJ_DIR) ; rm -f *.o *.mod *.MOD
