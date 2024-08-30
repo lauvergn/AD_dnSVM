@@ -9,7 +9,6 @@ do
   test -d $dirlib || continue
   cd $dirlib
   make --silent cleanall &> /dev/null
-  test -d Ext_lib && rm -rf Ext_lib/Save*.zip Ext_lib/*_loc Ext_lib/.git
   cd ..
 done
 
