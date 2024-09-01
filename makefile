@@ -73,11 +73,11 @@ else
   include $(CompilersDIR)/compilers.mk
 endif
 #=================================================================================
-#
 # External Libraries directory
 ifeq ($(ExtLibDIR),)
-  ExtLibDIR := Ext_Lib
+  ExtLibDIR := $(MAIN_path)/Ext_Lib
 endif
+$(shell [ -d $(ExtLibDIR) ] || (echo $(ExtLibDIR) "does not exist" ; exit 1))
 #
 QD_DIR=$(ExtLibDIR)/QDUtilLib
 QDMOD_DIR=$(QD_DIR)/OBJ/obj$(ext_obj)
@@ -226,12 +226,14 @@ zip: cleanall
 #===============================================
 #== external libraries
 #
+.PHONY: getlib
+getlib:
+	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
 $(QDLIBA):
-	@test -d $(ExtLibDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
-	@test -d $(QD_DIR) || (cd $(ExtLibDIR) ; ./get_QDUtilLib.sh $(EXTLIB_TYPE))
-	@test -d $(QD_DIR) || (echo $(QD_DIR) "does not exist" ; exit 1)
-	cd $(QD_DIR) ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR) CompilersDIR=$(CompilersDIR)
-	@echo "  done " $(QDLIBA) " in "$(BaseName)
+	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
+	cd $(ExtLibDIR)/QDUtilLib ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR) CompilersDIR=$(CompilersDIR)
+	@test -f $(QDLIBA) || (echo $(QDLIBA) "does not exist" ; exit 1)
+	@echo "  done " $(QDLIBA)
 #
 #===============================================
 

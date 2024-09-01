@@ -1,0 +1,10 @@
+.DS_Store */.DS_Store */*/.DS_Store
+OBJ/*
+*.x
+*.a 
+*.log
+res
+test_io_file.txt
+TESTS/*log
+TESTS/res*
+file.*

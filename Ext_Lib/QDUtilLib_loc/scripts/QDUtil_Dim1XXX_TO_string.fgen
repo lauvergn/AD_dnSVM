@@ -1,0 +1,15 @@
+  PURE FUNCTION QDUtil_Dim1XXX_TO_string(tab)  RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+
+    character (len=:), allocatable  :: string
+    YYY, intent(in)             :: tab(:)
+
+    integer :: i
+
+    string = ''
+    DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
+      string = string // TO_string(tab(i)) // ' '
+    END DO
+    string = string // TO_string((tab(ubound(tab,dim=1))))
+
+  END FUNCTION QDUtil_Dim1XXX_TO_string

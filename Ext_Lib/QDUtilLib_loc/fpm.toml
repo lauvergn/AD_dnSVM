@@ -1,0 +1,33 @@
+name = "QDUtilLib"
+version = "0.0.0"
+license = "MIT"
+author = "David Lauvergnat"
+maintainer = "david.lauvergnat@universite-paris-saclay.fr"
+copyright = "2023 David Lauvergnat"
+
+[library]
+source-dir="SRC"
+
+[[test]]
+name="TestQDLib"
+source-dir="TESTS"
+main="Test_QDLib.f90"
+
+
+[[executable]]
+name="AppQDLib"
+source-dir="APP"
+main="App_QDLib.f90"
+
+[install]
+library = true
+
+[build]
+link = ["blas", "lapack"]
+
+
+[preprocess]
+cpp.macros = ["__LAPACK=1"]
+
+[fortran]
+implicit-external = true
