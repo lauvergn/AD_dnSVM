@@ -34,6 +34,7 @@ PROGRAM TEST_dnMat
   IMPLICIT NONE
 
     TYPE (dnMat_t)                   :: dnM1,dnM2
+    TYPE (dnMat_t)                   :: dnV,dnM,dnDiag
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Mat_dnS(:,:)
     TYPE (dnS_t)                     :: dnS,dnS_ana
@@ -116,6 +117,27 @@ PROGRAM TEST_dnMat
   CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (error)')
 
   CALL Flush_Test(test_var)
+
+   ! test diago
+  deallocate(Mat_dnS)
+  allocate(Mat_dnS(2,2))
+  DO j=1,size(Mat_dnS,dim=2)
+  DO i=1,size(Mat_dnS,dim=1)
+    Mat_dnS(i,j) = (Vec_dnS(1)+Vec_dnS(2))**(i+j-2)
+  END DO
+  END DO
+  dnM=Mat_dnS
+  CALL Write_dnMat(dnM, info='M')
+  CALL DIAG_dnMat(dnMat=dnM,dnMatDiag=dnDiag,dnVec=dnV)
+  CALL Write_dnMat(dnDiag, info='Diag')
+  CALL Write_dnMat(dnV, info='V')
+  dnM1 = matmul(dnM,dnV)
+  dnM2 = matmul(transpose(dnV),dnM1) - dnDiag
+  CALL Write_dnMat(dnM2, info='Vt.M.V - Diag')
+  
+  res_test = Check_dnMat_IS_ZERO(dnM2)
+  CALL Logical_Test(test_var,test1=res_test,info='Diago')
+
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)

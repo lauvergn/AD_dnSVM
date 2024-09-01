@@ -1538,7 +1538,7 @@ MODULE ADdnSVM_dnMat_m
     IF (nderiv < 0 .OR. nsurf < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
 
     CALL AD_alloc_dnMat(SymdnMat,nsurf=nsurf,nVar=nVar,nderiv=nderiv,      &
-                        name_var='TransdnMat',name_sub=name_sub)
+                        name_var='SymdnMat',name_sub=name_sub)
 
     IF (nderiv >= 0) THEN
       SymdnMat%d0(:,:) = HALF*(transpose(dnMat%d0) + dnMat%d0)
@@ -2284,9 +2284,9 @@ MODULE ADdnSVM_dnMat_m
 
     IF (nderiv < 0) RETURN
 
-    CALL AD_alloc_dnMat(dnMatDiag,nsurf,nVar,nderiv)
+    CALL AD_alloc_dnMat(dnMatDiag,nsurf=nsurf,nVar=nVar,nderiv=nderiv)
     dnMatDiag = ZERO
-    CALL AD_alloc_dnMat(dnVec,nsurf,nVar,nderiv)
+    CALL AD_alloc_dnMat(dnVec,nsurf=nsurf,nVar=nVar,nderiv=nderiv)
     dnVec     = ZERO
 
     ! the zero order: normal diagonalization
