@@ -233,9 +233,12 @@ MODULE ADdnSVM_dnMat_m
     !       T      F       F    => ok
     !       F      T       T    => ok
     !   all other posiblities are wrong
-    IF ( (present(nsurf) .AND. .NOT. present(sizeL) .AND. .NOT. present(sizeL) ) .OR. &
-         (.NOT. present(nsurf) .AND. present(sizeL) .AND. present(sizeL) ) ) THEN
+    IF ( (present(nsurf) .AND. .NOT. present(sizeL) .AND. .NOT. present(sizeC) ) .OR. &
+         (.NOT. present(nsurf) .AND. present(sizeL) .AND. present(sizeC) ) ) THEN
       CONTINUE ! the two possiblities
+      !write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      !write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      !write(out_unit,*) 'present(sizeC): ',present(sizeC)
     ELSE
       write(out_unit,*) ' ERROR in AD_alloc_dnMat'
       write(out_unit,*) ' wrong parameter presence:'

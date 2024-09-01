@@ -105,6 +105,16 @@ PROGRAM TEST_dnMat
   res_test = (err_dnMat == 0)
   CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (rectangle)')
 
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  CALL alloc_dnMat(dnM1,sizeL=2,nVar=2,nderiv=1,err_dnMat=err_dnMat)
+  res_test = (err_dnMat /= 0)
+  CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (error)')
+
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  CALL alloc_dnMat(dnM1,sizeL=2,nsurf=2,nVar=2,nderiv=1,err_dnMat=err_dnMat)
+  res_test = (err_dnMat /= 0)
+  CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (error)')
+
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
