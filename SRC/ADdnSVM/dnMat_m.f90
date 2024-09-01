@@ -230,29 +230,31 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
     ! test nsurf, sizeL, sizeL
-    IF (present(nsurf) .AND. (present(sizeL) .OR. present(sizeC))) THEN
+    !       T      F       F    => ok
+    !       F      T       T    => ok
+    !   all other posiblities are wrong
+    IF ( (present(nsurf) .AND. .NOT. present(sizeL) .AND. .NOT. present(sizeL) ) .OR. &
+         (.NOT. present(nsurf) .AND. present(sizeL) .AND. present(sizeL) ) ) THEN
+      CONTINUE ! the two possiblities
+    ELSE
       write(out_unit,*) ' ERROR in AD_alloc_dnMat'
-      write(out_unit,*) ' nsurf and sizeL or sizeC are present. It is not possible'
+      write(out_unit,*) ' wrong parameter presence:'
       write(out_unit,*) 'present(nsurf): ',present(nsurf)
       write(out_unit,*) 'present(sizeL): ',present(sizeL)
       write(out_unit,*) 'present(sizeC): ',present(sizeC)
+      write(out_unit,*)
+      write(out_unit,*) ' The two correct possibilities are:'
+      write(out_unit,*) '----------------------------------------------'
+      write(out_unit,*) ' present(nsurf) present(sizeL) present(sizeC)'
+      write(out_unit,*) '    true           false           false'
+      write(out_unit,*) '    false          true            true'
+      write(out_unit,*) '----------------------------------------------'
+
       IF (present(err_dnMat)) THEN
         err_dnMat = 1
         RETURN
       ELSE
-        STOP 'ERROR in AD_alloc_dnMat: nsurf and sizeL or sizeC are present'
-      END IF
-    END IF
-    IF (.NOT. (present(sizeL) .AND. present(sizeC))) THEN
-      write(out_unit,*) ' ERROR in AD_alloc_dnMat'
-      write(out_unit,*) ' sizeL or sizeC are not present. It is not possible'
-      write(out_unit,*) 'present(sizeL): ',present(sizeL)
-      write(out_unit,*) 'present(sizeC): ',present(sizeC)
-      IF (present(err_dnMat)) THEN
-        err_dnMat = 1
-        RETURN
-      ELSE
-        STOP 'ERROR in AD_alloc_dnMat: sizeL or sizeC are not present'
+        STOP 'ERROR in AD_alloc_dnMat: wrong parameter presence,nsurf and sizeL or sizeC'
       END IF
     END IF
 

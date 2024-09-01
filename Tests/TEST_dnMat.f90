@@ -45,7 +45,7 @@ PROGRAM TEST_dnMat
     real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
     real (kind=Rkind), allocatable   :: FlatdnM(:),FlatdnM_ref(:),Mat(:,:)
 
-    integer                          :: nderiv,nio_test,nderiv_Mat
+    integer                          :: nderiv,nio_test,nderiv_Mat,err_dnMat
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
     real (kind=Rkind)                :: ZeroTresh   = ONETENTH**10
 
@@ -91,6 +91,21 @@ PROGRAM TEST_dnMat
 
   CALL Flush_Test(test_var)
 
+   ! test the allocate / deallocate
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  res_test = (err_dnMat == 0)
+  CALL Logical_Test(test_var,test1=res_test,info='dealloc_dnMat')
+
+  CALL alloc_dnMat(dnM1,nsurf=2,nVar=2,nderiv=1,err_dnMat=err_dnMat)
+  res_test = (err_dnMat == 0)
+  CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (square)')
+
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  CALL alloc_dnMat(dnM1,sizeL=2,sizeC=3,nVar=2,nderiv=1,err_dnMat=err_dnMat)
+  res_test = (err_dnMat == 0)
+  CALL Logical_Test(test_var,test1=res_test,info='alloc_dnMat (rectangle)')
+
+  CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
