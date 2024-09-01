@@ -1,13 +1,28 @@
 #!/bin/bash
 
-#EXTLIB_TYPE=$1
 BaseName=$1
-DIR=$2
+Branch_in=$2
+
+DIR=$3
+
+if (test -z "$Branch_in" ) then
+  Branch=main
+else
+  Branch=$Branch_in
+fi
+
+
+#github versions
+version="https://github.com/lauvergn/"$BaseName"/archive/refs/heads/"$Branch".zip"
+
+#https://github.com/lauvergn/QDUtilLib/archive/refs/heads/dev.zip
+#https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 
 echo In get_Lib.sh $BaseName
 
 
 ExtLibSAVEDIR=/Users/lauvergn/git/Ext_Lib
+
 LOC_version=$BaseName
 
 
@@ -48,8 +63,8 @@ fi
 
 
 #1) try to get from github
-#latest HEAD version
-version="https://github.com/lauvergn/"$BaseName"/archive/refs/heads/main.zip"
+#latest HEAD version (defined at the beginning of the script)
+echo "GitHub version:" $version
 curl -LJ $version --output $LOC_version.zip
 zipfile=$LOC_version.zip
 if (test -f $zipfile) then
