@@ -139,6 +139,7 @@ This module contains functions and subroutines to manipulate character string (c
   It can work with table of dimension 1.
 - Function to read a line from a file define with its unit: **Read_line**
 - Function to check is a string is empty: **string_IS_empty**
+- Concatenation (//) between string and integer, real, complex, and logical (and the reverse)
 - Examples:
 ```Fortran
 character (len=:), allocatable :: str
@@ -148,6 +149,8 @@ str = TO_string(1.0)      ! => "1."
 str = TO_string(EYE)      ! => "(0.,1.)"
 str = TO_string(.FALSE.)  ! => "F"
 str = TO_string([1,3,-1]) ! => "1 3 -1"
+
+str = 'coucou' // 1.      ! => "coucou1."
 
 str = TO_lowercase("AbC") ! => "abc"
 str = TO_uppercase("aBc") ! => "ABC"

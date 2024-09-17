@@ -65,6 +65,20 @@ IMPLICIT NONE
     MODULE PROCEDURE QDUtil_string_IS_empty
   END INTERFACE
 
+  INTERFACE operator(//)
+    MODULE PROCEDURE QDUtil_string_concat_logical
+    MODULE PROCEDURE QDUtil_logical_concat_string
+
+    MODULE PROCEDURE QDUtil_string_concat_Ik4,QDUtil_string_concat_Ik8
+    MODULE PROCEDURE QDUtil_Ik4_concat_string,QDUtil_Ik8_concat_string
+
+    MODULE PROCEDURE QDUtil_string_concat_Rk4,QDUtil_string_concat_Rk8,QDUtil_string_concat_Rk16
+    MODULE PROCEDURE QDUtil_Rk4_concat_string,QDUtil_Rk8_concat_string,QDUtil_Rk16_concat_string
+
+    MODULE PROCEDURE QDUtil_string_concat_Ck4,QDUtil_string_concat_Ck8,QDUtil_string_concat_Ck16
+    MODULE PROCEDURE QDUtil_Ck4_concat_string,QDUtil_Ck8_concat_string,QDUtil_Ck16_concat_string
+  END INTERFACE
+
   INTERFACE TO_string
     MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
     MODULE PROCEDURE QDUtil_logical_TO_string
@@ -1065,6 +1079,210 @@ END SUBROUTINE QDUtil_SET_Astring
   
   END SUBROUTINE QDUtil_dealloc_array_OF_Stringdim1
 
+  FUNCTION QDUtil_string_concat_logical(str1,s2) RESULT(string)
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    logical,                        intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_logical
+  FUNCTION QDUtil_logical_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    logical,                        intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_logical_concat_string
+
+  FUNCTION QDUtil_string_concat_Ik4(str1,i2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    integer (kind=Ik4),             intent(in)  :: i2
+  
+    string = str1 // TO_string(i2)
+
+  END FUNCTION QDUtil_string_concat_Ik4
+  FUNCTION QDUtil_Ik4_concat_string(i1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    integer (kind=Ik4),             intent(in)  :: i1
+  
+    string = TO_string(i1) // str2
+
+  END FUNCTION QDUtil_Ik4_concat_string
+  FUNCTION QDUtil_string_concat_Ik8(str1,i2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    integer (kind=Ik8),             intent(in)  :: i2
+  
+    string = str1 // TO_string(i2)
+
+  END FUNCTION QDUtil_string_concat_Ik8
+  FUNCTION QDUtil_Ik8_concat_string(i1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    integer (kind=Ik8),             intent(in)  :: i1
+  
+    string = TO_string(i1) // str2
+
+  END FUNCTION QDUtil_Ik8_concat_string
+
+
+  FUNCTION QDUtil_string_concat_Rk4(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    real (kind=Rk4),                intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Rk4
+  FUNCTION QDUtil_Rk4_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    real (kind=Rk4),                intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Rk4_concat_string
+  FUNCTION QDUtil_string_concat_Rk8(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    real (kind=Rk8),                intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Rk8
+  FUNCTION QDUtil_Rk8_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    real (kind=Rk8),                intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Rk8_concat_string
+  FUNCTION QDUtil_string_concat_Rk16(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    real (kind=Rk16),               intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Rk16
+  FUNCTION QDUtil_Rk16_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    real (kind=Rk16),               intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Rk16_concat_string
+
+
+  FUNCTION QDUtil_string_concat_Ck4(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    complex (kind=Rk4),             intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Ck4
+  FUNCTION QDUtil_Ck4_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    complex (kind=Rk4),             intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Ck4_concat_string
+  FUNCTION QDUtil_string_concat_Ck8(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    complex (kind=Rk8),             intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Ck8
+  FUNCTION QDUtil_Ck8_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    complex (kind=Rk8),             intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Ck8_concat_string
+  FUNCTION QDUtil_string_concat_Ck16(str1,s2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str1
+    complex (kind=Rk16),            intent(in)  :: s2
+  
+    string = str1 // TO_string(s2)
+
+  END FUNCTION QDUtil_string_concat_Ck16
+  FUNCTION QDUtil_Ck16_concat_string(s1,str2) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    IMPLICIT NONE
+  
+    character (len=:),  allocatable             :: string
+    character (len=*),              intent(in)  :: str2
+    complex (kind=Rk16),            intent(in)  :: s1
+  
+    string = TO_string(s1) // str2
+
+  END FUNCTION QDUtil_Ck16_concat_string
+
+
   SUBROUTINE Test_QDUtil_String()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
@@ -1206,6 +1424,37 @@ END SUBROUTINE QDUtil_SET_Astring
     CALL SET_string(string,'1','2','3','4','5','6','7','8','9','10')
     res_test = (string == '12345678910')
     CALL Logical_Test(test_var,test1=res_test,info='SET_string (12345678910)')
+    CALL Flush_Test(test_var)
+
+    ! test concatenation
+    string = 'coucou' // 1
+    res_test = (string == 'coucou1')
+    CALL Logical_Test(test_var,test1=res_test,info="'coucou' // 1")
+    string = 'coucou' // -1_Ik4
+    res_test = (string == 'coucou-1')
+    CALL Logical_Test(test_var,test1=res_test,info="'coucou' // -1 (Ik4)")
+    string = 'coucou' // 99999999999_Ik8
+    res_test = (string == 'coucou99999999999')
+    CALL Logical_Test(test_var,test1=res_test,info="'coucou' // 99999999999 (Ik8)")
+
+    string = 1 // 'coucou' // 1
+    res_test = (string == '1coucou1')
+    CALL Logical_Test(test_var,test1=res_test,info="1 // 'coucou' // 1")
+    string = +1_Ik8 // 'coucou' // -1_Ik4
+    res_test = (string == '1coucou-1')
+    CALL Logical_Test(test_var,test1=res_test,info="1 (Ik8) // 'coucou' // -1 (Ik4)")
+
+    string = CONE // 'coucou' // ONE
+    res_test = (string == '(1.,0.)coucou1.')
+    CALL Logical_Test(test_var,test1=res_test,info="cplx // 'coucou' // real")
+    string = TWO // 'coucou' // EYE
+    res_test = (string == '2.coucou(0.,1.)')
+    CALL Logical_Test(test_var,test1=res_test,info="real // 'coucou' // cplx")
+
+    string = .TRUE. // 'coucou' // .FALSE.
+    res_test = (string == 'TcoucouF')
+    CALL Logical_Test(test_var,test1=res_test,info="logical // 'coucou' // logical")
+
     CALL Flush_Test(test_var)
 
     ! finalize the tests
