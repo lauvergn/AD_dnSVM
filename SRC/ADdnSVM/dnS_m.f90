@@ -249,7 +249,7 @@ MODULE ADdnSVM_dnS_m
   END INTERFACE
 
   INTERFACE dnf_OF_dnS
-    MODULE PROCEDURE AD_dnF_OF_dnS
+    MODULE PROCEDURE AD_dnF_OF_dnS,AD_dnF_OF_TabOfdnS
   END INTERFACE
 
   INTERFACE sqrt
@@ -2383,6 +2383,96 @@ END FUNCTION AD_Grad_OF_dnS
     END IF
 
   END FUNCTION AD_dnF_OF_dnS
+
+  FUNCTION AD_dnF_OF_TabOfdnS(f,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnS_t)                       :: Sres
+    TYPE (dnS_t),        intent(in)    :: S(:),f
+
+    integer :: nderiv,id,jd,kd,i,j,k,nVar
+    character (len=*), parameter :: name_sub='AD_dnF_OF_TabOfdnS'
+
+    CALL AD_dealloc_dnS(Sres)
+
+    IF (get_nVar(f) /= size(S)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar of f is not size(S)'
+      write(out_unit,*) '  nVar of f',get_nVar(f)
+      write(out_unit,*) '  size(S)  ',size(S)
+      STOP 'ERROR in AD_dnF_OF_TabOfdnS: nVar of f is not size(S)'
+    END IF
+
+    nderiv = min(get_nderiv(f),get_nderiv(S(1)))
+
+    nVar = get_nVar(S(1))
+    CALL alloc_dnS(Sres, nVar=nVar, nderiv=nderiv)
+
+
+    Sres%d0 = f%d0 ! f%d0 = func(s%d0)
+
+    IF (allocated(Sres%d1)) THEN
+      DO id=1,nVar
+        Sres%d1(id) = ZERO
+        DO i=1,size(S)
+          Sres%d1(id) =  Sres%d1(id) + f%d1(i)*S(i)%d1(id)
+        END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d2)) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        Sres%d2(jd,id) = ZERO
+
+        DO i=1,size(S)
+          Sres%d2(jd,id) = Sres%d2(jd,id) + f%d1(i)*S(i)%d2(jd,id)
+        END DO
+
+        DO i=1,size(S)
+        DO j=1,size(S)
+          Sres%d2(jd,id) = Sres%d2(jd,id) + f%d2(j,i) * S(i)%d1(id)*S(j)%d1(jd)
+        END DO
+        END DO
+
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d3)) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        Sres%d3(kd,jd,id) = ZERO
+
+        DO i=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + f%d1(i)*S(i)%d3(kd,jd,id)
+        END DO
+        
+        DO i=1,size(S)
+        DO j=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + ( &
+                       S(i)%d1(id)*S(j)%d2(kd,jd) + &
+                       S(i)%d1(jd)*S(j)%d2(kd,id) + &
+                       S(i)%d1(kd)*S(j)%d2(jd,id) )*f%d2(j,i)
+        END DO
+        END DO
+
+        DO i=1,size(S)
+        DO j=1,size(S)
+        DO k=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + &
+              ( S(i)%d1(id)*S(j)%d1(jd)*S(k)%d1(kd) )*f%d3(k,j,i)
+        END DO
+        END DO
+        END DO
+ 
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dnF_OF_TabOfdnS
 
   ELEMENTAL FUNCTION AD_dnS_EXP_R(S,R) RESULT(Sres)
     USE QDUtil_m

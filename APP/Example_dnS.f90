@@ -146,6 +146,22 @@ PROGRAM Example_dnS
     CALL Write_dnS(Vec(i),out_unit,info='dnBox_' // int_TO_char(i))
   END DO
 
- 
+
+  nderiv = 1
+  Vec   = Variable([HALF,ONE,TWO,THREE], nderiv=nderiv)
+  CALL Write_dnS(Vec(1),info='Vec(1)')
+  CALL Write_dnS(Vec(2),info='Vec(2)')
+
+  VecXY = Variable([get_d0(Vec(1))*get_d0(Vec(2))],nderiv=nderiv)
+  CALL Write_dnS(VecXY(1),info='VecXY(1)')
+
+  f     = cos(VecXY(1))
+  CALL Write_dnS(f,info='f')
+
+  CALL Write_dnS(cos(Vec(1)*Vec(2)),info='cos(Vec(1)*Vec(2))')
+
+  f   = cos(Vec(1)*Vec(2))-dnF_OF_dnS(f,[Vec(1)*Vec(2)])
+  CALL Write_dnS(f,info='dnF_OF_dnS, value: 0.')
+
 
 END PROGRAM Example_dnS
