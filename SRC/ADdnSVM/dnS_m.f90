@@ -183,8 +183,9 @@ MODULE ADdnSVM_dnS_m
   PUBLIC :: get_nderiv,get_nVar
   PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
   PUBLIC :: get_Flatten
-  PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1
+  PUBLIC :: ReduceDerivatives_dnS2_TO_dnS1,FROM_dnSReducedDer,TO_dnSReducedDer
   PUBLIC :: dnf_OF_dnS
+
 
   PUBLIC :: AD_get_Num_dnS_FROM_f_x,AD_Check_dnS_IS_ZERO,AD_d0S_TIME_R
 
@@ -244,8 +245,15 @@ MODULE ADdnSVM_dnS_m
   INTERFACE   get_Flatten
      MODULE PROCEDURE   AD_get_Flatten_dnS
   END INTERFACE
+
   INTERFACE ReduceDerivatives_dnS2_TO_dnS1
      MODULE PROCEDURE AD_ReduceDerivatives_dnS2_TO_dnS1
+  END INTERFACE
+  INTERFACE TO_dnSReducedDer
+     MODULE PROCEDURE AD_TO_dnSReducedDer
+  END INTERFACE
+  INTERFACE FROM_dnSReducedDer
+     MODULE PROCEDURE AD_FROM_dnSReducedDer
   END INTERFACE
 
   INTERFACE dnf_OF_dnS
@@ -753,38 +761,126 @@ CONTAINS
     IF (debug) write(out_unit,*) ' END ',name_sub 
 
   END SUBROUTINE AD_set_dnS_with_ider
-  SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1(S1,S2,list_act)
+  SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1(S1,S2,list_act) ! this is kept for compatibilty with the old version
     USE QDUtil_m, ONLY : out_unit
     IMPLICIT NONE
 
-    CLASS (dnS_t), intent(inout) :: S1
-    CLASS (dnS_t), intent(in)    :: S2
+    TYPE (dnS_t), intent(inout) :: S1
+    TYPE (dnS_t), intent(in)    :: S2
     integer,       intent(in)    :: list_act(:)
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_ReduceDerivatives_dnS2_TO_dnS1'
 
-    CALL AD_dealloc_dnS(S1)
-
-    IF (allocated(S2%d1)) THEN
-    IF (size(list_act) > size(S2%d1) ) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' size(list_act) > size(S2%d1)'
-      write(out_unit,*) ' size(list_act) ',size(list_act)
-      write(out_unit,*) ' size(S2%d1)    ',size(S2%d1)
-      write(out_unit,*) ' CHECK the fortran!!'
-      STOP 'ERROR in AD_ReduceDerivatives_dnS2_TO_dnS1'
-    END IF
-    END IF
-
-    S1%nderiv = S2%nderiv
-
-    S1%d0 = S2%d0
-    IF (allocated(S2%d1)) S1%d1 = S2%d1(list_act)
-    IF (allocated(S2%d2)) S1%d2 = S2%d2(list_act,list_act)
-    IF (allocated(S2%d3)) S1%d3 = S2%d3(list_act,list_act,list_act)
+    S1 = TO_dnSReducedDer(S2,list_act)
 
   END SUBROUTINE AD_ReduceDerivatives_dnS2_TO_dnS1
+  FUNCTION AD_TO_dnSReducedDer(S,list) RESULT(Sres)
+    USE QDUtil_m, ONLY : out_unit
+    IMPLICIT NONE
+
+    TYPE (dnS_t) :: Sres
+
+
+    CLASS (dnS_t), intent(in)    :: S
+    integer,       intent(in)    :: list(:)
+
+    integer :: err_dnS_loc
+    character (len=*), parameter :: name_sub='AD_TO_dnSReducedDer'
+
+    CALL AD_dealloc_dnS(Sres)
+
+    IF (allocated(S%d1)) THEN
+    IF (size(list) > size(S%d1) ) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(list) > size(S%d1)'
+      write(out_unit,*) ' size(list)  ',size(list)
+      write(out_unit,*) ' size(S%d1)  ',size(S%d1)
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_TO_dnSReducedDer'
+    END IF
+    END IF
+
+    Sres%nderiv = S%nderiv
+
+    Sres%d0 = S%d0
+    IF (allocated(S%d1)) Sres%d1 = S%d1(list)
+    IF (allocated(S%d2)) Sres%d2 = S%d2(list,list)
+    IF (allocated(S%d3)) Sres%d3 = S%d3(list,list,list)
+
+  END FUNCTION AD_TO_dnSReducedDer
+
+  FUNCTION AD_FROM_dnSReducedDer(nVar,list,S)  RESULT(Sres)
+    USE QDUtil_m, ONLY : out_unit, ZERO
+    IMPLICIT NONE
+
+    TYPE (dnS_t) :: Sres
+
+    integer,       intent(in)    :: nVar
+    CLASS (dnS_t), intent(in)    :: S
+    integer,       intent(in)    :: list(:)
+
+    integer :: err_dnS_loc
+    integer :: i,j,k,nderiv
+
+    character (len=*), parameter :: name_sub='AD_FROM_dnSReducedDer'
+
+    nderiv = get_nderiv(S)
+
+    CALL AD_alloc_dnS(Sres,nVar,nderiv)
+
+
+    IF (allocated(S%d1)) THEN
+    IF (size(list) > size(S%d1) ) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(list) > size(S%d1)'
+      write(out_unit,*) ' size(list) ',size(list)
+      write(out_unit,*) ' size(S%d1)  ',size(S%d1)
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_FROM_dnSReducedDer: size(list) > size(S%d1)'
+    END IF
+    END IF
+
+    IF (count(list > nVar) > 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Some indexes of list are larger than  nVar'
+      write(out_unit,*) ' list  ',list
+      write(out_unit,*) ' nVar  ',nVar
+      STOP 'ERROR in AD_FROM_dnSReducedDer: Some indexes of list are larger than  nVar'
+    END IF
+
+
+    Sres%d0 = S%d0
+
+    IF (allocated(S%d1)) THEN
+      Sres%d1 = ZERO
+      DO i=1,size(list)
+        Sres%d1(list(i)) = S%d1(i)
+      END DO
+    END IF
+    
+    IF (allocated(S%d2)) THEN
+      Sres%d2 = ZERO
+      DO i=1,size(list)
+      DO j=1,size(list)
+        Sres%d2(list(j),list(i)) = S%d2(j,i)
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(S%d3)) THEN
+      Sres%d3 = ZERO
+      DO i=1,size(list)
+      DO j=1,size(list)
+      DO k=1,size(list)
+        Sres%d3(list(k),list(j),list(i)) = S%d3(k,j,i)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_FROM_dnSReducedDer
+
   FUNCTION AD_Deriv_OF_dnS(S,ider) RESULT(dS)
     USE QDUtil_m, ONLY : Rkind, out_unit, ZERO, TO_string
     IMPLICIT NONE
