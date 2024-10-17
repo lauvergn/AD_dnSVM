@@ -911,6 +911,23 @@ PROGRAM TEST_dnS
 
   CALL Flush_Test(test_var)
 
+  nderiv = 0
+  x=HALF
+
+  dnX         = Variable(x,nderiv=nderiv) ! 1D
+  CALL Write_dnS(dnX,string=test_var%test_log,info="dnS 1D")
+
+  dnY =  FROM_dnSReducedDer(nVar=3,list=[2],S=dnX)
+  CALL Write_dnS(dnY,string=test_var%test_log,info="dnS 1D->3D")
+
+  dnZ = TO_dnSReducedDer(dnY,list=[2])
+  CALL Write_dnS(dnZ,string=test_var%test_log,info="dnS 3D->1D")
+
+  res_test = AD_Check_dnS_IS_ZERO(dnZ - dnX,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='Reduced Derivative ok ?')
+
+  CALL Flush_Test(test_var)
+
   CALL Flush_Test(test_var)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
@@ -934,6 +951,20 @@ PROGRAM TEST_dnS
   dnFX        = cos(dnY)
   res_test = AD_Check_dnS_IS_ZERO(dnFX - dnFX,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='function combination  ==0?')
+
+  nderiv = 0
+  x=ONE
+
+  dnX         = Variable(x,nderiv=nderiv) ! 1D for the function
+  dnF         = cos(dnX)
+
+  dnY         = Variable(x,iVar=2,nVar=4,nderiv=nderiv)
+
+  dnFY        = dnF_OF_dnS(dnF,dnX)
+  dnFX        = cos(dnY)
+  res_test = AD_Check_dnS_IS_ZERO(dnFX - dnFX,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='function combination  ==0?')
+
   CALL Flush_Test(test_var)
 
   CALL Flush_Test(test_var)

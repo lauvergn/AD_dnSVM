@@ -783,7 +783,7 @@ CONTAINS
 
 
     CLASS (dnS_t), intent(in)    :: S
-    integer,       intent(in)    :: list(:)
+    integer,      intent(in)     :: list(:)
 
     integer :: err_dnS_loc
     character (len=*), parameter :: name_sub='AD_TO_dnSReducedDer'
@@ -817,7 +817,7 @@ CONTAINS
     TYPE (dnS_t) :: Sres
 
     integer,       intent(in)    :: nVar
-    CLASS (dnS_t), intent(in)    :: S
+    CLASS (dnS_t),  intent(in)    :: S
     integer,       intent(in)    :: list(:)
 
     integer :: err_dnS_loc
@@ -2437,14 +2437,16 @@ END FUNCTION AD_Grad_OF_dnS
 
     CALL AD_dealloc_dnS(Sres)
 
-    IF (get_nVar(f) /= 1) THEN
+    nderiv = min(get_nderiv(f),get_nderiv(S))
+
+
+    IF (nderiv > 0 .AND. get_nVar(f) /= 1) THEN
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' nVar of f is not 1'
       write(out_unit,*) '  nVar',get_nVar(f)
       STOP 'ERROR in AD_dnF_OF_dnS: nVar of f is not 1'
     END IF
 
-    nderiv = min(get_nderiv(f),get_nderiv(S))
 
     CALL alloc_dnS(Sres, nVar=get_nVar(S), nderiv=nderiv)
 
@@ -2480,18 +2482,21 @@ END FUNCTION AD_Grad_OF_dnS
 
   END FUNCTION AD_dnF_OF_dnS
 
-  FUNCTION AD_dnF_OF_TabOfdnS(f,S) RESULT(Sres)
+  FUNCTION AD_dnF_OF_TabOfdnS(f,S) RESULT(Sres) ! chain rule with f(S(:))
     USE QDUtil_m
 
     TYPE (dnS_t)                       :: Sres
-    TYPE (dnS_t),        intent(in)    :: S(:),f
+    TYPE (dnS_t),        intent(in)    :: f
+    TYPE (dnS_t),        intent(in)    :: S(:)
 
     integer :: nderiv,id,jd,kd,i,j,k,nVar
     character (len=*), parameter :: name_sub='AD_dnF_OF_TabOfdnS'
-
+    
     CALL AD_dealloc_dnS(Sres)
 
-    IF (get_nVar(f) /= size(S)) THEN
+    nderiv = min(get_nderiv(f),get_nderiv(S(1)))
+
+    IF (nderiv > 0 .AND. get_nVar(f) /= size(S)) THEN
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' nVar of f is not size(S)'
       write(out_unit,*) '  nVar of f',get_nVar(f)
@@ -2499,9 +2504,9 @@ END FUNCTION AD_Grad_OF_dnS
       STOP 'ERROR in AD_dnF_OF_TabOfdnS: nVar of f is not size(S)'
     END IF
 
-    nderiv = min(get_nderiv(f),get_nderiv(S(1)))
 
     nVar = get_nVar(S(1))
+
     CALL alloc_dnS(Sres, nVar=nVar, nderiv=nderiv)
 
 
