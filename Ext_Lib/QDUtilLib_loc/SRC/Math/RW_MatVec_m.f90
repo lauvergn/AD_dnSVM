@@ -451,9 +451,9 @@ MODULE QDUtil_RW_MatVec_m
     USE QDUtil_NumParameters_m, ONLY : out_unit,Rk8
     IMPLICIT NONE
 
-    integer,            intent(in)    :: nio,nbcol_loc
-     integer,           intent(inout) :: err
-     real(kind=Rk8), intent(inout) :: Mat(:,:)
+    integer,           intent(in)    :: nio,nbcol_loc
+    integer,           intent(inout) :: err
+    real(kind=Rk8),    intent(inout) :: Mat(:,:)
 
      integer i,j,jj,nb,nbblocs,nfin,nl,nc
 
@@ -2156,6 +2156,39 @@ MODULE QDUtil_RW_MatVec_m
       res_test = all(abs(I1Vec-I2Vec) < ZeroTresh)
     END IF
     CALL Logical_Test(test_var,test1=res_test,info='Read-Write Ik4Vec')
+
+    !! test with size = 1
+    R1Mat = reshape([ONE],shape=[1,1])
+    R2Mat = R1Mat ; R2Mat = ZERO
+    open(newunit=io,file='test_io_file.txt')
+    CALL Write_Mat(R1Mat,io,4) ; close(io)
+
+    open(newunit=io,file='test_io_file.txt')
+    CALL Read_Mat(R2Mat,io,4,ioerr) ; close(io)
+
+    IF (ioerr /= 0) THEN
+      write(out_unit,*) 'ERROR while reading R2Mat'
+      res_test = .FALSE.
+    ELSE
+      res_test = all(abs(R1Mat-R2Mat) < ZeroTresh)
+    END IF
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Rk8Mat(1,1)')
+
+    R1Vec = [ONE]
+    R2Vec = [ZERO]
+    open(newunit=io,file='test_io_file.txt')
+    CALL Write_Vec(R1Vec,io,4) ; close(io)
+
+    open(newunit=io,file='test_io_file.txt')
+    CALL Read_Vec(R2Vec,io,4,ioerr) ; close(io)
+
+    IF (ioerr /= 0) THEN
+      write(out_unit,*) 'ERROR while reading R2Vec'
+      res_test = .FALSE.
+    ELSE
+      res_test = all(abs(R1Vec-R2Vec) < ZeroTresh)
+    END IF
+    CALL Logical_Test(test_var,test1=res_test,info='Read-Write Rk8Vec(1)')
 
     ! finalize the tests
     CALL Finalize_Test(test_var)

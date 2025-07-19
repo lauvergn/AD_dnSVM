@@ -20,4 +20,6 @@ PROGRAM Test_QDLib
   CALL Test_QDUtil_Memory()
   CALL Test_QDUtil_FFT_OOURA()
 
+  CALL Test_Quadrature_QDUtil()
+
 END PROGRAM Test_QDLib
