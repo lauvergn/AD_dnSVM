@@ -8,3 +8,4 @@ test_io_file.txt
 TESTS/*log
 TESTS/res*
 file.*
+doc/ford_site

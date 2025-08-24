@@ -108,7 +108,7 @@ CONTAINS
     IF (present(info)) write(nio_loc,'(a)') info
     IF (allocated(Quadrature%x)) THEN
       DO i=1,size(Quadrature%x,dim=1)
-        write(nio_loc,*) 'x(' // TO_string(i) // ',:): ',Quadrature%x(i,:)
+        write(nio_loc,*) 'x(' // TO_string(i) // ',:): ',(Quadrature%x(i,:))
       END DO
     ELSE
       write(nio_loc,'(a)') 'Quadrature%x is not allocated'

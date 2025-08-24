@@ -145,6 +145,12 @@ $(QDLIBA): $(OBJ)
 $(OBJ_DIR)/%.o: %.f90
 	$(FFC) $(FFLAGS) -o $@ -c $<
 #===============================================
+#============= documentation with ford =========
+#===============================================
+.PHONY: doc
+doc:
+	ford doc/ford-front-matter.md
+#===============================================
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
@@ -155,6 +161,7 @@ clean:
 #
 cleanall : clean
 	rm -fr OBJ/obj* OBJ/*mod build
+	rm -fr doc/ford_site
 	rm -f libQD*.a
 	rm -f TESTS/res* TESTS/*log
 	@echo "  done all cleaning"

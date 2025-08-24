@@ -1,7 +1,7 @@
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FFC),gfortran)
+ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-14 gfortran-15))
 
   # optimization management (default without optimization)
   ifeq ($(OOPT),1)
@@ -44,6 +44,102 @@ ifeq ($(FFC),gfortran)
   endif
 
    FC_VER = $(shell $(FFC) --version | head -1 )
+
+endif
+#=================================================================================
+# nvfortran (linux)
+#=================================================================================
+ifeq ($(FFC),nvfortran)
+
+  # optimization management (default without optimization)
+  ifeq ($(OOPT),1)
+    FFLAGS = -fast
+    CFLAGS = -fast
+  else
+    FFLAGS = -O0 -g -C
+    CFLAGS = -O0 -g
+  endif
+
+  # integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -i8
+  endif
+
+  # where to store .mod files
+  FFLAGS +=-module $(MOD_DIR)
+
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
+
+  # omp management (default with openmp)
+  ifeq ($(OOMP),1)
+    FFLAGS += -mp
+    CFLAGS += -mp
+  endif
+
+  # lapack management with cpreprocessing
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
+
+  # lapack management
+  ifeq ($(LLAPACK),1)
+    ifeq ($(OS),Darwin)    # OSX
+      # OSX libs (included lapack+blas)
+      FLIB = -framework Accelerate
+    else                   # Linux
+      # linux libs
+      FLIB = -llapack -lblas
+    endif
+  endif
+
+   FC_VER = $(shell $(FFC) --version | grep nvfortran )
+
+endif
+#=================================================================================
+# flang (aocc, amd) (linux)
+# (it does not work)
+#=================================================================================
+ifeq ($(FFC),flang)
+
+  # optimization management (default without optimization)
+  ifeq ($(OOPT),1)
+    FFLAGS = -Ofast -Mallocatable=03
+  else
+    FFLAGS = -O0 -Mallocatable=03
+  endif
+
+  # integer kind management
+  ifeq ($(INT),8)
+    FFLAGS += -fdefault-integer-8
+  endif
+
+  # where to store .mod files
+  FFLAGS += -J$(MOD_DIR)
+
+  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
+  FFLAGS += -I$(MOD_DIR) $(EXTMod)
+
+  # omp management (default with openmp)
+  ifeq ($(OOMP),1)
+    FFLAGS += -mp
+  else
+    FFLAGS += -nomp
+  endif
+
+  # lapack management with cpreprocessing
+  FFLAGS += -Mpreprocess -D__LAPACK="$(LLAPACK)"
+
+  # lapack management
+  ifeq ($(LLAPACK),1)
+    ifeq ($(OS),Darwin)    # OSX
+      # OSX libs (included lapack+blas)
+      FLIB = -framework Accelerate
+    else                   # Linux
+      # linux libs
+      FLIB = -llapack -lblas
+    endif
+  endif
+
+   FC_VER = $(shell $(FFC) --version | grep "AMD clang" )
 
 endif
 #=================================================================================

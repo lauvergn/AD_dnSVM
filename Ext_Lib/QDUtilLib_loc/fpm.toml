@@ -1,5 +1,5 @@
 name = "QDUtilLib"
-version = "0.0.0"
+version = "1.2"
 license = "MIT"
 author = "David Lauvergnat"
 maintainer = "david.lauvergnat@universite-paris-saclay.fr"
@@ -7,6 +7,7 @@ copyright = "2023 David Lauvergnat"
 
 [library]
 source-dir="SRC"
+type = "static"
 
 [[test]]
 name="TestQDLib"
@@ -31,3 +32,23 @@ cpp.macros = ["__LAPACK=1"]
 
 [fortran]
 implicit-external = true
+
+
+[extra.ford]
+project = "QDUtilLib"
+exclude_dir= "../doc"
+# TOML allows comments, which is handy
+summary = """
+List of Fortran modules which contain utilities for codes.
+All modules contain a testing unit.
+"""
+extensions = ['f90']
+graph = false
+preprocess = false
+search = false
+display = ['public','protected']
+#preprocessor = ["gfortran -E"]
+#fpp_extensions = ['f90']
+#display = ["public", "protected"]
+#max_frontpage_items = 4
+#{!README.md!}

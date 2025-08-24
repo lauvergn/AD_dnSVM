@@ -13,7 +13,7 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPt=1, OMP=1, LAPACK=1, INT=4)
+To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4)
 ```bash
 make lib
 ```
@@ -33,7 +33,7 @@ Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ.a*
 make cleanall
 ```
 
-Remove all files
+Remove all files (executable, library, .mod, .o, build, documentation)
 
 To test the module, in TESTS directory, run
 
@@ -41,7 +41,7 @@ To test the module, in TESTS directory, run
 ./run_tests.sh
 ```
 
-The tests are running with gfortran and several option combinations:
+The tests are running with gfortran and with combinations of several options:
 
 - OPT=1 or 0: compilation with optimization or without optimization
 - OMP=1 or 0: with or without openmp
@@ -78,6 +78,21 @@ To run an example:
 ```bash
 fpm run AppQDLib 
 ```
+
+### c) Documentation installation
+
+The documentation is build with ford and you have two ways to make it:
+
+With the makefile:
+```bash
+make doc
+```
+or directly with ford:
+```bash
+ford doc/ford-front-matter.md
+```
+
+The documentation is available as: "doc/ford_site/index.html"
 
 ## 2) How tu use it
 
@@ -182,7 +197,7 @@ All functions are **elemental** (except **TO_string(frac)**). Therefore, one can
   TYPE(Frac_t), allocatable :: tab_Frac(:)
 
   Frac1 = '1/-2' ! use the conversion from string to Frac_t
-  write(*,*) 'Frac1: ',TO_String(Frac1) ! it give "Frac1: -1/2"
+  write(*,*) 'Frac1: ',TO_String(Frac1) ! it gives "Frac1: -1/2"
   Frac2 = -2*Frac1 ! here the result is one and it is simplified
   write(*,*) 'Frac2: ',TO_String(Frac2) ! it give "Frac2: 1"
   Frac2 = Frac1**3
@@ -227,8 +242,6 @@ This module contains public functions and subroutines to perform some lienar alg
 
 ### Diagonalization
 
-This module contains public subroutines to digonlize a matrix with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
+This module contains public subroutines to digonalize a matrix with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
 
 - Subroutine to diagnalize a real matrix: **diagonalization**
-
-
