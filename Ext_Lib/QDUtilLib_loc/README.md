@@ -5,7 +5,7 @@ All modules contain a testing unit.
 
 It has been tested with:
 
-- gfortran (14.1.0_2 on macos, 12 on linux)
+- gfortran (11, 12, 13, 14, 15 on macos, 12 on linux)
 - ifx/ifort (2023 on linux)
 - nagor (7.1 on linux)
 
@@ -13,7 +13,7 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4)
+To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
 ```bash
 make lib
 ```
@@ -22,7 +22,24 @@ with XXX, the compiler name (like gfortran), W, X, Y the value O or 1 and Z the 
 For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4.a**
 The module file (.mod) are in the OBJ/obj__XXX_optW_lapackX_ompY_intZ directory.
 
+The compiler options are (the first values are the default):
+
+- FC=gfortran or ifx or ifort ...
+- OPT=1 or 0: compilation with optimization or without optimization
+- OMP=1 or 0: with or without openmp
+- LAPACK=1 or 0: with or without blas and lapack libraries
+- INT=4 or 8: change the integer kind default compilation option
+- RKIND=real64 or real32 or real128: change the real kind
+- WITHRK16=1 or 0: enables to turn on (off) the quadruple precision (real128). There is no default, hence the value is defined automatically
+
+Exemple: 
+
+```bash
+make FC=gfortran OPT=1 OMP=0 RKIND=real128
+```
+
 Two options to clean:
+
 ```bash
 make clean
 ```
@@ -35,7 +52,7 @@ make cleanall
 
 Remove all files (executable, library, .mod, .o, build, documentation)
 
-To test the module, in TESTS directory, run
+To test the module (it is long), from the TESTS directory, run
 
 ```bash
 ./run_tests.sh
@@ -47,8 +64,15 @@ The tests are running with gfortran and with combinations of several options:
 - OMP=1 or 0: with or without openmp
 - LAPACK=1 or 0: with or without blas and lapack libraries
 - INT=4 or 8: change the integer kind default compilation option
+- RKIND=real64 or real32 or real128: change the real kind
 
 The file, **ALL_Tests.log**, contains a summary of all the tests.
+
+Alternatively, you run a test with the makefile:
+
+```bash
+make ut FC=gfortran OPT=1 OMP=0 RKIND=real128
+```
 
 ### b) with fpm:
 
@@ -141,6 +165,12 @@ To change print_level (**prtlev** is an integer):
 
 ```Fortran
 CALL set_print_level(prtlev=0)
+```
+
+To print information about the library
+
+```Fortran
+CALL version_QDUtil(Print_Version=.TRUE.)
 ```
 
 ### String
@@ -245,3 +275,63 @@ This module contains public functions and subroutines to perform some lienar alg
 This module contains public subroutines to digonalize a matrix with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
 
 - Subroutine to diagnalize a real matrix: **diagonalization**
+
+### Quadrature
+
+This module contains public subroutines to generate Gauss quadratures for some orthonormal polynomials (Hermite or HO (Harmonic Oscillator), Legendre) or other basis sets (sine, BoxAB, Fourier).
+
+- The quadrature (name, grid points (x), weights (w)) is defined in a derived type:
+
+```Fortran
+  TYPE Quadrature_t
+    real (kind=Rkind), allocatable :: x(:,:) ! x(ndim,nq): position
+    real (kind=Rkind), allocatable :: w(:)   ! w(ndim,nq): weight
+    character (len=:), allocatable :: name
+    ...
+  END TYPE Quadrature_t
+```
+
+- Subroutine to initialize the quadrature: 
+
+```Fortran
+CALL Init_Quadrature_QDUtil(Quadrature,nq,name,A,B,xc,scale,isym_grid,err)
+```
+
+- **Quadrature**: Variable (intent(inout)) which contains the quadrature (Quadrature_t)
+- **nq**: number of grid points (intent(in)).
+- **name**: type of the quadrature (intent(in)). 
+
+```text
+Possibilities: 
+"sine"      => particle-in-a-box in ]0,PI[ (sin(k.x))
+"BoxAB"     => particle-in-a-box in ]A,B[
+"Fourier"   => Fourier in [-PI,PI]
+"FourierAB" => Fourier in [A,B]
+"HermiteH"  => Hermite polynomials ]-inf,+inf[, with xc=0. and scale=1.
+"HO"        => HO basis set ]-inf,+inf[ (the gaussian part is included in the weights)
+"LegendreP" => Legendre polynomials [-1,1] (or "Pl0").
+```
+
+- **A** and **B**: Numerical domain [A,B] (intent(in) and optional) for "BoxAB" or "FourierAB" basis sets (B>A).
+- **xc** and **scale**: are, respectively, the center and the scaling factor (scale > 0.) of HO basis set (intent(in) and optional).
+- **isym_grid**: Integer (0, -1, 1) wich enables to control the Fourier or FourierAB grid (intent(in) and optional).
+
+```text
+isym_grid=0  => the first grid point is in A+dx/2 (default)
+isym_grid=-1 => the first grid point is in A
+isym_grid=-1 => the first grid point is in A+dx (last point in B)
+```
+
+- **err**: Integer to check the error (intent(inout) and optional). err=0 => no error.
+
+Examples for an HO grid (with 10 points):
+
+```Fortran
+CALL Init_Quadrature(Quadrature,nq=10,name="HO",xc=1._real64,scale=0.5_real64,err=err_grid)
+```
+
+Or for High Precision (HP) calculation
+
+```Fortran
+CALL Init_Quadrature_HP(Quadrature,nq=10,name="HO",xc=1._real64,scale=0.5_real64,err=err_grid)
+```

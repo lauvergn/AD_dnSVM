@@ -1,5 +1,5 @@
 name = "QDUtilLib"
-version = "1.2"
+version = "2.2"
 license = "MIT"
 author = "David Lauvergnat"
 maintainer = "david.lauvergnat@universite-paris-saclay.fr"
@@ -28,7 +28,7 @@ link = ["blas", "lapack"]
 
 
 [preprocess]
-cpp.macros = ["__LAPACK=1"]
+cpp.macros = ["__LAPACK=1","__WITHRK16=1"]
 
 [fortran]
 implicit-external = true

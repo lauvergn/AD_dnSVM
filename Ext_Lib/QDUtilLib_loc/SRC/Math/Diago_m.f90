@@ -198,9 +198,6 @@ MODULE QDUtil_diago_m
       deallocate(Rwork)
       deallocate(CEigVecLeft)
       deallocate(CMat_save)
-#elif __LAPACK == 8
-      IF (debug) write(out_unit,*) 'lapack77: ZGEEV (non-symmetric): not yet (with _LAPACK == 8)'
-      STOP
 #else
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
@@ -397,24 +394,6 @@ MODULE QDUtil_diago_m
       END IF
 
       deallocate(work)
-#elif __LAPACK == 8
-      lwork = 3*n-1
-      allocate(work(lwork))
-      REigVec(:,:) = RMat(:,:)
-
-      ! with mkl (ifort), lapack lib can linked with -i8 option (int64), so that we don't need to convert integer in int32
-      CALL DSYEV('V','U',n,REigVec,n,REigVal,work,lwork,ierr)
-
-      IF (debug) write(out_unit,*) 'ierr=',ierr
-      flush(out_unit)
-
-      IF (ierr /= 0) THEN
-         write(out_unit,*) ' ERROR in ',name_sub
-         write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
-         STOP 'ERROR in QDUtil_Rdiagonalization: DSYEV lapack subroutine has FAILED!'
-      END IF
-
-      deallocate(work)
 #else
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
@@ -449,35 +428,6 @@ MODULE QDUtil_diago_m
                  int(1,kind=int32),REigVec,ldvr4,work,lwork4,ierr4)
       IF (debug) write(out_unit,*)'ierr=',ierr4
       IF (ierr4 /= 0_int32) THEN
-        write(out_unit,*) ' ERROR in ',name_sub
-        write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
-        STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
-      END IF
-
-      DO i=1,n
-        write(out_unit,*) 'Eigenvalue(', i, ') = ', REigVal(i),'+I ',IEigVec_loc(i)
-      END DO
-      IF (present(IEigVec)) IEigVec = IEigVec_loc
-
-      deallocate(IEigVec_loc)
-      deallocate(work)
-      deallocate(RMat_save)
-#elif __LAPACK == 8
-      IF (debug) write(out_unit,*) 'lapack77: DGEEV (non-symmetric)'
-      flush(out_unit)
-
-      RMat_save = RMat ! save RMat
-
-      lwork = (2+64)*n
-      ldvr  = n
-      lda   = n
-
-      allocate(work(lwork))
-      allocate(IEigVec_loc(n))
-
-      CALL DGEEV('N','V',n,RMat_save,lda,REigVal,IEigVec_loc,dummy,1,REigVec,ldvr,work,lwork,ierr)
-      IF (debug) write(out_unit,*)'ierr=',ierr
-      IF (ierr /= 0) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
         STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
@@ -539,7 +489,6 @@ MODULE QDUtil_diago_m
     END IF
 
   END SUBROUTINE QDUtil_Rdiagonalization
-
 
   SUBROUTINE QDUtil_Cdiagonalization_Her(Mat,Eig,Vec,diago_type,sort,phase)
     USE QDUtil_NumParameters_m
@@ -785,7 +734,7 @@ MODULE QDUtil_diago_m
 !
 !============================================================
 !
-!   diagonalisation trigonalisation puis diagonalisation
+!   diagonalization:  trigonalization then diagonalization
 !
 !============================================================
 !
@@ -948,7 +897,6 @@ MODULE QDUtil_diago_m
       RETURN
   END SUBROUTINE QDUtil_TQLI_EISPACK
 
-!
 !============================================================
 !
 !   Sort the eigenvalues and the eigenvectors
@@ -979,18 +927,44 @@ MODULE QDUtil_diago_m
   end subroutine QDUtil_sort_tab
 
   SUBROUTINE QDUtil_sort(ene,psi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
 
-      real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
+    real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
 
-      real(kind=Rkind) :: a
-      integer          :: i,j,k
+    real(kind=Rkind) :: a
+    integer          :: i,j,k
 
-      DO i=1,size(ene)
+    DO i=1,size(ene)
+    DO j=i+1,size(ene)
+     IF (ene(i) > ene(j)) THEN
+  	    !permutation
+        a=ene(i)
+        ene(i)=ene(j)
+        ene(j)=a
+        DO k=1,size(psi,dim=1)
+          a=psi(k,i)
+          psi(k,i)=psi(k,j)
+          psi(k,j)=a
+        END DO
+      END IF
+    END DO
+    END DO
+
+  END SUBROUTINE QDUtil_sort
+  SUBROUTINE QDUtil_sort_abs(ene,psi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
+
+    real(kind=Rkind) :: a
+    integer          :: i,j,k
+
+    DO i=1,size(ene)
       DO j=i+1,size(ene)
-       IF (ene(i) > ene(j)) THEN
-!	      permutation
+        IF (abs(ene(i)) > abs(ene(j))) THEN
+          ! permutation
           a=ene(i)
           ene(i)=ene(j)
           ene(j)=a
@@ -1001,34 +975,7 @@ MODULE QDUtil_diago_m
           END DO
         END IF
       END DO
-      END DO
-
-  END SUBROUTINE QDUtil_sort
-  SUBROUTINE QDUtil_sort_abs(ene,psi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-      real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
-
-      real(kind=Rkind) :: a
-      integer          :: i,j,k
-
-
-        DO i=1,size(ene)
-          DO j=i+1,size(ene)
-            IF (abs(ene(i)) > abs(ene(j))) THEN
-!             permutation
-              a=ene(i)
-              ene(i)=ene(j)
-              ene(j)=a
-              DO k=1,size(psi,dim=1)
-                a=psi(k,i)
-                psi(k,i)=psi(k,j)
-                psi(k,j)=a
-              END DO
-            END IF
-          END DO
-        END DO
+    END DO
 
   end subroutine QDUtil_sort_abs
   SUBROUTINE QDUtil_sort_VecCplx_EneR(ene,psi)
@@ -1303,11 +1250,12 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
       Integer :: i,j,k,l,m,n,ii,Nbiter,nm,mml,nZ,ierr
       Data Nbiter/60/
       complex(kind=Rkind) :: D(n),E(n),Z(nZ,n)
-      real (kind=Rkind) :: machep,norm1,norm2,rsign
+      real (kind=Rkind) :: norm1,norm2,rsign
       complex(kind=Rkind) :: b,c,f,g,p,r,s
 
+      !real (kind=Rkind) :: machep=10.d-16
+      real (kind=Rkind),   parameter   :: machep    = epsilon(ONE)
 
-      machep=10.d-16
       ierr=0
 !     initialize z to e one.
       do i=2,n
@@ -1407,8 +1355,7 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
       IMPLICIT NONE
 
       INTEGER I,II,J,JP1,K,L,N,NM
-      complex(kind=Rkind) A(nm,n),Z(nm,n),d(n),e(n)                     &
-                ,f,g,h,hh
+      complex(kind=Rkind) A(nm,n),Z(nm,n),d(n),e(n),f,g,h,hh
       real (kind=Rkind) :: scale,rsign
 !     real (kind=Rkind) :: one,scale,rsign,zero
 !     Data zero/0./,one/1./
@@ -1418,8 +1365,8 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
             Z(i,j)=A(i,j)
          enddo
       enddo
-!
-!     FOR I=N STEP -1 UNTIL 2 DO --
+
+      !     FOR I=N STEP -1 UNTIL 2 DO --
       do ii=2,n
          I=N+2-II
          L=I-1
@@ -1587,10 +1534,10 @@ stop
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     integer                          :: i,n,io,ioerr,diago_type
-    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),Diag(:,:)
+    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),RDiag(:,:),RDiffMat(:,:)
     character (len=:),   allocatable :: info
 
     complex(kind=Rkind), allocatable :: CMat(:,:),CEigVal(:),CVec(:,:),CDiag(:,:),C2Mat(:,:)
@@ -1606,61 +1553,84 @@ stop
 
     allocate(REigVal(n))
     allocate(RVec(n,n))
-    allocate(Diag(n,n))
+    allocate(RDiag(n,n))
 
     ! tests
     CALL Initialize_Test(test_var,test_name='Diago')
 
     CALL diagonalization(RMat,REigVal,RVec,n)
 
-    Diag = ZERO
+    RDiag = ZERO
     DO i=1,n
-      Diag(i,i) = REigVal(i)
+      RDiag(i,i) = REigVal(i)
     END DO
 
-    R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
+    R2Mat = matmul(RVec,matmul(RDiag,transpose(RVec)))
 
-    res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+    RDiffMat = abs(R2Mat-RMat)
+    res_test = all(RDiffMat < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='diago')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(RMat,out_unit,5,info='RMat')
+      write(out_unit,*)
       CALL Write_Mat(RVec,out_unit,5,info='RVec')
+      write(out_unit,*)
       CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
+      write(out_unit,*)
 
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
+      CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
+      write(out_unit,*)
+      flush(out_unit)
     END IF
     CALL Flush_Test(test_var)
 
     DO diago_type=1,4
       info = 'diago (#' // TO_string(diago_type) // ')'
-
+      write(out_unit,*) info ; flush(out_unit)
 #if __LAPACK == 0
       IF (diago_type == 4) THEN
         write(out_unit,*) 'WARNING: LAPACK and BLAS are not linked'
         write(out_unit,*) '=> diago with type=4 is not possible'
+        flush(out_unit)
         CYCLE
       END IF
 #endif
+      IF (diago_type == 4 .AND. Rkind /= Rk8) THEN
+        write(out_unit,*) '=> diago with LAPACK (type=4) is only possible with Rk8'
+        flush(out_unit)
+        CYCLE
+      END IF
 
       CALL diagonalization(RMat,REigVal,RVec,n,diago_type=diago_type)
-      Diag = ZERO
+      RDiag = ZERO
       DO i=1,n
-        Diag(i,i) = REigVal(i)
+        RDiag(i,i) = REigVal(i)
       END DO
-      R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
+      R2Mat = matmul(RVec,matmul(RDiag,transpose(RVec)))
   
-      res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+      RDiffMat = abs(R2Mat-RMat)
+      res_test = all(RDiffMat < ZeroTresh)
   
       CALL Logical_Test(test_var,test1=res_test,info='diago')
       IF (.NOT. res_test) THEN
         CALL Write_Mat(RMat,out_unit,5,info='RMat')
+        write(out_unit,*)
         CALL Write_Mat(RVec,out_unit,5,info='RVec')
+        write(out_unit,*)
         CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
-  
+        write(out_unit,*)
+
         CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+        write(out_unit,*)
+        CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
+        write(out_unit,*)
+        flush(out_unit)
       END IF
       CALL Flush_Test(test_var)
     END DO
+
     !====================================================================
 
     n = 3
@@ -1682,6 +1652,11 @@ stop
         CYCLE
       END IF
 #endif
+      IF (diago_type == 4 .AND. Rkind /= Rk8) THEN
+        write(out_unit,*) '=> diago with LAPACK (type=4) is only possible with Rk8'
+        flush(out_unit)
+        CYCLE
+      END IF
 
       CALL diagonalization(CMat,CEigVal,CVec,n,diago_type=diago_type)
       CDiag = CZERO
@@ -1690,14 +1665,23 @@ stop
       END DO
       C2Mat = matmul(CVec,matmul(CDiag,transpose(CVec))) ! It doex not work !!!
 
-      res_test = all(abs(C2Mat-CMat) < ZeroTresh)
+      RDiffMat = abs(C2Mat-CMat)
+      res_test = all(RDiffMat < ZeroTresh)
       CALL Logical_Test(test_var,test1=res_test,info='diago (cplx)')
       IF (.NOT. res_test) THEN
         CALL Write_Mat(CMat,out_unit,5,info='CMat')
+        write(out_unit,*)
         CALL Write_Mat(CVec,out_unit,5,info='CVec')
+        write(out_unit,*)
         CALL Write_Vec(CEigVal,out_unit,5,info='CEigVal')
   
+        write(out_unit,*)
         CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+        write(out_unit,*)
+        DO i=1,size(RDiffMat,dim=2)
+          write(out_unit,*) 'RDiffMat(:,i)',i,RDiffMat(:,i)
+        END DO
+        !CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
       END IF
       CALL Flush_Test(test_var)
     END DO

@@ -718,7 +718,7 @@ CONTAINS
   !> This subroutine performs tests of the module.
   SUBROUTINE Test_QDUtil_Frac
     USE QDUtil_Test_m
-    USE QDUtil_NumParameters_m, only : Rkind, out_unit
+    USE QDUtil_NumParameters_m, only : Rkind, TEN, ONE, out_unit
     IMPLICIT NONE
 
     TYPE(Frac_t)              :: frac1,frac2,frac3
@@ -729,7 +729,7 @@ CONTAINS
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind), parameter     :: ZeroTresh    = 10._Rkind**(-10)
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     !----- for debuging --------------------------------------------------
     character (len=*), parameter :: name_sub='Test_QDUtil_Frac'

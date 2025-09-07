@@ -3128,7 +3128,9 @@ CONTAINS
 
 
     real (kind=Rkind) :: err
-    real (kind=Rkind) :: err_thres = ONETENTH**12
+    !real (kind=Rkind) :: err_thres = ONETENTH**12
+    real (kind=Rkind),   parameter   :: err_thres    = TEN**2*epsilon(ONE)
+
     logical           :: res_test
     TYPE (test_t)     :: test_var
 

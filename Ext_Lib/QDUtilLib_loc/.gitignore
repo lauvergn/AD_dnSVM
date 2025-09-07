@@ -1,4 +1,8 @@
-.DS_Store */.DS_Store */*/.DS_Store
+.DS_Store 
+*/.DS_Store 
+*/*/.DS_Store
+SRC/*.mod
+SRC/*/*.mod
 OBJ/*
 *.x
 *.a 

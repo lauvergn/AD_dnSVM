@@ -679,7 +679,8 @@ MODULE QDUtil_Matrix_m
     integer,          intent(inout) :: index(n)
     real(kind=Rkind), intent(inout) :: d
 
-    real(kind=Rkind), parameter :: tiny = ONETENTH**20
+    !real(kind=Rkind), parameter :: tiny = ONETENTH**20
+    real (kind=Rkind), parameter :: tiny = epsilon(ONE)
 
     real(kind=Rkind) :: aamax,sum,dum
     integer           :: i,j,k,imax
@@ -1047,7 +1048,7 @@ MODULE QDUtil_Matrix_m
     IF (lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
-    SELECT CASE (lu_type)
+    SELECT CASE (lu_type_loc)
     CASE(1) ! ori
       CALL QDUtil_lubksb_cplx(a,n,LU_index,b)
     CASE(3) ! lapack
@@ -1055,10 +1056,6 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRS('No transpose',n4,1,a,n4,LU_index,b,n4,ierr4)
       err = int(ierr4)
-      IF (err /= 0) STOP 'LU QDUtil_Driver_LU_solve_cplx'
-#elif __LAPACK == 8
-      n4     = int(n,kind=int32)
-      CALL ZGETRS('No transpose',n,1,a,n,LU_index,b,n,err)
       IF (err /= 0) STOP 'LU QDUtil_Driver_LU_solve_cplx'
 #else
       write(out_unit,*) ' ERROR in QDUtil_Driver_LU_solve_cplx'
@@ -1098,7 +1095,7 @@ MODULE QDUtil_Matrix_m
     IF ( lu_type_loc == 3) lu_type_loc = lu_type_default
 #endif
 
-    SELECT CASE (lu_type)
+    SELECT CASE (lu_type_loc)
     CASE(1) ! ori
       allocate(work(n))
       CALL QDUtil_ludcmp_cplx(a,n,work,LU_index,d)
@@ -1108,9 +1105,6 @@ MODULE QDUtil_Matrix_m
       n4     = int(n,kind=int32)
       CALL ZGETRF(n4,n4,a,n4,LU_index,ierr4)
       err = int(ierr4)
-      IF (err /= 0) STOP 'QDUtil_Driver_LU_decomp_cplx'
-#elif __LAPACK == 8
-      CALL ZGETRF(n,n,a,n,LU_index,err)
       IF (err /= 0) STOP 'QDUtil_Driver_LU_decomp_cplx'
 #else
       write(out_unit,*) ' ERROR in QDUtil_Driver_LU_decomp_cplx'
@@ -1176,8 +1170,9 @@ MODULE QDUtil_Matrix_m
       IMPLICIT NONE
 
        integer n
-       real(kind=Rkind)   tiny
-       parameter (tiny=ONETENTH**20)
+       !real(kind=Rkind), parameter :: tiny = ONETENTH**20
+       real (kind=Rkind), parameter :: tiny = epsilon(ONE)
+
        complex(kind=Rkind) a(n,n),vv(n)
        complex(kind=Rkind) aamax,sum,dum,d
        integer index(n)
@@ -1377,7 +1372,7 @@ MODULE QDUtil_Matrix_m
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     integer                          :: io,ioerr
     real(kind=Rkind),    allocatable :: R1Mat(:,:),R1Vec(:),R11Mat(:,:)
@@ -1457,7 +1452,9 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='Inversion of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
     END IF
     CALL Flush_Test(test_var)
@@ -1466,7 +1463,9 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='Inversion (#0) of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
     END IF
     CALL Flush_Test(test_var)
@@ -1475,7 +1474,9 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='Inversion (#1) of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
     END IF
     CALL Flush_Test(test_var)
@@ -1486,7 +1487,9 @@ MODULE QDUtil_Matrix_m
     CALL Flush_Test(test_var)
     IF (.NOT. res_test) THEN
       CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
     END IF
     res_test = all(abs(inv_OF_Mat_TO(C1Mat,inv_type=0)-C2Mat) < ZeroTresh)
@@ -1494,7 +1497,9 @@ MODULE QDUtil_Matrix_m
     CALL Flush_Test(test_var)
     IF (.NOT. res_test) THEN
       CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
     END IF
 
@@ -1503,7 +1508,9 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='Inversion of R1Mat (#0 sub)')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(R1Mat,R2Mat),out_unit,5,info='Id?')
     END IF
     CALL inv_OF_Mat_TO_Mat_inv(C1Mat,C11Mat,0,ZERO)
@@ -1511,7 +1518,9 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='Inversion of C1Mat (#0 sub)')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      write(out_unit,*)
       CALL Write_Mat(matmul(C1Mat,C2Mat),out_unit,5,info='Id?')
     END IF
     CALL Flush_Test(test_var)
@@ -1540,8 +1549,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
@@ -1551,8 +1563,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#0) of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
@@ -1562,8 +1577,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#1) of R1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='R1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='R1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='R2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(R1Mat,R2Vec)-R1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
@@ -1573,8 +1591,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve of C1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
@@ -1584,8 +1605,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#0) of C1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)
@@ -1595,8 +1619,11 @@ MODULE QDUtil_Matrix_m
     CALL Logical_Test(test_var,test1=res_test,info='LinearSys_Solve (#3) of C1Mat')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(R1Mat,out_unit,5,info='C1Mat')
+      write(out_unit,*)
       CALL Write_Vec(R1Vec,out_unit,5,info='C1Vec')
+      write(out_unit,*)
       CALL Write_Vec(R2Vec,out_unit,5,info='C2Vec')
+      write(out_unit,*)
       CALL Write_Vec(matmul(C1Mat,C2Vec)-C1Vec,out_unit,5,info='Error')
     END IF
     CALL Flush_Test(test_var)

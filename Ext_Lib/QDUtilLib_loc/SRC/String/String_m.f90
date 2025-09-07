@@ -14,7 +14,7 @@
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
 !
-! The above copyright notice and this permission notice shall be included in all
+! The above copyright notice and this permis sion notice shall be included in all
 ! copies or substantial portions of the Software.
 !
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -27,7 +27,14 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_String_m
-IMPLICIT NONE
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
+  USE QDUtil_String_Rk4_m
+  USE QDUtil_String_Rk8_m
+  USE QDUtil_String_Rk16_m
+
+  IMPLICIT NONE
 
   PRIVATE
 
@@ -71,24 +78,14 @@ IMPLICIT NONE
 
     MODULE PROCEDURE QDUtil_string_concat_Ik4,QDUtil_string_concat_Ik8
     MODULE PROCEDURE QDUtil_Ik4_concat_string,QDUtil_Ik8_concat_string
-
-    MODULE PROCEDURE QDUtil_string_concat_Rk4,QDUtil_string_concat_Rk8,QDUtil_string_concat_Rk16
-    MODULE PROCEDURE QDUtil_Rk4_concat_string,QDUtil_Rk8_concat_string,QDUtil_Rk16_concat_string
-
-    MODULE PROCEDURE QDUtil_string_concat_Ck4,QDUtil_string_concat_Ck8,QDUtil_string_concat_Ck16
-    MODULE PROCEDURE QDUtil_Ck4_concat_string,QDUtil_Ck8_concat_string,QDUtil_Ck16_concat_string
   END INTERFACE
 
   INTERFACE TO_string
     MODULE PROCEDURE QDUtil_int32_TO_string,QDUtil_int64_TO_string
     MODULE PROCEDURE QDUtil_logical_TO_string
-    MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
-    MODULE PROCEDURE QDUtil_Ck4_TO_string,QDUtil_Ck8_TO_string,QDUtil_Ck16_TO_string
 
     MODULE PROCEDURE QDUtil_Dim1int32_TO_string,QDUtil_Dim1int64_TO_string
     MODULE PROCEDURE QDUtil_Dim1logical_TO_string
-    MODULE PROCEDURE QDUtil_Dim1Rk4_TO_string,QDUtil_Dim1Rk8_TO_string,QDUtil_Dim1Rk16_TO_string
-    MODULE PROCEDURE QDUtil_Dim1Ck4_TO_string,QDUtil_Dim1Ck8_TO_string,QDUtil_Dim1Ck16_TO_string
   END INTERFACE
 
   INTERFACE int_TO_char
@@ -96,9 +93,6 @@ IMPLICIT NONE
   END INTERFACE
   INTERFACE logical_TO_char
     MODULE PROCEDURE QDUtil_logical_TO_string
-  END INTERFACE
-  INTERFACE real_TO_char
-    MODULE PROCEDURE QDUtil_Rk4_TO_string,QDUtil_Rk8_TO_string,QDUtil_Rk16_TO_string
   END INTERFACE
 
   INTERFACE ADD_TO_string
@@ -197,32 +191,31 @@ CONTAINS
    QDUtil_strdup = trim(string)
 
   END FUNCTION QDUtil_strdup
-SUBROUTINE QDUtil_SET_Astring(string,string1,string2,string3,string4,string5, &
+  SUBROUTINE QDUtil_SET_Astring(string,string1,string2,string3,string4,string5, &
                               string6,string7,string8,string9,string10)
   IMPLICIT NONE
 
-character (len=:),  allocatable, intent(inout) :: string
-character (len=*),               intent(in)    :: string1
-character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
-character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
+    character (len=:),  allocatable, intent(inout) :: string
+    character (len=*),               intent(in)    :: string1
+    character (len=*),  optional,    intent(in)    :: string2,string3,string4,string5
+    character (len=*),  optional,    intent(in)    :: string6,string7,string8,string9,string10
 
-!$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
+    !$OMP  CRITICAL (QDUtil_SET_Astring_CRIT)
 
-string = string1
-IF (present(string2 )) string = string // string2
-IF (present(string3 )) string = string // string3
-IF (present(string4 )) string = string // string4
-IF (present(string5 )) string = string // string5
+    string = string1
+    IF (present(string2 )) string = string // string2
+    IF (present(string3 )) string = string // string3
+    IF (present(string4 )) string = string // string4
+    IF (present(string5 )) string = string // string5
+    IF (present(string6 )) string = string // string6
+    IF (present(string7 )) string = string // string7
+    IF (present(string8 )) string = string // string8
+    IF (present(string9 )) string = string // string9
+    IF (present(string10)) string = string // string10
 
-IF (present(string6 )) string = string // string6
-IF (present(string7 )) string = string // string7
-IF (present(string8 )) string = string // string8
-IF (present(string9 )) string = string // string9
-IF (present(string10)) string = string // string10
+    !$OMP  END CRITICAL (QDUtil_SET_Astring_CRIT)
 
-!$OMP  END CRITICAL (QDUtil_SET_Astring_CRIT)
-
-END SUBROUTINE QDUtil_SET_Astring
+  END SUBROUTINE QDUtil_SET_Astring
   SUBROUTINE QDUtil_ADD_TO_Astring(string,string1,string2,string3,string4,string5, &
                                           string6,string7,string8,string9,string10)
     IMPLICIT NONE
@@ -253,21 +246,124 @@ END SUBROUTINE QDUtil_SET_Astring
       !$OMP  END CRITICAL (QDUtil_ADD_TO_Astring_CRIT)
   
   END SUBROUTINE QDUtil_ADD_TO_Astring
-  FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
+  PURE FUNCTION QDUtil_logical_TO_string(l)  RESULT(string)
 
     character (len=:), allocatable  :: string
     logical, intent(in)             :: l
 
-    !$OMP  CRITICAL (QDUtil_logical_TO_string_CRIT)
     IF (l) THEN
       string = 'T'
     ELSE
       string = 'F'
     END IF
-    !$OMP  END CRITICAL (QDUtil_logical_TO_string_CRIT)
 
   END FUNCTION QDUtil_logical_TO_string
-  FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
+  PURE FUNCTION QDUtil_int32_TO_string(i) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    IMPLICIT NONE
+
+    character (len=:),  allocatable             :: string
+    integer (kind=Ik4),             intent(in)  :: i
+
+
+    character (len=:), allocatable  :: name_int
+    character (len=1), allocatable  :: ch
+    integer (kind=Ik4) :: i0,iloc
+
+    name_int = ''
+    iloc = abs(i)
+    DO
+      i0 = mod(iloc,10)
+      iloc = iloc/10_Ik4
+      SELECT CASE(i0)
+      CASE(0_Ik4)
+        ch = '0'
+      CASE(1_Ik4)
+        ch = '1'
+      CASE(2_Ik4)
+        ch = '2'
+      CASE(3_Ik4)
+        ch = '3'
+      CASE(4_Ik4)
+        ch = '4'
+      CASE(5_Ik4)
+        ch = '5'
+      CASE(6_Ik4)
+        ch = '6'
+      CASE(7_Ik4)
+        ch = '7'
+      CASE(8_Ik4)
+        ch = '8'
+      CASE(9_Ik4)
+        ch = '9'
+      END SELECT
+      name_int = ch // name_int
+      IF (iloc == 0_Ik4) EXIT
+    END DO
+
+    IF (i < 0_Ik4) THEN
+      string = '-' // trim(adjustl(name_int))
+    ELSE
+      string = trim(adjustl(name_int))
+    END IF
+
+    ! deallocate name_int
+    deallocate(name_int)
+
+  END FUNCTION QDUtil_int32_TO_string
+  PURE FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
+    USE QDUtil_NumParameters_m, ONLY : Ik8
+    IMPLICIT NONE
+
+    character (len=:),  allocatable             :: string
+    integer (kind=Ik8),             intent(in)  :: i
+
+
+    character (len=:), allocatable  :: name_int
+    character (len=1), allocatable  :: ch
+    integer (kind=Ik8) :: i0,iloc
+
+    name_int = ''
+    iloc = abs(i)
+    DO
+      i0 = mod(iloc,10)
+      iloc = iloc/10_ik8
+      SELECT CASE(i0)
+      CASE(0_ik8)
+        ch = '0'
+      CASE(1_ik8)
+        ch = '1'
+      CASE(2_ik8)
+        ch = '2'
+      CASE(3_ik8)
+        ch = '3'
+      CASE(4_ik8)
+        ch = '4'
+      CASE(5_ik8)
+        ch = '5'
+      CASE(6_ik8)
+        ch = '6'
+      CASE(7_ik8)
+        ch = '7'
+      CASE(8_Ik8)
+        ch = '8'
+      CASE(9_Ik8)
+        ch = '9'
+      END SELECT
+      name_int = ch // name_int
+      IF (iloc == 0_Ik8) EXIT
+    END DO
+
+    IF (i < 0_Ik8) THEN
+      string = '-' // trim(adjustl(name_int))
+    ELSE
+      string = trim(adjustl(name_int))
+    END IF
+
+    deallocate(name_int)
+
+  END FUNCTION QDUtil_int64_TO_string
+  FUNCTION QDUtil_int32_TO_string_old(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik4,Rk8
     IMPLICIT NONE
 
@@ -302,8 +398,8 @@ END SUBROUTINE QDUtil_SET_Astring
     deallocate(name_int)
     !$OMP  END CRITICAL (QDUtil_int32_TO_string_CRIT)
 
-  END FUNCTION QDUtil_int32_TO_string
-  FUNCTION QDUtil_int64_TO_string(i) RESULT(string)
+  END FUNCTION QDUtil_int32_TO_string_old
+  FUNCTION QDUtil_int64_TO_string_old(i) RESULT(string)
     USE QDUtil_NumParameters_m, ONLY : Ik8,Rk8
     IMPLICIT NONE
 
@@ -339,294 +435,9 @@ END SUBROUTINE QDUtil_SET_Astring
 
     !$OMP  END CRITICAL (QDUtil_int64_TO_string_CRIT)
 
-  END FUNCTION QDUtil_int64_TO_string
-  FUNCTION QDUtil_Rk16_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    real (kind=Rk16), intent(in)              :: r
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Rk16_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      write(name_real,'(' // Rformat // ')') r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-    ELSE
-      write(name_real,*) r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-
-      !this is add for ifort because ZERO is written as 0.000..0E+000
-      i = len(string)
-      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
-
-      !then, the 0 at the end are removed
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Rk16_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Rk16_TO_string
-  FUNCTION QDUtil_Rk8_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    real (kind=Rk8),   intent(in)            :: r
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Rk8_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      write(name_real,'(' // Rformat // ')') r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-    ELSE
-      write(name_real,*) r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-
-      !this is add for ifort because ZERO is written as 0.000..0E+000
-      i = len(string)
-      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
-
-      !then, the 0 at the end are removed
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Rk8_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Rk8_TO_string
-  FUNCTION QDUtil_Rk4_TO_string(r,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    real (kind=Rk4), intent(in)              :: r
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Rk4_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      write(name_real,'(' // Rformat // ')') r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-    ELSE
-      write(name_real,*) r
-
-      clen = len_trim(adjustl(name_real))
-      allocate(character(len=clen) :: string)
-
-      string = trim(adjustl(name_real))
-
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-
-      !this is add for ifort because ZERO is written as 0.000..0E+000
-      i = len(string)
-      IF (string(i:i) == '+' .OR. string(i:i) == '-') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'E' .OR. string(i:i) == 'e') string = string(1:i-1)
-      i = len(string)
-      IF (string(i:i) == 'D' .OR. string(i:i) == 'd') string = string(1:i-1) ! just in case we have 0.000...D+000
-
-      !then, the 0 at the end are removed
-      DO i=len(string),2,-1
-        IF (string(i:i) == '0') THEN
-          string(i:i) = ' '
-        ELSE
-          EXIT
-        END IF
-      END DO
-      string = trim(adjustl(string))
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Rk4_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Rk4_TO_string
-
-  FUNCTION QDUtil_Ck4_TO_string(c,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    complex (kind=Rk4), intent(in)           :: c
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Ck4_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
-    ELSE
-      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Ck4_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Ck4_TO_string
-  FUNCTION QDUtil_Ck8_TO_string(c,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    complex (kind=Rk8), intent(in)           :: c
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Ck8_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
-    ELSE
-      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Ck8_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Ck8_TO_string
-  FUNCTION QDUtil_Ck16_TO_string(c,Rformat) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-
-    character (len=:), allocatable           :: string
-
-    complex (kind=Rk16), intent(in)           :: c
-    character (len=*), intent(in), optional  :: Rformat
-
-
-    integer,                parameter :: Line_len = 256
-    character(len=Line_len)           :: name_real
-    integer :: clen,i
-
-    !$OMP  CRITICAL (QDUtil_Ck16_TO_string_CRIT)
-
-    IF (allocated(string)) deallocate(string)
-
-
-    IF (present(Rformat)) THEN
-      string = '(' // TO_string(c%re,Rformat) // ',' // TO_string(c%im,Rformat) // ')'
-    ELSE
-      string = '(' // TO_string(c%re) // ',' // TO_string(c%im) // ')'
-    END IF
-
-    !$OMP  END CRITICAL (QDUtil_Ck16_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Ck16_TO_string
+  END FUNCTION QDUtil_int64_TO_string_old
 
   FUNCTION QDUtil_Dim1logical_TO_string(tab,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
 
     character (len=:), allocatable            :: string
     logical,           intent(in)             :: tab(:)
@@ -649,7 +460,7 @@ END SUBROUTINE QDUtil_SET_Astring
 
   END FUNCTION QDUtil_Dim1logical_TO_string
   FUNCTION QDUtil_Dim1int32_TO_string(tab,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+    USE QDUtil_NumParameters_m, ONLY : Ik4
 
     character (len=:), allocatable  :: string
     integer (kind=Ik4), intent(in)             :: tab(:)
@@ -672,7 +483,7 @@ END SUBROUTINE QDUtil_SET_Astring
 
   END FUNCTION QDUtil_Dim1int32_TO_string
   FUNCTION QDUtil_Dim1int64_TO_string(tab,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
+    USE QDUtil_NumParameters_m, ONLY : Ik8
 
     character (len=:), allocatable  :: string
     integer (kind=Ik8), intent(in)             :: tab(:)
@@ -694,223 +505,6 @@ END SUBROUTINE QDUtil_SET_Astring
     !$OMP  END CRITICAL (QDUtil_Dim1int64_TO_string_CRIT)
 
   END FUNCTION QDUtil_Dim1int64_TO_string
-  FUNCTION QDUtil_Dim1Rk4_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    real (kind=Rk4),   intent(in)            :: tab(:)
-    character (len=*), intent(in), optional  :: Rformat
-    integer,           intent(in), optional   :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Rk4_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Rk4_TO_string
-  FUNCTION QDUtil_Dim1Rk8_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    real (kind=Rk8),   intent(in)            :: tab(:)
-    character (len=*), intent(in), optional  :: Rformat
-    integer,           intent(in), optional   :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Rk8_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Rk8_TO_string
-  FUNCTION QDUtil_Dim1Rk16_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    real (kind=Rk16),  intent(in)            :: tab(:)
-    character (len=*), intent(in), optional  :: Rformat
-    integer,           intent(in), optional   :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Rk16_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Rk16_TO_string
-  FUNCTION QDUtil_Dim1Ck4_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    complex (kind=Rk4), intent(in)            :: tab(:)
-    character (len=*),  intent(in), optional  :: Rformat
-    integer,            intent(in), optional   :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1        
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Ck4_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Ck4_TO_string
-  FUNCTION QDUtil_Dim1Ck8_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    complex (kind=Rk8), intent(in)            :: tab(:)
-    character (len=*),  intent(in), optional  :: Rformat
-    integer,            intent(in), optional   :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1        
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1        
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Ck8_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Ck8_TO_string
-  FUNCTION QDUtil_Dim1Ck16_TO_string(tab,Rformat,max_col)  RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Ik4,Ik8,Rk4,Rk8,Rk16
-
-    character (len=:), allocatable  :: string
-    complex (kind=Rk16), intent(in)            :: tab(:)
-    character (len=*),   intent(in), optional  :: Rformat
-    integer,             intent(in), optional  :: max_col
-
-    integer :: i,icol,max_col_loc
-
-    !$OMP CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
-    string = ''
-    IF (present(Rformat)) THEN
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1        
-        string = string // TO_string(tab(i),Rformat) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))),Rformat)
-    ELSE
-      icol   = 0
-      DO i=lbound(tab,dim=1),ubound(tab,dim=1)-1
-        icol = icol + 1        
-        string = string // TO_string(tab(i)) // ' '
-        IF (present(max_col)) THEN
-          IF (mod(icol,max_col) == 0) string = string // new_line('nl')
-        END IF
-      END DO
-      string = string // TO_string((tab(ubound(tab,dim=1))))
-    END IF
-    !$OMP  END CRITICAL (QDUtil_Dim1Ck16_TO_string_CRIT)
-
-  END FUNCTION QDUtil_Dim1Ck16_TO_string
-
 
   FUNCTION QDUtil_string_IS_empty(String)
     IMPLICIT NONE
@@ -1146,146 +740,11 @@ END SUBROUTINE QDUtil_SET_Astring
 
   END FUNCTION QDUtil_Ik8_concat_string
 
-
-  FUNCTION QDUtil_string_concat_Rk4(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    real (kind=Rk4),                intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Rk4
-  FUNCTION QDUtil_Rk4_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    real (kind=Rk4),                intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Rk4_concat_string
-  FUNCTION QDUtil_string_concat_Rk8(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    real (kind=Rk8),                intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Rk8
-  FUNCTION QDUtil_Rk8_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    real (kind=Rk8),                intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Rk8_concat_string
-  FUNCTION QDUtil_string_concat_Rk16(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    real (kind=Rk16),               intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Rk16
-  FUNCTION QDUtil_Rk16_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    real (kind=Rk16),               intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Rk16_concat_string
-
-
-  FUNCTION QDUtil_string_concat_Ck4(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    complex (kind=Rk4),             intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Ck4
-  FUNCTION QDUtil_Ck4_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk4
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    complex (kind=Rk4),             intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Ck4_concat_string
-  FUNCTION QDUtil_string_concat_Ck8(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    complex (kind=Rk8),             intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Ck8
-  FUNCTION QDUtil_Ck8_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk8
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    complex (kind=Rk8),             intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Ck8_concat_string
-  FUNCTION QDUtil_string_concat_Ck16(str1,s2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str1
-    complex (kind=Rk16),            intent(in)  :: s2
-  
-    string = str1 // TO_string(s2)
-
-  END FUNCTION QDUtil_string_concat_Ck16
-  FUNCTION QDUtil_Ck16_concat_string(s1,str2) RESULT(string)
-    USE QDUtil_NumParameters_m, ONLY : Rk16
-    IMPLICIT NONE
-  
-    character (len=:),  allocatable             :: string
-    character (len=*),              intent(in)  :: str2
-    complex (kind=Rk16),            intent(in)  :: s1
-  
-    string = TO_string(s1) // str2
-
-  END FUNCTION QDUtil_Ck16_concat_string
-
-
   SUBROUTINE Test_QDUtil_String()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
+    USE QDUtil_String_Rk4_m
+
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -1371,8 +830,10 @@ END SUBROUTINE QDUtil_SET_Astring
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (1._Rk4)')
     res_test = ('-10.' == TO_string(-10._Rk8))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-10._Rk8)')
+#if __WITHRK16 == 1
     res_test = ('-999.5' == TO_string(-999.5_Rk16))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-999.5_Rk16)')
+#endif
     res_test = ('-1. 0. 13.' == TO_string([-1._Rk4,0._Rk4,13._Rk4]))
     CALL Logical_Test(test_var,test1=res_test,info='TO_string (-1. 0. 13.)')
     res_test = ('-1.000 0.000 13.000' == TO_string([-1._Rk4,0._Rk4,13._Rk4],Rformat='f6.3'))

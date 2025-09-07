@@ -49,6 +49,9 @@ MODULE QDUtil_m
 
   USE QDUtil_Quadrature_m
 
+  USE QDUtil_diagoRk16_m
+  USE QDUtil_Quadrature_Rk16_m
+
   IMPLICIT NONE
 
 END MODULE QDUtil_m
