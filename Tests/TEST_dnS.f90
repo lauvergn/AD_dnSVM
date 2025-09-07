@@ -50,7 +50,8 @@ PROGRAM TEST_dnS
 
     integer                          :: nderiv,nio_test
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
-    real (kind=Rkind)                :: ZeroTresh   = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh   = TEN**2*epsilon(ONE)
+
 
     integer                          :: i,j
 
@@ -66,7 +67,12 @@ PROGRAM TEST_dnS
 
   CALL Initialize_Test(test_var,test_name='dnS')
 
-  nderiv = 3
+  IF (Rkind == Rk4) THEN
+    nderiv = 1
+    CALL Set_step_dnS(ONETENTH**3)
+  ELSE
+    nderiv = 3
+  END IF
   CALL Append_Test(test_var,'== TESTING dnS module with nderiv= ' // int_TO_char(nderiv))
 
   x       = 0.5_Rkind
@@ -175,7 +181,9 @@ PROGRAM TEST_dnS
   Snum = AD_get_Num_dnS_FROM_f_x(x,faplusx,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='a+dnX:         (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='0.5 + dnX')
+  IF (print_level > 0) THEN 
+    CALL Write_dnS(Sana,string=test_var%test_log,info='Sana: 0.5 + dnX')
+  END IF
 
   Sana = dnX + 0.5_Rkind
   Snum = AD_get_Num_dnS_FROM_f_x(x,faplusx,nderiv=nderiv)
@@ -258,7 +266,10 @@ PROGRAM TEST_dnS
   Snum = AD_get_Num_dnS_FROM_f_x(x,SQRT_perso,nderiv=nderiv)
   res_test = AD_Check_dnS_IS_ZERO(Sana-Snum,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='sqrt: (Sana-Snum)==0?')
-  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='sqrt(dnX)')
+  IF (print_level > 0) THEN
+    CALL Write_dnS(Sana,string=test_var%test_log,info='Sana: sqrt(dnX)')
+    CALL Write_dnS(Snum,string=test_var%test_log,info='Snum: sqrt(dnX)')
+  END IF
 
   Sana = abs(dnX)
   Snum = AD_get_Num_dnS_FROM_f_x(x,ABS_perso,nderiv=nderiv)
@@ -358,7 +369,6 @@ PROGRAM TEST_dnS
   IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='atanh(dnX)')
 
   CALL Flush_Test(test_var)
-
 
   CALL Append_Test(test_var,'============================================')
   CALL Append_Test(test_var,'new tests: **, composition')

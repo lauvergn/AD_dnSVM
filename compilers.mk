@@ -29,53 +29,8 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-14 gfortran-15))
     CFLAGS += -fopenmp
   endif
 
-  # lapack management with cpreprocessing
-  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
-
-  # lapack management
-  ifeq ($(LLAPACK),1)
-    ifeq ($(OS),Darwin)    # OSX
-      # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
-    else                   # Linux
-      # linux libs
-      FLIB = -llapack -lblas
-    endif
-  endif
-
-   FC_VER = $(shell $(FFC) --version | head -1 )
-
-endif
-#=================================================================================
-# lfortran (it does not work)
-#=================================================================================
-ifeq ($(FFC),lfortran)
-
-  # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
-    FFLAGS = --fast --realloc-lhs
-  else
-    FFLAGS = --realloc-lhs
-  endif
-
-  # integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -fdefault-integer-8
-  endif
-
-  # where to store .mod files
-  FFLAGS +=-J$(MOD_DIR)
-
-  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
-  FFLAGS += -I$(MOD_DIR) $(EXTMod)
-
-  # omp management (default with openmp)
-  ifeq ($(OOMP),1)
-    FFLAGS += --openmp
-  endif
-
-  # lapack management with cpreprocessing
-  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
+  # cpreprocessing management
+  FFLAGS += -cpp $(CPPSHELL)
 
   # lapack management
   ifeq ($(LLAPACK),1)
@@ -135,8 +90,8 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
     endif
   endif
 
-  # lapack management with cpreprocessing
-  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
+  # cpreprocessing management
+  FFLAGS += -cpp $(CPPSHELL)
 
   ifeq ($(LLAPACK),1)
     ifeq ($(FFC),ifort)
@@ -187,8 +142,8 @@ ifeq ($(FFC),nagfor)
     FFLAGS += -openmp
   endif
 
-  # lapack management with cpreprocessing
-  FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
+  # cpreprocessing management
+  FFLAGS += -fpp $(CPPSHELL)
 
   # lapact management (default with openmp), with cpreprocessing
   ifeq ($(LLAPACK),1)

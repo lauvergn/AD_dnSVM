@@ -15,6 +15,8 @@ fi
 #github versions
 version="https://github.com/lauvergn/"$BaseName"/archive/refs/heads/"$Branch".zip"
 
+#version="https://github.com/lauvergn/"$BaseName"/releases/latest/download/package.zip"
+
 #https://github.com/lauvergn/QDUtilLib/archive/refs/heads/dev.zip
 #https://github.com/lauvergn/QDUtilLib/archive/refs/heads/main.zip
 

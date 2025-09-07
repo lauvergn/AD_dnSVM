@@ -30,35 +30,23 @@ MODULE QDUtil_NumParameters_m
   !$ USE omp_lib
   USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
   IMPLICIT NONE
-#ifndef __WITHRK16
-#define __WITHRK16 1
-#endif
 
   PUBLIC
   PRIVATE :: INPUT_UNIT,OUTPUT_UNIT,real32,real64,real128,int32,int64
 
   integer, parameter :: RkS        = real32 ! 4
   integer, parameter :: RkD        = real64 ! 8
+  integer, parameter :: RkQ        = real128 ! 16
   integer, parameter :: Rk4        = real32 ! 4
   integer, parameter :: Rk8        = real64 ! 8
-#if __WITHRK16 == 0
-  integer, parameter :: Rk16       = -1
-  integer, parameter :: RkQ        = -1
-#else
   integer, parameter :: Rk16       = real128 ! 16
-  integer, parameter :: RkQ        = real128 ! 16
-#endif
+
   integer, parameter :: IkS        = int32  ! 4
   integer, parameter :: IkD        = int64  ! 8
   integer, parameter :: Ik4        = int32  ! 4
   integer, parameter :: Ik8        = int64  ! 8
 
-  integer, parameter :: Rkind       =                         &
-#if defined(__RKIND)
-      __RKIND
-#else
-      real64
-#endif
+  integer, parameter :: Rkind      = RkD ! 8
   integer, parameter :: Ikind      = int32  ! 4
   integer, parameter :: ILkind     = int64  ! 8
 
@@ -89,17 +77,6 @@ MODULE QDUtil_NumParameters_m
   real (kind=Rkind), parameter ::                                              &
                 pi = 3.14159265358979323846264338327950288419716939937511_Rkind
 
-  real(kind=Rk4), parameter :: pi_Rk4         = &
-                 3.14159265358979323846264338327950288419716939937511_Rk4
-
-  real(kind=Rk8), parameter :: pi_Rk8         = &
-                3.14159265358979323846264338327950288419716939937511_Rk8
-
-#if __WITHRK16 == 1
-  real(kind=Rk16), parameter :: pi_Rk16         = &
-                 3.14159265358979323846264338327950288419716939937511_Rk16
-#endif
-
   complex (kind=Rkind), parameter :: EYE      = (ZERO,ONE)
   complex (kind=Rkind), parameter :: CZERO    = (ZERO,ZERO)
   complex (kind=Rkind), parameter :: CONE     = (ONE,ZERO)
@@ -109,34 +86,13 @@ MODULE QDUtil_NumParameters_m
   integer :: in_unit   = INPUT_UNIT  ! Unit for the ouptput files, with the ISO_FORTRAN_ENV
   integer :: out_unit  = OUTPUT_UNIT ! Unit for the input   files, with the ISO_FORTRAN_ENV
 
+  !integer, protected :: print_level  = 1        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
   integer, protected :: print_level  = -2        ! 0 minimal, 1 default, 2 large, -1 nothing, -2 not initialized
 
   integer, parameter :: Name_len     = 20
   integer, parameter :: Name_longlen = 50
   integer, parameter :: Line_len     = 255
   integer, parameter :: error_l      = 80
-
-  character (len=*), parameter :: QDUtil_version =                         &
-#if defined(__QD_VERSION)
-      __QD_VERSION
-#else
-      'unknown: -D__QD_VERSION=?'
-#endif
-
-  character (len=*), parameter :: QDUtil_compile_date =                     &
-#if defined(__COMPILE_DATE)
-      __COMPILE_DATE
-#else
-      'unknown: -D__COMPILE_DATE=?'
-#endif
-
-  character (len=*), parameter :: QDUtil_compile_host =                      &
-#if defined(__COMPILE_HOST)
-      __COMPILE_HOST
-#else
-      "unknown: -D__COMPILE_HOST=?"
-#endif
-  logical, private :: QDUtil_Print_Version_done = .FALSE.
 
   PRIVATE :: QDUtil_set_print_level
   INTERFACE set_print_level
@@ -156,53 +112,13 @@ CONTAINS
     END IF
 
   END SUBROUTINE QDUtil_set_print_level
-  SUBROUTINE version_QDUtil(Print_Version)
-    USE iso_fortran_env
-    IMPLICIT NONE
-
-    logical,             intent(in)    :: Print_Version
-
-    IF (Print_Version) THEN
-      QDUtil_Print_Version_done = .TRUE.
-      write(out_unit,*) '================================================='
-      write(out_unit,*) '================================================='
-      write(out_unit,*) '== QD (Quantum Dynamics) Util Libraries ========='
-      write(out_unit,*) '== QDUtil version:    ',QDUtil_version
-      write(out_unit,*) '-------------------------------------------------'
-      write(out_unit,*) '== Compiled on       "',QDUtil_compile_host, '" the ',QDUtil_compile_date
-      write(out_unit,*) '== Compiler:         ',compiler_version()
-      write(out_unit,*) '== Compiler options: ',compiler_options()
-      write(out_unit,*) '-------------------------------------------------'
-      write(out_unit,*) 'QDUtil is a free software under the MIT Licence.'
-      write(out_unit,*) '  Copyright (c) 2022 David Lauvergnat [1]'
-      write(out_unit,*)
-      write(out_unit,*) '  [1]: Institut de Chimie Physique, UMR 8000, CNRS-Université Paris-Saclay, France'
-      write(out_unit,*) '=================================================' 
-#if __LAPACK == 0
-      write(out_unit,*) '  Lapack library is not linked'
-#else
-      write(out_unit,*) '  Lapack library is linked'
-#endif
-#if __WITHRK16 == 1
-      write(out_unit,*) 'Reals with quadruple precision (real128) are available'
-#else
-    write(out_unit,*) 'Reals with quadruple precision (real128) are NOT available'
-#endif
-      write(out_unit,*) '  WITHRK16',__WITHRK16
-      write(out_unit,*) '  Rk16',Rk16
-      write(out_unit,*) '  Rkind',Rkind
-
-      write(out_unit,*) '=================================================' 
-    END IF
-    
-  END SUBROUTINE version_QDUtil
   SUBROUTINE Test_QDUtil_NumParameters()
     USE QDUtil_Test_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = 100._Rkind*epsilon(1._Rkind)
+    real (kind=Rkind), parameter     :: ZeroTresh    = 10._Rkind**(-10)
     integer                          :: i
 
     real (kind=Rkind), parameter   :: tab_ParaReal(*) = [                      &

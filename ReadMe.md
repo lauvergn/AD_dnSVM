@@ -9,11 +9,12 @@ Its features are:
 It is similar to Auto_Deriv fortran module:
   <http://www.autodiff.org/?module=Tools&tool=AUTO_DERIV>
 
-date: 20/08/2024
+date: 07/09/2025
 
   Copyright 2021 David Lauvergnat [1]
 
 *Originally, it has been developed for Quantum Model Lib (QML):* <https://github.com/lauvergn/QuantumModelLib>
+
 
 ## 1) Utilisation with scalars
 
@@ -80,7 +81,8 @@ gives:
 Here, df constains df/dX. 
 WARNING: the nderiv of df is reduced by one with respect to nderiv of f.
 
-The gradient is also possible, the result is in a table of dnS. It has the same limitation with nderiv (reduction of nderiv)/
+The gradient is also possible, the result is in a table of dnS. It has the same limitation with nderiv (reduction of nderiv)
+
 ```Fortran
  gradf = grad(f)
 ```
@@ -136,30 +138,34 @@ make all
 ```
 
 It will make the library, the executable tests and example.
-You can change the compiler, Lapack flag, the OpenMP flag, the compiler optimization flag and the default integer either in the makefile or when calling make:
+You can change the compiler, Lapack flag, the OpenMP flag, the compiler optimization flag, the default integer, the real kind either in the makefile or when calling make:
 
 ```bash
-make all FC=ifort OMP=0 OPT=0 LAPACK=0 INT=4
+make all FC=ifort OMP=0 OPT=0 LAPACK=0 INT=4 RKIND=real64
   # FC=ifort to change the compiller to ifort
   # OMP=0/1 to turn off/on the OpenMP fortran flag.
   # OPT=0/1 to turn off/on the fortran optimization.
   # LAPACK=0/1 to turn off/on the lapack use
   # INT=4/8 to change the default integer
+  # RKIND=real64 or real32 or real128: change the real kind
 ```
 
-The library, **libAD_dnSVM_XXX_oppY_ompZ_lapackW_intV.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
+
+The library, **libAD_dnSVM_XXX_oppY_ompZ_lapackW_intV_realA.a** is created in the main directory and the **libAD_dnSVM.a** library is linked to it.
 Remarks : 
 - XXX is the compiller (gfortran, ifort ...)
 - Y is 0 or 1 (opt0 / opt1: compiler optimization)
 - Z is 0 or 1 (omp0 / omp1: whitout/with OpenMP)
 - W is 0 or 1 (lapack0 / lapack1: whitout/with lapack)
 - V is 4 or 8 (int4 / int8)
+- A is 32 or 64 or 128 (real32, real64, real128)
 
-If needed, the .mod files are in the **OBJ/obj_XXX_oppY_ompZ_lapackW_intV** directory.
+
+If needed, the .mod files are in the **OBJ/obj_XXX_oppY_ompZ_lapackW_intV_realA** directory.
 
 It has been tested with:
 
-- gfortran (14.1.0_2 on macos, 12 on linux)
+- gfortran (11, 12, 13, 14, 15 on macos, 12 on linux)
 - ifx/ifort (2023 on linux)
 - nagor (7.1 on linux)
 
@@ -171,6 +177,7 @@ With **fpm**
     fpm test dnPoly
     fpm test dnS
     fpm test dnVec
+    fpm test dnMat
 ```
 
 or in the Tests directory, run the scripts
@@ -183,7 +190,7 @@ or in the Tests directory, run the scripts
 or in the Tests directory (with several combinations of OMP, OPT ...), run the script
 
 ```bash
-    ./run_tests
+    ./run_tests.sh
 ```
 
 ## 4) run the example
@@ -192,10 +199,11 @@ With **fpm**
 
 ```bash
     fpm run Exa_dnS
-````
+```
 
 or in the main directory
 
 ```bash
     ./Exa_dnS.x
 ```
+

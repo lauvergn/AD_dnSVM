@@ -18,6 +18,12 @@ LAPACK = 1
 ## force the default integer (without kind) during the compillation.
 ## default 4: , INT=8 (for kind=8)
 INT = 4
+## change the real kind
+## default real64: , possibilities, real32, real64, real128
+RKIND = real64
+# For some compilers (like lfortran), real128 (quadruple precision) is not implemented
+# WITHRK16 = 1 (0) compilation with (without) real128
+WITHRK16 = 
 ## how to get external libraries;  "loc" (default): from local zip file, Empty or something else, from github
 EXTLIB_TYPE = loc
 #=================================================================================
@@ -31,15 +37,59 @@ ifeq ($(OPT),)
 else
   OOPT      := $(OPT)
 endif
+ifneq ($(OOPT),$(filter $(OOPT),0 1))
+  $(info *********** OPT (optimisation):        $(OOPT))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
 ifeq ($(OMP),)
   OOMP      := 1
 else
   OOMP      := $(OMP)
 endif
+ifneq ($(OOMP),$(filter $(OOMP),0 1))
+  $(info *********** OMP (openmp):        $(OOMP))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
 ifeq ($(LAPACK),)
   LLAPACK      := 1
 else
   LLAPACK      := $(LAPACK)
+endif
+ifneq ($(LLAPACK),$(filter $(LLAPACK),0 1))
+  $(info *********** LAPACK:        $(LLAPACK))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
+ifeq ($(WITHRK16),)
+  WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+else
+  WWITHRK16      := $(WITHRK16)
+endif
+ifneq ($(WWITHRK16),$(filter $(WWITHRK16),0 1))
+  $(info *********** WITHRK16 (compilation with real128):        $(WWITHRK16))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(INT),$(filter $(INT),4 8))
+  $(info *********** INT (change default integer):        $(INT))
+  $(info Possible values: 4, 8)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
+  $(info *********** RKIND (select the real kind):        $(RKIND))
+  $(info Possible values (case sensitive): real32 real64 real128)
+  $(error ERROR: Incompatible options)
+endif
+#=================================================================================
+ifeq ($(RKIND),real128)
+  ifeq ($(WWITHRK16),0)
+    $(info "Incompatible options:")
+    $(info ***********RKIND:        $(RKIND))
+    $(info ***********WITHRK16:     $(WWITHRK16))
+    $(error ERROR: Incompatible options)
+  endif
 endif
 #=================================================================================
 # Operating system, OS? automatic using uname:
@@ -47,9 +97,10 @@ endif
 OS:=$(shell uname)
 
 #=================================================================================
-# extansion for the library (.a), objects and modules directory
+# extension for the library (.a), objects and modules directory
 #=================================================================================
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
+ext_obj    :=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)_$(RKIND)
+extold_obj :=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
 
 #=================================================================================
 # Directories
@@ -57,13 +108,21 @@ ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
 MAIN_path := $(shell pwd)
 
 OBJ_DIR    := OBJ/obj$(ext_obj)
+OBJOLD_DIR := OBJ/obj$(extold_obj)
 $(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
 MOD_DIR    := $(OBJ_DIR)
 
-SRC_DIR=SRC
-MAIN_DIR=APP
-TESTS_DIR=Tests
+SRC_DIR    := SRC
+MAIN_DIR   := APP
+TESTS_DIR  := Tests
 #
+AD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
+#
+CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
+              -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
+              -D__AD_VERSION='$(AD_VERSION)' \
+              -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
+              -D__LAPACK="$(LLAPACK)"
 #=================================================================================
 # To deal with external compilers.mk file
 CompilersDIR = $(MAIN_path)
@@ -96,6 +155,10 @@ $(info ***********COMPILER_VER: $(FC_VER))
 $(info ***********OPTIMIZATION: $(OOPT))
 $(info ***********OpenMP:       $(OOMP))
 $(info ***********INT:          $(INT))
+$(info ***********RKIND:        $(RKIND))
+$(info ***********WITHRK16:     $(WWITHRK16))
+$(info ***********LAPACK:       $(LLAPACK))
+$(info ***********AD_VERSION:   $(AD_VERSION))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
@@ -112,14 +175,15 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 
 
 #
-TEST_dnSEXE    = Test_dnS.x
-TEST_dnPolyEXE = Test_dnPoly.x
-TEST_dnVecEXE  = Test_dnVec.x
-TEST_dnMatEXE  = Test_dnMat.x
+TEST_dnSEXE    := Test_dnS.x
+TEST_dnPolyEXE := Test_dnPoly.x
+TEST_dnVecEXE  := Test_dnVec.x
+TEST_dnMatEXE  := Test_dnMat.x
 
-EXA_dnSEXE     = Exa_dnS.x
-LIBADshort     = libAD_dnSVM
-LIBAD          = libAD_dnSVM$(ext_obj)
+EXA_dnSEXE     := Exa_dnS.x
+LIBADshort     := libAD_dnSVM
+LIBAD          := libAD_dnSVM$(ext_obj)
+LIBADOLD       := libAD_dnSVM$(extold_obj)
 #===============================================
 #============= Main programs: tests + example ==
 #
@@ -189,6 +253,10 @@ $(OBJ_DIR)/%.o: %.f90
 lib libad libAD: $(LIBAD).a
 $(LIBAD).a: $(OBJ)
 	ar -cr $(LIBAD).a $(OBJ)
+	rm -f  $(OBJOLD_DIR)
+	cd OBJ ; ln -s obj$(ext_obj) obj$(extold_obj)
+	rm -f  $(LIBADOLD).a
+	ln -s  $(LIBAD).a $(LIBADOLD).a
 	rm -f $(LIBADshort).a
 	ln -s  $(LIBAD).a $(LIBADshort).a
 	@echo "  done Library: "$(LIBAD).a

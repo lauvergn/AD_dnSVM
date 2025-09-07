@@ -70,7 +70,7 @@
 !! @date 09/08/2017
 !!
 MODULE ADdnSVM_dnS_m
-  USE QDUtil_m, ONLY : Rkind, out_unit
+  USE QDUtil_m, ONLY : Rkind, out_unit, ONETENTH
   IMPLICIT NONE
   PRIVATE
 
@@ -85,8 +85,8 @@ MODULE ADdnSVM_dnS_m
 !! @param d2                      real:    2d  order derivative (hessian: matrix of nVar*nVar derivatives)
 !! @param d3                      real:    3d  order derivative (nVar*nVar*nVar derivatives)
 
-  integer:: AD_dnS_test = 0
-
+  integer           :: AD_dnS_test = 0
+  real (kind=Rkind) :: step_dnS = ONETENTH**4
 
   TYPE, PUBLIC :: dnS_t
      PRIVATE
@@ -171,6 +171,10 @@ MODULE ADdnSVM_dnS_m
 
   END TYPE dnS_t
 
+  PUBLIC :: Set_step_dnS
+  INTERFACE Set_step_dnS
+    MODULE PROCEDURE AD_Set_step_dnS
+  END INTERFACE
   ! overloded operators, functions
   PUBLIC :: sqrt
   PUBLIC :: exp,abs,log,log10
@@ -322,6 +326,16 @@ MODULE ADdnSVM_dnS_m
     MODULE PROCEDURE AD_get_MODULO_dnS
   END INTERFACE
 CONTAINS
+
+  SUBROUTINE AD_Set_step_dnS(step)
+    USE QDUtil_m, ONLY : Rkind
+    IMPLICIT NONE
+
+    real (kind=Rkind), intent(in) :: step ! Value of the step for the finit difference
+
+    step_dnS = step
+
+  END SUBROUTINE AD_Set_step_dnS
 !> @brief Public subroutine which allocates a derived type dnS.
 !!
 !> @author David Lauvergnat
@@ -1563,7 +1577,7 @@ END FUNCTION AD_Grad_OF_dnS
 
     !local variables:
     TYPE (dnS_t)          :: Sloc
-    real (kind=Rkind)     :: xloc,step=ONETENTH**4
+    real (kind=Rkind)     :: xloc
     integer               :: nderiv_loc,i,j,k
     real (kind=Rkind)     :: f0,fp,fm,fpp,fmm,fppp,fmmm
 
@@ -1586,38 +1600,38 @@ END FUNCTION AD_Grad_OF_dnS
       Snum%d0 = f(x)
     CASE(1)
       f0  = f(x)
-      fp  = f(x+step)
-      fm  = f(x-step)
+      fp  = f(x+step_dnS)
+      fm  = f(x-step_dnS)
 
       Snum%d0 = f0
-      Snum%d1 = (fp-fm)/(step+step)
+      Snum%d1 = (fp-fm)/(step_dnS+step_dnS)
     CASE(2)
       f0  = f(x)
-      fp  = f(x+step)
-      fm  = f(x-step)
-      fpp = f(x+step+step)
-      fmm = f(x-step-step)
+      fp  = f(x+step_dnS)
+      fm  = f(x-step_dnS)
+      fpp = f(x+step_dnS+step_dnS)
+      fmm = f(x-step_dnS-step_dnS)
 
       Snum%d0 = f0
-      Snum%d1 = (fp-fm)/(step+step)
-      Snum%d2 = (fp+fm-TWO*f0)/step**2
+      Snum%d1 = (fp-fm)/(step_dnS+step_dnS)
+      Snum%d2 = (fp+fm-TWO*f0)/step_dnS**2
     CASE(3)
       f0   = f(x)
-      fp   = f(x+step)
-      fm   = f(x-step)
-      fpp  = f(x+step+step)
-      fmm  = f(x-step-step)
-      fppp = f(x+step+step+step)
-      fmmm = f(x-step-step-step)
+      fp   = f(x+step_dnS)
+      fm   = f(x-step_dnS)
+      fpp  = f(x+step_dnS+step_dnS)
+      fmm  = f(x-step_dnS-step_dnS)
+      fppp = f(x+step_dnS+step_dnS+step_dnS)
+      fmmm = f(x-step_dnS-step_dnS-step_dnS)
 
       Snum%d0 = f0
       Snum%d1 = ( THREE/FOUR*(fp-fm) - &
                  THREE/20._Rkind*(fpp-fmm) + &
-                 ONE/60._Rkind*(fppp-fmmm) )/step
+                 ONE/60._Rkind*(fppp-fmmm) )/step_dnS
 
-      Snum%d2 = (-30._Rkind*f0+16._Rkind*(fp+fm)-(fpp+fmm))/(TWELVE*step**2)
+      Snum%d2 = (-30._Rkind*f0+16._Rkind*(fp+fm)-(fpp+fmm))/(TWELVE*step_dnS**2)
 
-      Snum%d3 = (-13._Rkind*(fp-fm)+EIGHT*(fpp-fmm)-(fppp-fmmm))/(EIGHT*step**3)
+      Snum%d3 = (-13._Rkind*(fp-fm)+EIGHT*(fpp-fmm)-(fppp-fmmm))/(EIGHT*step_dnS**3)
 
     END SELECT
 

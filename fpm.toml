@@ -1,5 +1,5 @@
 name = "AD_dnSVM"
-version = "5.0"
+version = "6.0"
 license = "MIT"
 author = "David Lauvergnat"
 maintainer = "david.lauvergnat@universite-paris-saclay.fr"
@@ -42,7 +42,7 @@ QDUtilLib = { git = "https://github.com/lauvergn/QDUtilLib" }
 
 
 [preprocess]
-cpp.macros = ["__LAPACK=1"]
+cpp.macros = ["__LAPACK=1","__WITHRK16=1"]
 
 [fortran]
 implicit-external = true

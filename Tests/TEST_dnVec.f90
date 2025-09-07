@@ -47,7 +47,7 @@ PROGRAM TEST_dnS
 
     integer                          :: nderiv,nio_test
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
-    real (kind=Rkind)                :: ZeroTresh   = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh   = TEN**2*epsilon(ONE)
 
     integer                          :: i,j
 
@@ -58,7 +58,12 @@ PROGRAM TEST_dnS
 
   CALL Initialize_Test(test_var,test_name='dnVec')
 
-  nderiv = 2
+  IF (Rkind == Rk4) THEN
+    nderiv = 2
+    CALL Set_step_dnS(ONETENTH**3)
+  ELSE
+    nderiv = 2
+  END IF
   CALL Append_Test(test_var,'== TESTING dnVec module with nderiv= ' // int_TO_char(nderiv))
 
   x = 0.5_Rkind

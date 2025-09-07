@@ -66,6 +66,7 @@ PROGRAM TEST_dnPoly
   real(kind=Rkind)                    :: Norm,x,xx
   character (len=*), parameter        :: name_sub='TEST_dnPoly'
   TYPE (test_t)                       :: test_var
+  real (kind=Rkind), parameter        :: ZeroTresh   = TEN**2*epsilon(ONE)
 
 
   CALL read_arg()
@@ -73,7 +74,12 @@ PROGRAM TEST_dnPoly
   CALL Initialize_Test(test_var,test_name='dnPoly',PrintFlag = (print_level > 0))
 
 
-  nderiv = 1
+  IF (Rkind == Rk4) THEN
+    nderiv = 1
+    CALL Set_step_dnS(ONETENTH**3)
+  ELSE
+    nderiv = 1
+  END IF
   write(out_unit,'(a,i2)') "== TESTING dnPoly module with nderiv=",nderiv
 
   x       = HALF
@@ -83,7 +89,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(pi/2)
   CALL set_dnS(SExact,d0=sin(2*x)*Norm,d1=[2*cos(2*x)*Norm]) ! sin(2*x)/sqrt(pi/)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Box(x,2)        = sin(2*x)/sqrt(pi/2)        ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnBox(x,2)')
@@ -95,7 +101,7 @@ PROGRAM TEST_dnPoly
   Sana  = dnMonomial(dnX,2)
   CALL set_dnS(SExact,d0=x**2,d1=[2*x]) ! x**2
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Monomial(x,2)   = x**2                       ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnMonomial(x,2)')
@@ -107,7 +113,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(pi)
   CALL set_dnS(SExact,d0=sin(x)*Norm,d1=[cos(x)*Norm]) ! sin(x)/sqrt(pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Fourier(x,2)    = sin(x)/sqrt(pi)            ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnFourier(x,2)')
@@ -120,7 +126,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(pi)
   CALL set_dnS(SExact,d0=sin(2*x)*Norm,d1=[2*cos(2*x)*Norm]) ! sin(x)/sqrt(pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Fourier2(x,-2)  = sin(2x)/sqrt(pi)           ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnFourier2(x,-2)')
@@ -133,7 +139,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(TWO/(TWO*2+ONE))
   CALL set_dnS(SExact,d0=(THREE*x**2-ONE)/TWO*Norm,d1=[THREE*x*Norm]) ! (3x**2-1)/2/norm
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Legendre0(x,2)  = (3x**2-1)/2/Norm           ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnLegendre0(x,2)')
@@ -144,7 +150,7 @@ PROGRAM TEST_dnPoly
   Sana    = dnLegendre(dnX,2,0)
   SExact  = dnLegendre0(dnX,2)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Legendre(x,2,0) = Legendre0(x,2)             ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnLegendre(x,2,0)')
@@ -155,7 +161,7 @@ PROGRAM TEST_dnPoly
   Sana    = dnLegendre(dnX,1,1,ReNorm=.FALSE.)
   SExact  = -sqrt(ONE-dnX**2)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Legendre(x,1,1) = -sqrt(ONE-x**2)            ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnLegendre(x,1,1)',Rfmt='f15.11')
@@ -166,7 +172,7 @@ PROGRAM TEST_dnPoly
   Sana    = dnLegendre(dnX,1,1)
   SExact  = -sqrt(ONE-dnX**2)/sqrt(FOUR/THREE)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Legendre(x,1,1) = -sqrt(ONE-x**2)/sqrt(4/3)  ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnLegendre(x,1,1)',Rfmt='f15.11')
@@ -179,7 +185,7 @@ PROGRAM TEST_dnPoly
   Sana  = dnJacobi(dnX,n=2,alpha=1,beta=1,ReNorm=.FALSE.) ! Jacobi(x,2,1,1)
   CALL set_dnS(SExact,d0=3+15*xx+15*xx**2,d1=[15*HALF + 15*xx])
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Jacobi(x,2,1,1) = 3+15(xx+xx**2); xx=(x-1)/2 ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnJacobi(x,2,1,1)')
@@ -191,7 +197,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(sqrt(pi)*TWO**2*gamma_perso(2+1))
   CALL set_dnS(SExact,d0=(4*x**2-2)*Norm,d1=[(8*x)*Norm])
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Hermite(x,2)    = (4*x**2-2)/Norm            ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnHermite(x,2)')
@@ -203,7 +209,7 @@ PROGRAM TEST_dnPoly
   Norm  = ONE/sqrt(sqrt(pi)*TWO**2*gamma_perso(2+1))
   CALL set_dnS(SExact,d0=Exp(-x**2/2)*(4*x**2-2)*Norm,d1=[-2*x*Exp(-x**2/2)*(2*x**2-5)*Norm])
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='ExpHermite(x,2) = Exp(-x**2/2)(4*x**2-2)/Norm')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='dnExpHermite(x,2)')
@@ -217,7 +223,7 @@ PROGRAM TEST_dnPoly
   Sana  = RSphericalHarmonics2(dnTh,dnPhi,0,0)
   SExact  = ONE/sqrt(4*pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Y00(th,phi) ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='Y00(th,phi)')
@@ -228,7 +234,7 @@ PROGRAM TEST_dnPoly
   Sana    = RSphericalHarmonics2(dnTh,dnPhi,1,0)
   SExact  = cos(dnTh)/sqrt(TWO/THREE)/ONE/sqrt(2*pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Y10(th,phi) ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='Y10(th,phi)')
@@ -239,7 +245,7 @@ PROGRAM TEST_dnPoly
   Sana    = RSphericalHarmonics2(dnTh,dnPhi,1,-1)
   SExact  = -sin(dnTh)*sin(dnPhi)/sqrt(FOUR/THREE)/ONE/sqrt(pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Y1-1(th,phi) ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='Y1-1(th,phi)')
@@ -250,7 +256,7 @@ PROGRAM TEST_dnPoly
   Sana    = RSphericalHarmonics2(dnTh,dnPhi,1,1)
   SExact  = -sin(dnTh)*cos(dnPhi)/sqrt(FOUR/THREE)/ONE/sqrt(pi)
   CALL Logical_Test(test_var,                                                   &
-                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ONETENTH**10),       &
+                    test1=AD_Check_dnS_IS_ZERO(Sana-SExact,ZeroTresh),       &
                     info='Y11(th,phi) ')
   IF (test_var%PrintFlag) THEN
     CALL Write_dnS(Sana,  string=test_var%test_log,info='Y11(th,phi)')

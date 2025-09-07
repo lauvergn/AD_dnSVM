@@ -48,7 +48,7 @@ PROGRAM TEST_dnMat
 
     integer                          :: nderiv,nio_test,nderiv_Mat,err_dnMat
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
-    real (kind=Rkind)                :: ZeroTresh   = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh   = TEN**2*epsilon(ONE)
 
     integer                          :: i,j
 
@@ -59,7 +59,12 @@ PROGRAM TEST_dnMat
 
   CALL Initialize_Test(test_var,test_name='dnMat')
 
-  nderiv = 1
+  IF (Rkind == Rk4) THEN
+    nderiv = 1
+    CALL Set_step_dnS(ONETENTH**3)
+  ELSE
+    nderiv = 1
+  END IF
   CALL Append_Test(test_var,'== TESTING dnMat module with nderiv= ' // TO_String(nderiv))
 
   x = 0.5_Rkind
@@ -135,15 +140,12 @@ PROGRAM TEST_dnMat
   dnM2 = matmul(transpose(dnV),dnM1) - dnDiag
   CALL Write_dnMat(dnM2, info='Vt.M.V - Diag')
   
-  res_test = Check_dnMat_IS_ZERO(dnM2)
+  res_test = Check_dnMat_IS_ZERO(dnM2,epsi=ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='Diago')
 
-
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
-
-
 
   ! finalize the tests
   CALL Finalize_Test(test_var)

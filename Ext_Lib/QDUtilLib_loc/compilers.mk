@@ -1,7 +1,7 @@
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+ifeq ($(FFC),gfortran)
 
   # optimization management (default without optimization)
   ifeq ($(OOPT),1)
@@ -29,9 +29,8 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortr
     CFLAGS += -fopenmp
   endif
 
-  # cpreprocessing management
-  FFLAGS += -cpp $(CPPSHELL)
-
+  # lapack management with cpreprocessing
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   # lapack management
   ifeq ($(LLAPACK),1)
@@ -45,102 +44,6 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortr
   endif
 
    FC_VER = $(shell $(FFC) --version | head -1 )
-
-endif
-#=================================================================================
-# nvfortran (linux)
-#=================================================================================
-ifeq ($(FFC),nvfortran)
-
-  # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
-    FFLAGS = -fast
-    CFLAGS = -fast
-  else
-    FFLAGS = -O0 -g -C
-    CFLAGS = -O0 -g
-  endif
-
-  # integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -i8
-  endif
-
-  # where to store .mod files
-  FFLAGS +=-module $(MOD_DIR)
-
-  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
-  FFLAGS += -I$(MOD_DIR) $(EXTMod)
-
-  # omp management (default with openmp)
-  ifeq ($(OOMP),1)
-    FFLAGS += -mp
-    CFLAGS += -mp
-  endif
-
-  # cpreprocessing management
-  FFLAGS += -cpp $(CPPSHELL)
-
-  # lapack management
-  ifeq ($(LLAPACK),1)
-    ifeq ($(OS),Darwin)    # OSX
-      # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
-    else                   # Linux
-      # linux libs
-      FLIB = -llapack -lblas
-    endif
-  endif
-
-   FC_VER = $(shell $(FFC) --version | grep nvfortran )
-
-endif
-#=================================================================================
-# flang (aocc, amd) (linux)
-# (it does not work)
-#=================================================================================
-ifeq ($(FFC),flang)
-
-  # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
-    FFLAGS = -Ofast -Mallocatable=03
-  else
-    FFLAGS = -O0 -Mallocatable=03
-  endif
-
-  # integer kind management
-  ifeq ($(INT),8)
-    FFLAGS += -fdefault-integer-8
-  endif
-
-  # where to store .mod files
-  FFLAGS += -J$(MOD_DIR)
-
-  # where to look .mod files (add -I$(MOD_DIR) for nagfor)
-  FFLAGS += -I$(MOD_DIR) $(EXTMod)
-
-  # omp management (default with openmp)
-  ifeq ($(OOMP),1)
-    FFLAGS += -mp
-  else
-    FFLAGS += -nomp
-  endif
-
-  # cpreprocessing management
-  FFLAGS += -Mpreprocess $(CPPSHELL)
-
-  # lapack management
-  ifeq ($(LLAPACK),1)
-    ifeq ($(OS),Darwin)    # OSX
-      # OSX libs (included lapack+blas)
-      FLIB = -framework Accelerate
-    else                   # Linux
-      # linux libs
-      FLIB = -llapack -lblas
-    endif
-  endif
-
-   FC_VER = $(shell $(FFC) --version | grep "AMD clang" )
 
 endif
 #=================================================================================
@@ -161,7 +64,7 @@ ifeq ($(FFC),lfortran)
   endif
 
   # where to store .mod files
-  FFLAGS += -J$(MOD_DIR)
+  FFLAGS +=-J$(MOD_DIR)
 
   # where to look .mod files (add -I$(MOD_DIR) for nagfor)
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
@@ -171,8 +74,8 @@ ifeq ($(FFC),lfortran)
     FFLAGS += --openmp
   endif
 
-  # cpreprocessing management
-  FFLAGS += --cpp $(CPPSHELL)
+  # lapack management with cpreprocessing
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   # lapack management
   ifeq ($(LLAPACK),1)
@@ -232,8 +135,8 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
     endif
   endif
 
-  # cpreprocessing management
-  FFLAGS += -cpp $(CPPSHELL)
+  # lapack management with cpreprocessing
+  FFLAGS += -cpp -D__LAPACK="$(LLAPACK)"
 
   ifeq ($(LLAPACK),1)
     ifeq ($(FFC),ifort)
@@ -284,8 +187,8 @@ ifeq ($(FFC),nagfor)
     FFLAGS += -openmp
   endif
 
-  # cpreprocessing management
-  FFLAGS += -fpp $(CPPSHELL)
+  # lapack management with cpreprocessing
+  FFLAGS += -fpp -D__LAPACK="$(LLAPACK)"
 
   # lapact management (default with openmp), with cpreprocessing
   ifeq ($(LLAPACK),1)
