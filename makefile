@@ -9,7 +9,7 @@
 #FC = ifort
 #FC = nagfor
 #
-# Optimize? Empty: default Optimization; 0: No Optimization; 1 Optimzation
+# Optimize? Empty: default Optimization; 0: No Optimization; 1 Optimization
 OPT = 1
 ## OpenMP? Empty: default with OpenMP; 0: No OpenMP; 1 with OpenMP
 OMP = 1
@@ -302,32 +302,30 @@ getlib:
 	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
 $(QDLIBA):
 	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
-	cd $(ExtLibDIR)/QDUtilLib ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR) CompilersDIR=$(CompilersDIR)
+	cd $(ExtLibDIR)/QDUtilLib ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR) RKIND=$(RKIND) WITHRK16=$(WWITHRK16) CompilersDIR=$(CompilersDIR)
 	@test -f $(QDLIBA) || (echo $(QDLIBA) "does not exist" ; exit 1)
 	@echo "  done " $(QDLIBA)
 #
 #===============================================
 
-
-#
 #===============================================
-### dependencies
+#============= make dependencies =============
+#===============================================
+.PHONY: dep
+dependencies.mk fortranlist.mk dep:
+	./scripts/dependency.sh
+#===============================================
+#============= module dependencies =============
+#===============================================
 #
 $(OBJ_DIR)/Example_dnS.o:      $(LIBAD).a
 $(OBJ_DIR)/TEST_dnS.o:         $(LIBAD).a
 $(OBJ_DIR)/TEST_dnPoly.o:      $(LIBAD).a
 $(OBJ_DIR)/TEST_dnVec.o:       $(LIBAD).a
 $(LIBAD).a:                    $(OBJ_lib)
-#
-$(OBJ_DIR)/dnSVM_m.o:          $(OBJ_DIR)/dnS_m.o $(OBJ_DIR)/dnPoly_m.o \
-                               $(OBJ_DIR)/dnFunc_m.o $(OBJ_DIR)/dnS_Op_m.o \
-                               $(OBJ_DIR)/dnVec_m.o $(OBJ_DIR)/dnMat_m.o
-#
-$(OBJ_DIR)/dnPoly_m.o:         $(OBJ_DIR)/dnS_m.o
-$(OBJ_DIR)/dnFunc_m.o:         $(OBJ_DIR)/dnPoly_m.o $(OBJ_DIR)/dnS_m.o
-$(OBJ_DIR)/dnMat_m.o:          $(OBJ_DIR)/dnS_m.o
-$(OBJ_DIR)/dnVec_m.o:          $(OBJ_DIR)/dnS_m.o
-#
+
 $(OBJ_DIR)/dnS_m.o:            | $(QDLIBA)
+
+include ./dependencies.mk
 #
 #===============================================
