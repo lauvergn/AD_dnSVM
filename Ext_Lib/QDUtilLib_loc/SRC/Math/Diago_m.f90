@@ -42,11 +42,12 @@ MODULE QDUtil_diago_m
   RECURSIVE SUBROUTINE QDUtil_Cdiagonalization(CMat,CEigVal,CEigVec,nb_diago,diago_type,sort,phase)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
     USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     complex(kind=Rkind), intent(in)              :: CMat(:,:)
     complex(kind=Rkind), intent(inout)           :: CEigVal(:),CEigVec(:,:)
-    integer,          intent(in),       optional :: nb_diago ! when nb_diago < size(REigVal), 
+    integer,             intent(in),    optional :: nb_diago ! when nb_diago < size(REigVal), 
                                                              !only nb_diago eigenvavlues and  eigenREigVectors are calculated
 
     integer,          intent(in),       optional :: diago_type,sort
@@ -54,23 +55,40 @@ MODULE QDUtil_diago_m
 
 
     !local variables
-    integer            :: diago_type_loc
+    logical            :: phase_loc
+    integer            :: diago_type_loc,sort_loc
     integer            :: diago_type_default = 2 ! tred+tql
-    !                                   tred+tql
-    integer, parameter :: list_type(*) = [2]
+    integer, parameter :: list_type(*) = [2,4]
 
     complex(kind=Rkind), allocatable :: CMat_save(:,:)
     integer :: n_size,n_vect,n
 
-    integer              :: i,ierr
+    integer              ::    lwork ,ierr
+    integer(kind=int32)  :: n4,lwork4,ierr4
+    integer              :: i
     complex(kind=Rkind), allocatable :: work(:)
+
+    complex(kind=Rkind), allocatable :: CEigVecLeft(:,:)
+    real(kind=Rkind),    allocatable :: RWork(:)
 
 
     !----- for debuging --------------------------------------------------
     character (len=*), parameter :: name_sub='QDUtil_Cdiagonalization'
-    logical, parameter :: debug = .FALSE.
-    !logical, parameter :: debug = .TRUE.
+    !logical, parameter :: debug = .FALSE.
+    logical, parameter :: debug = .TRUE.
     !-----------------------------------------------------------
+
+    IF (present(sort)) THEN
+      sort_loc = sort
+    ELSE
+      sort_loc = 1
+    END IF
+    IF (present(phase)) THEN
+      phase_loc = phase
+    ELSE
+      phase_loc = .TRUE.
+    END IF
+
 
     n_size = size(CEigVal)
     IF (present(nb_diago)) THEN
@@ -125,8 +143,69 @@ MODULE QDUtil_diago_m
       CALL QDUtil_cTql2(n,n,CEigVal,work,CEigVec,ierr)
       IF (debug) write(out_unit,*)'ierr=',ierr
 
+      IF (debug) THEN
+        DO i=1,n
+          write(out_unit,*) 'Eigenvalue(', i, ') = ', CEigVal(i)
+        END DO
+      END IF
+
       deallocate(work)
       deallocate(CMat_save)
+
+    CASE (4) ! ZGEEV
+#if __LAPACK == 1
+      IF (debug) write(out_unit,*) 'lapack77: ZGEEV (non-symmetric)'
+      flush(out_unit)
+
+      CMat_save = CMat
+
+      !Query the optimal workspace.
+      lwork4 = -1_int32
+      n4     = int(n,kind=int32)
+      allocate(CEigVecLeft(n,n))
+      allocate(RWork(n+n))
+      allocate(work(1))
+
+      CALL ZGEEV('V','V',n4,CMat_save,n4,CEigVal,CEigVecLeft,n4,CEigVec,n4,work,lwork4,RWork,ierr4)
+      lwork4 = int(work(1),kind=int32)
+      deallocate(work)
+
+      ! diagonalization
+      allocate(work(lwork4))
+
+      CALL ZGEEV('V','V',n4,CMat_save,n4,CEigVal,CEigVecLeft,n4,CEigVec,n4,work,lwork4,RWork,ierr4)
+
+      IF (debug) write(out_unit,*)'ierr=',ierr4
+      IF (ierr4 /= 0_int32) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' ZGEEV lapack subroutine has FAILED!'
+        STOP 'ERROR in QDUtil_Cdiagonalization: ZGEEV lapack subroutine has FAILED!'
+      END IF
+      IF (debug) THEN
+        DO i=1,n
+          write(out_unit,*) 'Eigenvalue(', i, ') = ', CEigVal(i)
+        END DO
+        CALL Write_Mat(CMat_save,out_unit,5,info='eigenvector Overlap')
+
+        CMat_save = matmul(transpose(conjg(CEigVecLeft)),CEigVec)
+        DO i=1,n
+          CMat_save(i,i) = CMat_save(i,i)-CONE
+        END DO
+        write(out_unit,*) 'Max diff identity ?',maxval(abs(CMat_save))
+      END IF
+
+      deallocate(work)
+      deallocate(Rwork)
+      deallocate(CEigVecLeft)
+      deallocate(CMat_save)
+#else
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
+      write(out_unit,*) '  The program should not reach the LAPACK case.'
+      write(out_unit,*) '  => Probabely, wrong diago_type_default.'
+      write(out_unit,*) '  => CHECK the fortran!!'
+      STOP 'ERROR in QDUtil_Cdiagonalization: LAPACK case impossible'
+#endif
 
     CASE DEFAULT
       write(out_unit,*) ' ERROR in ',name_sub
@@ -134,6 +213,32 @@ MODULE QDUtil_diago_m
       write(out_unit,*) '  => CHECK the fortran!!'
       STOP 'ERROR in QDUtil_Cdiagonalization: default case impossible'
     END SELECT
+
+
+
+    SELECT CASE (sort_loc)
+    CASE(1)
+      CALL QDUtil_sort_VecCplx_EneC(CEigVal,CEigVec)
+    CASE(-1)
+      CEigVal = -CEigVal
+      CALL QDUtil_sort_VecCplx_EneC(CEigVal,CEigVec)
+      CEigVal = -CEigVal
+    CASE(2)
+      CALL QDUtil_sort_abs_VecCplx_EneC(CEigVal,CEigVec)
+    CASE DEFAULT ! no sort
+      CONTINUE
+    END SELECT
+
+    DO i=1,n
+      CEigVec(:,i) = CEigVec(:,i)/sqrt(dot_product(CEigVec(:,i),CEigVec(:,i)))
+    END DO
+
+    IF (phase_loc) CALL QDUtil_Unique_phase_cplx(CEigVec)
+
+    IF (debug) THEN
+      CMat_save = matmul(transpose(CEigVec),CEigVec)
+      CALL Write_Mat(CMat_save,out_unit,5,info='eigenvector Overlap')
+    END IF
 
   END SUBROUTINE QDUtil_Cdiagonalization
 !============================================================
@@ -289,24 +394,6 @@ MODULE QDUtil_diago_m
       END IF
 
       deallocate(work)
-#elif __LAPACK == 8
-      lwork = 3*n-1
-      allocate(work(lwork))
-      REigVec(:,:) = RMat(:,:)
-
-      ! with mkl (ifort), lapack lib can linked with -i8 option (int64), so that we don't need to convert integer in int32
-      CALL DSYEV('V','U',n,REigVec,n,REigVal,work,lwork,ierr)
-
-      IF (debug) write(out_unit,*) 'ierr=',ierr
-      flush(out_unit)
-
-      IF (ierr /= 0) THEN
-         write(out_unit,*) ' ERROR in ',name_sub
-         write(out_unit,*) ' DSYEV lapack subroutine has FAILED!'
-         STOP 'ERROR in QDUtil_Rdiagonalization: DSYEV lapack subroutine has FAILED!'
-      END IF
-
-      deallocate(work)
 #else
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) '  LAPACK is not linked (LAPACK=0 in the makefile).'
@@ -341,35 +428,6 @@ MODULE QDUtil_diago_m
                  int(1,kind=int32),REigVec,ldvr4,work,lwork4,ierr4)
       IF (debug) write(out_unit,*)'ierr=',ierr4
       IF (ierr4 /= 0_int32) THEN
-        write(out_unit,*) ' ERROR in ',name_sub
-        write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
-        STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
-      END IF
-
-      DO i=1,n
-        write(out_unit,*) 'Eigenvalue(', i, ') = ', REigVal(i),'+I ',IEigVec_loc(i)
-      END DO
-      IF (present(IEigVec)) IEigVec = IEigVec_loc
-
-      deallocate(IEigVec_loc)
-      deallocate(work)
-      deallocate(RMat_save)
-#elif __LAPACK == 8
-      IF (debug) write(out_unit,*) 'lapack77: DGEEV (non-symmetric)'
-      flush(out_unit)
-
-      RMat_save = RMat ! save RMat
-
-      lwork = (2+64)*n
-      ldvr  = n
-      lda   = n
-
-      allocate(work(lwork))
-      allocate(IEigVec_loc(n))
-
-      CALL DGEEV('N','V',n,RMat_save,lda,REigVal,IEigVec_loc,dummy,1,REigVec,ldvr,work,lwork,ierr)
-      IF (debug) write(out_unit,*)'ierr=',ierr
-      IF (ierr /= 0) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' DGEEV lapack subroutine has FAILED!'
         STOP 'ERROR in QDUtil_Rdiagonalization: DGEEV lapack subroutine has FAILED!'
@@ -431,7 +489,6 @@ MODULE QDUtil_diago_m
     END IF
 
   END SUBROUTINE QDUtil_Rdiagonalization
-
 
   SUBROUTINE QDUtil_Cdiagonalization_Her(Mat,Eig,Vec,diago_type,sort,phase)
     USE QDUtil_NumParameters_m
@@ -677,7 +734,7 @@ MODULE QDUtil_diago_m
 !
 !============================================================
 !
-!   diagonalisation trigonalisation puis diagonalisation
+!   diagonalization:  trigonalization then diagonalization
 !
 !============================================================
 !
@@ -840,7 +897,6 @@ MODULE QDUtil_diago_m
       RETURN
   END SUBROUTINE QDUtil_TQLI_EISPACK
 
-!
 !============================================================
 !
 !   Sort the eigenvalues and the eigenvectors
@@ -871,18 +927,44 @@ MODULE QDUtil_diago_m
   end subroutine QDUtil_sort_tab
 
   SUBROUTINE QDUtil_sort(ene,psi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
 
-      real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
+    real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
 
-      real(kind=Rkind) :: a
-      integer          :: i,j,k
+    real(kind=Rkind) :: a
+    integer          :: i,j,k
 
-      DO i=1,size(ene)
+    DO i=1,size(ene)
+    DO j=i+1,size(ene)
+     IF (ene(i) > ene(j)) THEN
+  	    !permutation
+        a=ene(i)
+        ene(i)=ene(j)
+        ene(j)=a
+        DO k=1,size(psi,dim=1)
+          a=psi(k,i)
+          psi(k,i)=psi(k,j)
+          psi(k,j)=a
+        END DO
+      END IF
+    END DO
+    END DO
+
+  END SUBROUTINE QDUtil_sort
+  SUBROUTINE QDUtil_sort_abs(ene,psi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
+
+    real(kind=Rkind) :: a
+    integer          :: i,j,k
+
+    DO i=1,size(ene)
       DO j=i+1,size(ene)
-       IF (ene(i) > ene(j)) THEN
-!	      permutation
+        IF (abs(ene(i)) > abs(ene(j))) THEN
+          ! permutation
           a=ene(i)
           ene(i)=ene(j)
           ene(j)=a
@@ -893,34 +975,7 @@ MODULE QDUtil_diago_m
           END DO
         END IF
       END DO
-      END DO
-
-  END SUBROUTINE QDUtil_sort
-  SUBROUTINE QDUtil_sort_abs(ene,psi)
-      USE QDUtil_NumParameters_m
-      IMPLICIT NONE
-
-      real(kind=Rkind), intent(inout) :: ene(:),psi(:,:)
-
-      real(kind=Rkind) :: a
-      integer          :: i,j,k
-
-
-        DO i=1,size(ene)
-          DO j=i+1,size(ene)
-            IF (abs(ene(i)) > abs(ene(j))) THEN
-!             permutation
-              a=ene(i)
-              ene(i)=ene(j)
-              ene(j)=a
-              DO k=1,size(psi,dim=1)
-                a=psi(k,i)
-                psi(k,i)=psi(k,j)
-                psi(k,j)=a
-              END DO
-            END IF
-          END DO
-        END DO
+    END DO
 
   end subroutine QDUtil_sort_abs
   SUBROUTINE QDUtil_sort_VecCplx_EneR(ene,psi)
@@ -981,7 +1036,64 @@ SUBROUTINE QDUtil_sort_abs_VecCplx_EneR(ene,psi)
   END DO
 
 END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
-!
+SUBROUTINE QDUtil_sort_VecCplx_EneC(ene,psi)
+  USE QDUtil_NumParameters_m
+  IMPLICIT NONE
+
+  complex(kind=Rkind), intent(inout) :: ene(:)
+  complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+  real(kind=Rkind)    :: a
+  complex(kind=Rkind) :: ca
+  integer             :: i,j,k
+
+
+  DO i=1,size(ene)
+  DO j=i+1,size(ene)
+   IF (ene(i)%re > ene(j)%re) THEN
+      ! permutation
+      a=ene(i)
+      ene(i)=ene(j)
+      ene(j)=a
+      DO k=1,size(ene)
+        ca=psi(k,i)
+        psi(k,i)=psi(k,j)
+        psi(k,j)=ca
+      END DO
+    END IF
+  END DO
+  END DO
+
+END SUBROUTINE QDUtil_sort_VecCplx_EneC
+SUBROUTINE QDUtil_sort_abs_VecCplx_EneC(ene,psi)
+USE QDUtil_NumParameters_m
+IMPLICIT NONE
+
+complex(kind=Rkind), intent(inout) :: ene(:)
+complex(kind=Rkind), intent(inout) :: psi(:,:)
+
+real(kind=Rkind)    :: a
+complex(kind=Rkind) :: ca
+integer             :: i,j,k
+
+
+DO i=1,size(ene)
+DO j=i+1,size(ene)
+ IF (abs(ene(i)) > abs(ene(j))) THEN
+    ! permutation
+    a=ene(i)
+    ene(i)=ene(j)
+    ene(j)=a
+    DO k=1,size(ene)
+      ca=psi(k,i)
+      psi(k,i)=psi(k,j)
+      psi(k,j)=ca
+    END DO
+  END IF
+END DO
+END DO
+
+END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
 !============================================================
 !
 !   Change the phase of Vec(:,i) shuch its largest coeficient is positive
@@ -1138,11 +1250,12 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
       Integer :: i,j,k,l,m,n,ii,Nbiter,nm,mml,nZ,ierr
       Data Nbiter/60/
       complex(kind=Rkind) :: D(n),E(n),Z(nZ,n)
-      real (kind=Rkind) :: machep,norm1,norm2,rsign
+      real (kind=Rkind) :: norm1,norm2,rsign
       complex(kind=Rkind) :: b,c,f,g,p,r,s
 
+      !real (kind=Rkind) :: machep=10.d-16
+      real (kind=Rkind),   parameter   :: machep    = epsilon(ONE)
 
-      machep=10.d-16
       ierr=0
 !     initialize z to e one.
       do i=2,n
@@ -1242,8 +1355,7 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
       IMPLICIT NONE
 
       INTEGER I,II,J,JP1,K,L,N,NM
-      complex(kind=Rkind) A(nm,n),Z(nm,n),d(n),e(n)                     &
-                ,f,g,h,hh
+      complex(kind=Rkind) A(nm,n),Z(nm,n),d(n),e(n),f,g,h,hh
       real (kind=Rkind) :: scale,rsign
 !     real (kind=Rkind) :: one,scale,rsign,zero
 !     Data zero/0./,one/1./
@@ -1253,8 +1365,8 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneR
             Z(i,j)=A(i,j)
          enddo
       enddo
-!
-!     FOR I=N STEP -1 UNTIL 2 DO --
+
+      !     FOR I=N STEP -1 UNTIL 2 DO --
       do ii=2,n
          I=N+2-II
          L=I-1
@@ -1422,12 +1534,13 @@ stop
 
     TYPE (test_t)                    :: test_var
     logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = ONETENTH**10
+    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     integer                          :: i,n,io,ioerr,diago_type
-    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:)
-    real(kind=Rkind),    allocatable :: R2Mat(:,:),Diag(:,:)
+    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),RDiag(:,:),RDiffMat(:,:)
     character (len=:),   allocatable :: info
+
+    complex(kind=Rkind), allocatable :: CMat(:,:),CEigVal(:),CVec(:,:),CDiag(:,:),C2Mat(:,:)
 
     !====================================================================
     ! Tests for the matrix digonalization
@@ -1440,32 +1553,96 @@ stop
 
     allocate(REigVal(n))
     allocate(RVec(n,n))
-    allocate(Diag(n,n))
+    allocate(RDiag(n,n))
 
     ! tests
     CALL Initialize_Test(test_var,test_name='Diago')
 
     CALL diagonalization(RMat,REigVal,RVec,n)
 
-    Diag = ZERO
+    RDiag = ZERO
     DO i=1,n
-      Diag(i,i) = REigVal(i)
+      RDiag(i,i) = REigVal(i)
     END DO
 
-    R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
+    R2Mat = matmul(RVec,matmul(RDiag,transpose(RVec)))
 
-    res_test = all(abs(R2Mat-RMat) < ZeroTresh)
+    RDiffMat = abs(R2Mat-RMat)
+    res_test = all(RDiffMat < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='diago')
     IF (.NOT. res_test) THEN
       CALL Write_Mat(RMat,out_unit,5,info='RMat')
+      write(out_unit,*)
       CALL Write_Mat(RVec,out_unit,5,info='RVec')
+      write(out_unit,*)
       CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
+      write(out_unit,*)
 
       CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      write(out_unit,*)
+      CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
+      write(out_unit,*)
+      flush(out_unit)
     END IF
     CALL Flush_Test(test_var)
 
     DO diago_type=1,4
+      info = 'diago (#' // TO_string(diago_type) // ')'
+      write(out_unit,*) info ; flush(out_unit)
+#if __LAPACK == 0
+      IF (diago_type == 4) THEN
+        write(out_unit,*) 'WARNING: LAPACK and BLAS are not linked'
+        write(out_unit,*) '=> diago with type=4 is not possible'
+        flush(out_unit)
+        CYCLE
+      END IF
+#endif
+      IF (diago_type == 4 .AND. Rkind /= Rk8) THEN
+        write(out_unit,*) '=> diago with LAPACK (type=4) is only possible with Rk8'
+        flush(out_unit)
+        CYCLE
+      END IF
+
+      CALL diagonalization(RMat,REigVal,RVec,n,diago_type=diago_type)
+      RDiag = ZERO
+      DO i=1,n
+        RDiag(i,i) = REigVal(i)
+      END DO
+      R2Mat = matmul(RVec,matmul(RDiag,transpose(RVec)))
+  
+      RDiffMat = abs(R2Mat-RMat)
+      res_test = all(RDiffMat < ZeroTresh)
+  
+      CALL Logical_Test(test_var,test1=res_test,info='diago')
+      IF (.NOT. res_test) THEN
+        CALL Write_Mat(RMat,out_unit,5,info='RMat')
+        write(out_unit,*)
+        CALL Write_Mat(RVec,out_unit,5,info='RVec')
+        write(out_unit,*)
+        CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
+        write(out_unit,*)
+
+        CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+        write(out_unit,*)
+        CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
+        write(out_unit,*)
+        flush(out_unit)
+      END IF
+      CALL Flush_Test(test_var)
+    END DO
+
+    !====================================================================
+
+    n = 3
+    CMat =  reshape([CONE,EYE,CZERO,                           &
+                     EYE,CONE,EYE,                             &
+                     CZERO,EYE,CONE],shape=[3,3])
+
+    allocate(CEigVal(n))
+    allocate(CVec(n,n))
+    allocate(CDiag(n,n))
+
+    DO diago_type=2,4,2
       info = 'diago (#' // TO_string(diago_type) // ')'
 
 #if __LAPACK == 0
@@ -1475,22 +1652,36 @@ stop
         CYCLE
       END IF
 #endif
+      IF (diago_type == 4 .AND. Rkind /= Rk8) THEN
+        write(out_unit,*) '=> diago with LAPACK (type=4) is only possible with Rk8'
+        flush(out_unit)
+        CYCLE
+      END IF
 
-      CALL diagonalization(RMat,REigVal,RVec,n,diago_type=diago_type)
-      Diag = ZERO
+      CALL diagonalization(CMat,CEigVal,CVec,n,diago_type=diago_type)
+      CDiag = CZERO
       DO i=1,n
-        Diag(i,i) = REigVal(i)
+        CDiag(i,i) = CEigVal(i)
       END DO
-      R2Mat = matmul(RVec,matmul(Diag,transpose(RVec)))
-  
-      res_test = all(abs(R2Mat-RMat) < ZeroTresh)
-      CALL Logical_Test(test_var,test1=res_test,info='diago')
+      C2Mat = matmul(CVec,matmul(CDiag,transpose(CVec))) ! It doex not work !!!
+
+      RDiffMat = abs(C2Mat-CMat)
+      res_test = all(RDiffMat < ZeroTresh)
+      CALL Logical_Test(test_var,test1=res_test,info='diago (cplx)')
       IF (.NOT. res_test) THEN
-        CALL Write_Mat(RMat,out_unit,5,info='RMat')
-        CALL Write_Mat(RVec,out_unit,5,info='RVec')
-        CALL Write_Vec(REigVal,out_unit,5,info='REigVal')
+        CALL Write_Mat(CMat,out_unit,5,info='CMat')
+        write(out_unit,*)
+        CALL Write_Mat(CVec,out_unit,5,info='CVec')
+        write(out_unit,*)
+        CALL Write_Vec(CEigVal,out_unit,5,info='CEigVal')
   
-        CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+        write(out_unit,*)
+        CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+        write(out_unit,*)
+        DO i=1,size(RDiffMat,dim=2)
+          write(out_unit,*) 'RDiffMat(:,i)',i,RDiffMat(:,i)
+        END DO
+        !CALL Write_Mat(RDiffMat,out_unit,5,info='RDiffMat')
       END IF
       CALL Flush_Test(test_var)
     END DO

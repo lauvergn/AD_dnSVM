@@ -27,14 +27,14 @@ do
   echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
   echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
   echo test number: $num                                              >> ALL_Tests.log
-  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT RKIND $RKIND >> ALL_Tests.log
+  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT RKIND $RKIND WITHRK16=0 >> ALL_Tests.log
   echo ---------------------------------------------------            >> ALL_Tests.log
 
   cd ..
      ext=$F90"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT"_RKIND"$RKIND
      RES="res_QDLib_"$ext
      LOG="comp_"$ext".log"
-     make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND > $here/$LOG 2>&1
+     make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND WITHRK16=0 >  $here/$LOG 2>&1
      ./Test_QDLib.x > $here/$RES
      make clean        FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND >> $here/$LOG 2>&1
      rm -f lib*.a Test_QDLib.x
@@ -50,7 +50,6 @@ do
   done
   done
 done
-
 echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
 echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> ALL_Tests.log
 echo "Number of options: " $num

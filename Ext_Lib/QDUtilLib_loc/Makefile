@@ -14,6 +14,12 @@ LAPACK = 1
 ## force the default integer (without kind) during the compillation.
 ## default 4: , INT=8 (for kind=8)
 INT = 4
+## change the real kind
+## default real64: , possibilities, real32, real64, real128
+RKIND = real64
+# For some compilers (like lfortran), real128 (quadruple precision) is not implemented
+# WITHRK16 = 1 (0) compilation with (without) real128
+WITHRK16 = 
 #=================================================================================
 ifeq ($(FC),)
   FFC      := gfortran
@@ -25,31 +31,77 @@ ifeq ($(OPT),)
 else
   OOPT      := $(OPT)
 endif
+ifneq ($(OOPT),$(filter $(OOPT),0 1))
+  $(info *********** OPT (optimisation):        $(OOPT))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
 ifeq ($(OMP),)
   OOMP      := 1
 else
   OOMP      := $(OMP)
+endif
+ifneq ($(OOMP),$(filter $(OOMP),0 1))
+  $(info *********** OMP (openmp):        $(OOMP))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
 endif
 ifeq ($(LAPACK),)
   LLAPACK      := 1
 else
   LLAPACK      := $(LAPACK)
 endif
+ifneq ($(LLAPACK),$(filter $(LLAPACK),0 1))
+  $(info *********** LAPACK:        $(LLAPACK))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
+ifeq ($(WITHRK16),)
+  WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+else
+  WWITHRK16      := $(WITHRK16)
+endif
+ifneq ($(WWITHRK16),$(filter $(WWITHRK16),0 1))
+  $(info *********** WITHRK16 (compilation with real128):        $(WWITHRK16))
+  $(info Possible values: 0, 1)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(INT),$(filter $(INT),4 8))
+  $(info *********** INT (change default integer):        $(INT))
+  $(info Possible values: 4, 8)
+  $(error ERROR: Incompatible options)
+endif
+ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
+  $(info *********** RKIND (select the real kind):        $(RKIND))
+  $(info Possible values (case sensitive): real32 real64 real128)
+  $(error ERROR: Incompatible options)
+endif
 #=================================================================================
-
+ifeq ($(RKIND),real128)
+  ifeq ($(WWITHRK16),0)
+    $(info "Incompatible options:")
+    $(info ***********RKIND:        $(RKIND))
+    $(info ***********WITHRK16:     $(WWITHRK16))
+    $(error ERROR: Incompatible options)
+  endif
+endif
 #=================================================================================
 #
 # Operating system, OS? automatic using uname:
 OS=$(shell uname)
 #
 # Extension for the object directory and the library
-ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
+ext_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)_$(RKIND)
+extold_obj=_$(FFC)_opt$(OOPT)_omp$(OOMP)_lapack$(LLAPACK)_int$(INT)
+
 #
 # library name
 QDLIBA=lib$(QDLIB)$(ext_obj).a
+QDLIBOLDA=lib$(QDLIB)$(extold_obj).a
 #=================================================================================
 #
 OBJ_DIR=OBJ/obj$(ext_obj)
+OBJOLD_DIR=OBJ/obj$(extold_obj)
 $(shell [ -d $(OBJ_DIR) ] || mkdir -p $(OBJ_DIR))
 #
 MOD_DIR=$(OBJ_DIR)
@@ -59,11 +111,19 @@ SRC_DIR=SRC
 MAIN_DIR=APP
 TESTS_DIR=TESTS
 #
+QD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
+#
+CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
+              -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
+              -D__QD_VERSION='$(QD_VERSION)' \
+			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
+			  -D__LAPACK="$(LLAPACK)"
+
 #=================================================================================
 # To deal with external compilers.mk file
 CompilersDIR=
 ifeq ($(CompilersDIR),)
-include compilers.mk
+  include compilers.mk
 else
   include $(CompilersDIR)/compilers.mk
 endif
@@ -77,16 +137,22 @@ $(info ***********COMPILER_VER: $(FC_VER))
 $(info ***********OPTIMIZATION: $(OOPT))
 $(info ***********OpenMP:       $(OOMP))
 $(info ***********INT:          $(INT))
+$(info ***********RKIND:        $(RKIND))
+$(info ***********WITHRK16:     $(WWITHRK16))
 $(info ***********LAPACK:       $(LLAPACK))
+$(info ***********QD_VERSION:   $(QD_VERSION))
 $(info ***********FFLAGS:       $(FFLAGS))
 $(info ***********FLIB:         $(FLIB))
 $(info ***********ext_obj:      $(ext_obj))
+$(info ***********************************************************************)
+$(info ***********OBJ_DIR:      $(OBJ_DIR))
+$(info ***********OBJOLD_DIR:   $(OBJOLD_DIR))
 $(info ***********************************************************************)
 
 
 VPATH = $(MAIN_DIR) $(TESTS_DIR) $(SRC_DIR)  \
         $(SRC_DIR)/Test  \
-        $(SRC_DIR)/NumParameters $(SRC_DIR)/String $(SRC_DIR)/File $(SRC_DIR)/Math \
+        $(SRC_DIR)/NumParameters $(SRC_DIR)/String $(SRC_DIR)/File $(SRC_DIR)/Math $(SRC_DIR)/Quadrature \
         $(SRC_DIR)/Frac $(SRC_DIR)/File $(SRC_DIR)/Time \
         $(SRC_DIR)/Memory
 
@@ -95,12 +161,8 @@ QDLIB=QD
 MAIN=App_QDLib
 TESTS=Test_QDLib
 
-SRCFILES=Test_m.f90 NumParameters_m.f90 MathUtil_m.f90 FFT_m.f90 \
-         String_m.f90 RW_MatVec_m.f90 Matrix_m.f90 Vector_m.f90 Diago_m.f90 \
-         IntVec_m.f90 RealVec_m.f90 \
-         Frac_m.f90 File_m.f90 Time_m.f90 \
-         Memory_NotPointer_m.f90 Memory_Pointer_m.f90 Memory_base_m.f90 Memory_m.f90 \
-         QDUtil_m.f90
+# liste of source files in SRCFILES
+include ./fortranlist.mk
 
 OBJ0=${SRCFILES:.f90=.o}
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -111,7 +173,9 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 .PHONY: ut UT
 UT ut: $(TESTS).x
 	./$(TESTS).x > test.log
-	grep "Number of error(s)" test.log
+	@grep "Number of error(s)" test.log
+	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' test.log
+	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' test.log
 	@echo "  done Tests"
 
 
@@ -123,6 +187,8 @@ all: $(QDLIBA) $(MAIN).x $(TESTS).x
 #===============================================
 #============= Main executable and tests  ======
 #===============================================
+.PHONY: exe app
+app exe: $(MAIN).x
 $(MAIN).x: $(OBJ_DIR)/$(MAIN).o $(QDLIBA)
 	$(FFC) $(FFLAGS) -o $(MAIN).x  $(OBJ_DIR)/$(MAIN).o  $(QDLIBA) $(FLIB)
 
@@ -136,24 +202,42 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
+	rm -f  $(OBJOLD_DIR)
+	cd OBJ ; ln -s obj$(ext_obj) obj$(extold_obj)
+	rm -f  $(QDLIBOLDA)
+	ln -s  $(QDLIBA) $(QDLIBOLDA)
+	@echo "  OBJ_DIR:    "$(OBJ_DIR)
+	@echo "  OBJOLD_DIR: "$(OBJOLD_DIR)
 	@echo "  done Library: "$(QDLIBA)
 
+
+# In the makefile, symling with directories does not work !!
+#	ln -s $(OBJ_DIR) $(OBJOLD_DIR)
+#	ln -s OBJ/obj$(ext_obj) OBJ/obj$(extold_obj)
 #===============================================
 #============= compilation =====================
 #===============================================
 $(OBJ_DIR)/%.o: %.f90
 	$(FFC) $(FFLAGS) -o $@ -c $<
 #===============================================
+#============= documentation with ford =========
+#===============================================
+.PHONY: doc
+doc:
+	ford doc/ford-front-matter.md
+#===============================================
 #================ cleaning =====================
 .PHONY: clean cleanall
 clean:
-	rm -f $(OBJ_DIR)/*/*.o $(OBJ_DIR)/*.o
+	rm -f $(OBJ_DIR)/*.o
+	rm -f SRC/*.mod SRC/*/*.mod
 	rm -f *.log test*.txt file.*
 	rm -f Test*.x App*.x
 	@echo "  done cleaning"
 #
 cleanall : clean
 	rm -fr OBJ/obj* OBJ/*mod build
+	rm -fr doc/ford_site
 	rm -f libQD*.a
 	rm -f TESTS/res* TESTS/*log
 	@echo "  done all cleaning"
@@ -167,42 +251,19 @@ zip: cleanall
 	$(ExtLibSAVEDIR)/makezip.sh $(BaseName)
 	cd $(ExtLibSAVEDIR) ; ./cp_QDUtil.sh
 	@echo "  done zip"
+
+#===============================================
+#============= make dependencies =============
+#===============================================
+.PHONY: dep
+dependencies.mk fortranlist.mk dep:
+	./scripts/dependency.sh
 #===============================================
 #============= module dependencies =============
 #===============================================
-$(OBJ_DIR)/NumParameters_m.o:       $(OBJ_DIR)/Test_m.o
-
-$(OBJ_DIR)/Memory_base_m.o:         $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/Memory_NotPointer_m.o:   $(OBJ_DIR)/Memory_base_m.o $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/Memory_Pointer_m.o:      $(OBJ_DIR)/Memory_base_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/Time_m.o:                $(OBJ_DIR)/NumParameters_m.o
-
-
-$(OBJ_DIR)/MathUtil_m.o:            $(OBJ_DIR)/NumParameters_m.o
-$(OBJ_DIR)/FFT_m.o:                 $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/String_m.o:              $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_base_m.o
-
-$(OBJ_DIR)/Frac_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-
-$(OBJ_DIR)/File_m.o:                $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-
-$(OBJ_DIR)/RW_MatVec_m.o:           $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/String_m.o
-$(OBJ_DIR)/Matrix_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
-$(OBJ_DIR)/Vector_m.o:              $(OBJ_DIR)/RW_MatVec_m.o
-$(OBJ_DIR)/Diago_m.o:               $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o
-
-$(OBJ_DIR)/IntVec_m.o:              $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_m.o
-$(OBJ_DIR)/RealVec_m.o:             $(OBJ_DIR)/NumParameters_m.o $(OBJ_DIR)/Memory_m.o
-
-
-$(OBJ_DIR)/Memory_m.o:              $(OBJ_DIR)/Memory_NotPointer_m.o $(OBJ_DIR)/Memory_Pointer_m.o \
-                                    $(OBJ_DIR)/String_m.o $(OBJ_DIR)/NumParameters_m.o
-
-$(OBJ_DIR)/QDUtil_m.o:              $(OBJ_DIR)/Diago_m.o $(OBJ_DIR)/Matrix_m.o $(OBJ_DIR)/RW_MatVec_m.o \
-                                    $(OBJ_DIR)/Frac_m.o $(OBJ_DIR)/String_m.o $(OBJ_DIR)/Time_m.o \
-                                    $(OBJ_DIR)/Memory_m.o $(OBJ_DIR)/File_m.o
-
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
+
+
+$(QDLIBA): $(OBJ)
+include ./dependencies.mk
