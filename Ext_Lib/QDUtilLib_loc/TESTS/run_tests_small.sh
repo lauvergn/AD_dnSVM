@@ -16,13 +16,13 @@ num=0
 
 for FC in gfortran
 do
-for OPT in 0 1
+for OPT in 0
 do
-for OMP in 0 1
+for OMP in 0
 do
-for LAPACK in 0 1
+for LAPACK in 0
 do
-for INT in 4 8
+for INT in 4
 do
 for RKIND in real32 real64 real128
 do

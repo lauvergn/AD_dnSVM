@@ -11,5 +11,6 @@ res
 test_io_file.txt
 TESTS/*log
 TESTS/res*
+TESTS/output
 file.*
 doc/ford_site

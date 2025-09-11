@@ -12,6 +12,7 @@ PROGRAM Test_QDLib
   CALL Test_QDUtil_File()
   CALL Test_QDUtil_Memory()
   CALL Test_QDUtil_String()
+  CALL Test_QDUtil_Time()
 
   CALL Test_QDUtil_RW_MatVec()
   CALL Test_QDUtil_MathUtil()

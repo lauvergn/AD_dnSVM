@@ -41,12 +41,12 @@ MODULE QDUtil_NumParameters_m
   integer, parameter :: RkD        = real64 ! 8
   integer, parameter :: Rk4        = real32 ! 4
   integer, parameter :: Rk8        = real64 ! 8
-#if __WITHRK16 == 0
-  integer, parameter :: Rk16       = -1
-  integer, parameter :: RkQ        = -1
-#else
+#if __WITHRK16 == 1
   integer, parameter :: Rk16       = real128 ! 16
   integer, parameter :: RkQ        = real128 ! 16
+#else
+  integer, parameter :: Rk16       = -1
+  integer, parameter :: RkQ        = -1
 #endif
   integer, parameter :: IkS        = int32  ! 4
   integer, parameter :: IkD        = int64  ! 8

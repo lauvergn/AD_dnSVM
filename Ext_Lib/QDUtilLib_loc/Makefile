@@ -57,7 +57,7 @@ ifneq ($(LLAPACK),$(filter $(LLAPACK),0 1))
   $(error ERROR: Incompatible options)
 endif
 ifeq ($(WITHRK16),)
-  WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+  WWITHRK16      :=$(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &>comp.log ; ./scripts/testreal128.exe ; rm comp.log scripts/testreal128.exe)
 else
   WWITHRK16      := $(WITHRK16)
 endif
@@ -110,14 +110,15 @@ EXTMod=
 SRC_DIR=SRC
 MAIN_DIR=APP
 TESTS_DIR=TESTS
+TESTSOUT_DIR=TESTS/output
 #
 QD_VERSION=$(shell awk '/version/ {print $$3}' fpm.toml | head -1)
 #
 CPPSHELL    = -D__COMPILE_DATE="\"$(shell date +"%a %e %b %Y - %H:%M:%S")\"" \
               -D__COMPILE_HOST="\"$(shell hostname -s)\"" \
               -D__QD_VERSION='$(QD_VERSION)' \
-			  -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
-			  -D__LAPACK="$(LLAPACK)"
+              -D__RKIND="$(RKIND)" -D__WITHRK16="$(WWITHRK16)" \
+              -D__LAPACK="$(LLAPACK)"
 
 #=================================================================================
 # To deal with external compilers.mk file
@@ -168,22 +169,32 @@ OBJ0=${SRCFILES:.f90=.o}
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 
 #===============================================
+#============= all: lib, tests ...  ============
+#===============================================
+.PHONY: all
+all: lib app ut
+
+#===============================================
+#============= Tests ===========================
+#===============================================
+.PHONY: help
+help:
+	@echo " Makefile usage:"
+	@./scripts/makefile_usage.sh
+#
+#===============================================
 #============= Tests ===========================
 #===============================================
 .PHONY: ut UT
 UT ut: $(TESTS).x
-	./$(TESTS).x > test.log
-	@grep "Number of error(s)" test.log
-	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' test.log
-	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' test.log
+	mkdir -p $(TESTSOUT_DIR)
+	cd $(TESTSOUT_DIR) ; ../../$(TESTS).x > test.log
+	@grep "Number of error(s)" $(TESTSOUT_DIR)/test.log
+	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' $(TESTSOUT_DIR)/test.log
+	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' $(TESTSOUT_DIR)/test.log
 	@echo "  done Tests"
 
 
-#===============================================
-#============= all: lib, tests ...  ============
-#===============================================
-.PHONY: all
-all: $(QDLIBA) $(MAIN).x $(TESTS).x
 #===============================================
 #============= Main executable and tests  ======
 #===============================================
@@ -202,12 +213,10 @@ lib: $(QDLIBA)
 
 $(QDLIBA): $(OBJ)
 	ar -cr $(QDLIBA) $(OBJ)
-	rm -f  $(OBJOLD_DIR)
-	cd OBJ ; ln -s obj$(ext_obj) obj$(extold_obj)
-	rm -f  $(QDLIBOLDA)
-	ln -s  $(QDLIBA) $(QDLIBOLDA)
-	@echo "  OBJ_DIR:    "$(OBJ_DIR)
-	@echo "  OBJOLD_DIR: "$(OBJOLD_DIR)
+	cd OBJ ; ln -sf obj$(ext_obj) obj$(extold_obj)
+	ln -sf  $(QDLIBA) $(QDLIBOLDA)
+	@echo "  OBJ_DIR:      "$(OBJ_DIR)
+	@echo "  OBJOLD_DIR:   "$(OBJOLD_DIR)
 	@echo "  done Library: "$(QDLIBA)
 
 
@@ -238,20 +247,10 @@ clean:
 cleanall : clean
 	rm -fr OBJ/obj* OBJ/*mod build
 	rm -fr doc/ford_site
+	cd $(TESTS_DIR) ; ./clean
 	rm -f libQD*.a
-	rm -f TESTS/res* TESTS/*log
 	@echo "  done all cleaning"
-#===============================================
-#================ zip and copy the directory ===
-ExtLibSAVEDIR := /Users/lauvergn/git/Ext_Lib
-BaseName := QDUtilLib
-.PHONY: zip
-zip: cleanall
-	test -d $(ExtLibSAVEDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
-	$(ExtLibSAVEDIR)/makezip.sh $(BaseName)
-	cd $(ExtLibSAVEDIR) ; ./cp_QDUtil.sh
-	@echo "  done zip"
-
+#
 #===============================================
 #============= make dependencies =============
 #===============================================
@@ -263,7 +262,6 @@ dependencies.mk fortranlist.mk dep:
 #===============================================
 $(OBJ_DIR)/$(MAIN).o:               $(QDLIBA)
 $(OBJ_DIR)/$(TESTS).o:              $(QDLIBA)
-
 
 $(QDLIBA): $(OBJ)
 include ./dependencies.mk

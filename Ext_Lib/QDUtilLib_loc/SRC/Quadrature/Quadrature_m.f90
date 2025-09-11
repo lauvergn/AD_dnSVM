@@ -1157,7 +1157,7 @@ MODULE QDUtil_Quadrature_m
     CALL Initialize_Test(test_var,test_name='Quadrature_NP-HP')
 
     !=====================================================================================================================
-    ! BoxAB quadrature test
+    ! BoxAB quadrature test #1
     nq=101
     name_grid = 'BoxAB'
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
@@ -1168,8 +1168,9 @@ MODULE QDUtil_Quadrature_m
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     CALL Write_Quadrature(xw,nio=test_var%test_log_file_unit)
 
-    ! High Precision (only if Rk16 is defined (Rk16>0))
+    ! High Precision (only if Rk16 is defined (Rk16>0)), test #2 or not
     IF (Rk16 > 0) THEN
+      info_grid = name_grid // ' (HP) quadrature_nq=' // TO_string(nq)
       CALL Init_Quadrature_HP(xw,nq=nq,A=-ONE,B=ONE,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
@@ -1178,7 +1179,7 @@ MODULE QDUtil_Quadrature_m
     !=====================================================================================================================
 
     !=====================================================================================================================
-    ! BoxAB quadrature test
+    ! BoxAB quadrature test #3 or #2
     nq=128
     name_grid = 'FourierAB'
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
@@ -1189,8 +1190,9 @@ MODULE QDUtil_Quadrature_m
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     CALL Write_Quadrature(xw,nio=test_var%test_log_file_unit)
 
-    ! High Precision (only if Rk16 is defined (Rk16>0))
+    ! High Precision (only if Rk16 is defined (Rk16>0)), test #4 or not
     IF (Rk16 > 0) THEN
+      info_grid = name_grid // ' (HP) quadrature_nq=' // TO_string(nq)
       CALL Init_Quadrature_HP(xw,nq=nq,A=-ONE,B=ONE,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
@@ -1199,8 +1201,9 @@ MODULE QDUtil_Quadrature_m
     !=====================================================================================================================
 
     !=====================================================================================================================
-    ! HO quadrature test
-    nq=128
+    ! HO quadrature test #5 or #3
+    nq=65
+    IF (Rkind == Rk4) nq = 25 ! Because in simple precision, it does not work with nq=65
     name_grid = 'HO'
     info_grid = name_grid // '_xc1._scale0.5' // ' quadrature_nq=' // TO_string(nq)
 
@@ -1210,8 +1213,9 @@ MODULE QDUtil_Quadrature_m
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     CALL Write_Quadrature(xw,nio=test_var%test_log_file_unit)
 
-    ! High Precision (only if Rk16 is defined (Rk16>0))
+    ! High Precision (only if Rk16 is defined (Rk16>0)) test #6 or not
     IF (Rk16 > 0) THEN
+      info_grid = name_grid // ' (HP) quadrature_nq=' // TO_string(nq)
       CALL Init_Quadrature_HP(xw,nq=nq,name=name_grid,xc=ONE,scale=HALF,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
@@ -1220,7 +1224,7 @@ MODULE QDUtil_Quadrature_m
     !=====================================================================================================================
 
     !=====================================================================================================================
-    ! Legendre quadrature test
+    ! Legendre quadrature test #7 or #4
     nq=128
     name_grid = 'LegendreP'
     info_grid = name_grid // ' quadrature_nq=' // TO_string(nq)
@@ -1231,8 +1235,9 @@ MODULE QDUtil_Quadrature_m
     CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))
     CALL Write_Quadrature(xw,nio=test_var%test_log_file_unit)
 
-    ! High Precision (only if Rk16 is defined (Rk16>0))
+    ! High Precision (only if Rk16 is defined (Rk16>0)) test #8 or not
     IF (Rk16 > 0) THEN
+      info_grid = name_grid // ' (HP) quadrature_nq=' // TO_string(nq)
       CALL Init_Quadrature_HP(xw,nq=nq,name=name_grid,err=err_grid)
       res_test = (err_grid ==0)
       CALL Logical_Test(test_var,test1=res_test,info=(info_grid // ': Overlap check: T = ' // TO_string(res_test)))

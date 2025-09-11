@@ -28,11 +28,11 @@ for RKIND in real32 real64 real128
 do
   num=$(($num + 1))
   echo test number: $num
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> $TEST_LOG
-  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx            >> $TEST_LOG
-  echo test number: $num                                              >> $TEST_LOG
-  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT RKIND $RKIND >> $TEST_LOG
-  echo ---------------------------------------------------            >> $TEST_LOG
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                       >> $TEST_LOG
+  echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                       >> $TEST_LOG
+  echo test number: $num                                                         >> $TEST_LOG
+  echo $FC  OPT $OPT OpenMP $OMP LAPACK $LAPACK INT $INT RKIND $RKIND WITHRK16=0 >> $TEST_LOG
+  echo ---------------------------------------------------                       >> $TEST_LOG
 
   ext=$FC"_Opt"$OPT"_OMP"$OMP"_LAPACK"$LAPACK"_INT"$INT"_RKIND"$RKIND
   RES="res_QDLib_"$ext
@@ -41,7 +41,7 @@ do
   echo LOG $LOG >> $TEST_LOG
 
   cd $QD_DIR
-    make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND > $TEST_DIR/$LOG 2>&1
+    make Test_QDLib.x FC=$FC OPT=$OPT OMP=$OMP LAPACK=$LAPACK INT=$INT RKIND=$RKIND WITHRK16=0 > $TEST_DIR/$LOG 2>&1
   cd $TEST_DIR
   if [ -f $QD_DIR/Test_QDLib.x ]
   then

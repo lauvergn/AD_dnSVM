@@ -13,14 +13,25 @@ It has been tested with:
 
 ### a) with a makefile:
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
+For more details, run:
+
+```bash
+make help
+```
+
+To build the library, **libQD_gfortran_opt1_lapack1_omp1_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
 ```bash
 make lib
 ```
-It creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ.a**
-with XXX, the compiler name (like gfortran), W, X, Y the value O or 1 and Z the value 4 or 8.
-For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4.a**
-The module file (.mod) are in the OBJ/obj__XXX_optW_lapackX_ompY_intZ directory.
+In general, the makefile creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ_realR.a**
+with:
+- XXX: the compiler name (like gfortran)
+- W, X, Y: the value O or 1 
+- Z:  the value 4 or 8
+- R: the value of real kind (32, 64, 128)
+
+For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4_real64.a**
+The module file (.mod) are in the **OBJ/obj__XXX_optW_lapackX_ompY_intZ_realR** directory.
 
 The compiler options are (the first values are the default):
 
@@ -44,7 +55,7 @@ Two options to clean:
 make clean
 ```
 
-Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ.a**
+Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ_realA.a**
 
 ```bash
 make cleanall
@@ -66,7 +77,7 @@ The tests are running with gfortran and with combinations of several options:
 - INT=4 or 8: change the integer kind default compilation option
 - RKIND=real64 or real32 or real128: change the real kind
 
-The file, **ALL_Tests.log**, contains a summary of all the tests.
+In the TESTS directory, the file, **ALL_Tests.log**, contains a summary of all the tests and other test log files are in the TESTS/output directory.
 
 Alternatively, you run a test with the makefile:
 
@@ -118,7 +129,7 @@ ford doc/ford-front-matter.md
 
 The documentation is available as: "doc/ford_site/index.html"
 
-## 2) How tu use it
+## 2) How to use it
 
 ### 2a) With fpm
 
@@ -139,11 +150,13 @@ For instance, with gfortran, OpenMP, lapack and integer kind=4:
 gfortan -c xxx.f90 -fopenmp -IOBJ/libQD_gfortran_opt0_omp1_lapack1_int4
 ```
 
-- link with **libQD_XXX_optW_lapackX_ompY_intZ.a** library
+- link with **libQD_XXX_optW_lapackX_ompY_intZ_realR.a** library
 
 ```bash
-gfortran ...    libQD_gfortran_opt0_omp1_int4.a -llapack -lblas
+gfortran ...    libQD_gfortran_opt0_omp1_int4_real64.a -llapack -lblas
 ```
+
+The library and the module directory with old names (without **_realR**) are linked to the new library and the new module directory.
 
 ## 3) List of modules
 

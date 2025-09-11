@@ -15,9 +15,13 @@ PROGRAM App_QDLib
 
   TYPE (Quadrature_t) :: xw
   integer             :: err_grid
+  real(kind=Rkind)    :: time
 
 
   CALL version_QDUtil(Print_Version=.TRUE.)
+
+  time = 100000._Rkind
+  write(*,*) int(time),' seconds => d,h,m,s: ',conv_seconds(time)
 
  !====================================================================
   ! Tests string

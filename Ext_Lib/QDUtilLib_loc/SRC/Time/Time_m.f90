@@ -27,6 +27,9 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_Time_m
+#ifndef __WITHRK16
+#define __WITHRK16 1
+#endif
   IMPLICIT NONE
 
   PRIVATE
@@ -37,7 +40,17 @@ MODULE QDUtil_Time_m
   END TYPE Time_t 
 
 
-  PUBLIC :: Time_t,time_perso,DeltaTime,Delta_RealTime
+  PUBLIC :: Time_t,conv_seconds,time_perso,DeltaTime,Delta_RealTime
+  PUBLIC :: Test_QDUtil_Time
+
+  INTERFACE conv_seconds
+    MODULE PROCEDURE QDUtil_SecondsIk4_TO_HoursMinutesSeconds
+    MODULE PROCEDURE QDUtil_SecondsRk4_TO_HoursMinutesSeconds
+    MODULE PROCEDURE QDUtil_SecondsRk8_TO_HoursMinutesSeconds
+#if __WITHRK16 == 1
+    MODULE PROCEDURE QDUtil_SecondsRk16_TO_HoursMinutesSeconds
+#endif
+  END INTERFACE
 
   INTERFACE time_perso
     MODULE PROCEDURE QDUtil_time_perso
@@ -52,8 +65,114 @@ MODULE QDUtil_Time_m
     MODULE PROCEDURE QDUtil_DeltaTime_withParam_time
   END INTERFACE
   
-  CONTAINS
+CONTAINS
+  FUNCTION QDUtil_SecondsIk4_TO_HoursMinutesSeconds(time) RESULT(conv)
+    USE QDUtil_NumParameters_m, ONLY : Ik4
+    USE QDUtil_String_m
+    IMPLICIT NONE
 
+    character (len=:), allocatable  :: conv
+    integer (kind=Ik4), intent(in)  :: time
+
+    !local variables
+    integer           :: seconds,minutes,hours,days
+
+
+    seconds = int(time)
+    minutes = seconds/60
+    seconds = mod(seconds,60)
+    hours   = minutes/60
+    minutes = mod(minutes,60)
+    days    = hours/24
+    hours   = mod(hours,24)
+
+    conv = TO_String(seconds) // 's'
+    IF (minutes > 0) conv = TO_String(minutes) // 'm:' // conv 
+    IF (hours   > 0) conv = TO_String(hours)   // 'h:' // conv
+    IF (days    > 0) conv = TO_String(days)    // 'd:' // conv
+
+  END FUNCTION QDUtil_SecondsIk4_TO_HoursMinutesSeconds
+
+  FUNCTION QDUtil_SecondsRk4_TO_HoursMinutesSeconds(time) RESULT(conv)
+    USE QDUtil_NumParameters_m, ONLY : Rk4
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    character (len=:), allocatable  :: conv
+    real (kind=Rk4), intent(in) :: time
+
+    !local variables
+    integer           :: seconds,minutes,hours,days
+
+
+    seconds = int(time)
+    minutes = seconds/60
+    seconds = mod(seconds,60)
+    hours   = minutes/60
+    minutes = mod(minutes,60)
+    days    = hours/24
+    hours   = mod(hours,24)
+
+    conv = TO_String(seconds) // 's'
+    IF (minutes > 0) conv = TO_String(minutes) // 'm:' // conv 
+    IF (hours   > 0) conv = TO_String(hours)   // 'h:' // conv
+    IF (days    > 0) conv = TO_String(days)    // 'd:' // conv
+
+  END FUNCTION QDUtil_SecondsRk4_TO_HoursMinutesSeconds
+  FUNCTION QDUtil_SecondsRk8_TO_HoursMinutesSeconds(time) RESULT(conv)
+    USE QDUtil_NumParameters_m, ONLY : Rk8
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    character (len=:), allocatable  :: conv
+    real (kind=Rk8), intent(in) :: time
+
+    !local variables
+    integer           :: seconds,minutes,hours,days
+
+
+    seconds = int(time)
+    minutes = seconds/60
+    seconds = mod(seconds,60)
+    hours   = minutes/60
+    minutes = mod(minutes,60)
+    days    = hours/24
+    hours   = mod(hours,24)
+
+    conv = TO_String(seconds) // 's'
+    IF (minutes > 0) conv = TO_String(minutes) // 'm:' // conv 
+    IF (hours   > 0) conv = TO_String(hours)   // 'h:' // conv
+    IF (days    > 0) conv = TO_String(days)    // 'd:' // conv
+
+  END FUNCTION QDUtil_SecondsRk8_TO_HoursMinutesSeconds
+#if __WITHRK16 == 1
+  FUNCTION QDUtil_SecondsRk16_TO_HoursMinutesSeconds(time) RESULT(conv)
+    USE QDUtil_NumParameters_m, ONLY : Rk16
+    USE QDUtil_String_m
+    IMPLICIT NONE
+
+    character (len=:), allocatable  :: conv
+    real (kind=Rk16), intent(in) :: time
+
+    !local variables
+    integer           :: seconds,minutes,hours,days
+
+
+    seconds = int(time)
+    minutes = seconds/60
+    seconds = mod(seconds,60)
+    hours   = minutes/60
+    minutes = mod(minutes,60)
+    days    = hours/24
+    hours   = mod(hours,24)
+
+    conv = TO_String(seconds) // 's'
+    IF (minutes > 0) conv = TO_String(minutes) // 'm:' // conv 
+    IF (hours   > 0) conv = TO_String(hours)   // 'h:' // conv
+    IF (days    > 0) conv = TO_String(days)    // 'd:' // conv
+
+  END FUNCTION QDUtil_SecondsRk16_TO_HoursMinutesSeconds
+#endif
   !!@description: TODO
   !!@param: TODO
   SUBROUTINE QDUtil_time_perso(name_sub,openmpi,MPI_id)
@@ -223,5 +342,62 @@ MODULE QDUtil_Time_m
     END IF
 
   END FUNCTION QDUtil_Delta_RealTime
+
+
+  SUBROUTINE Test_QDUtil_Time()
+    USE QDUtil_Test_m
+    USE QDUtil_NumParameters_m
+
+    IMPLICIT NONE
+
+    TYPE (test_t)                    :: test_var
+    logical                          :: res_test
+
+    character (len=:), allocatable :: string
+
+    integer (kind=Ik4) :: timeIk4
+    real (kind=Rk4)    :: timeRk4
+    real (kind=Rk4)    :: timeRk8
+    real (kind=Rk4)    :: timeRk16
+
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='Test_QDUtil_Time'
+    !logical, parameter :: debug = .FALSE.
+    logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+
+    CALL Initialize_Test(test_var,test_name='Time')
+  
+    string='1d:3h:46m:40s'
+
+    !test #1
+    timeIk4 = 100000_Ik4
+    res_test = (string == conv_seconds(timeIk4))
+    CALL Logical_Test(test_var,test1=res_test,info='int (Ik4) time (1000 s)')
+    write(test_var%test_log_file_unit,*) int(timeIk4),' seconds => d,h,m,s: ',conv_seconds(timeIk4)
+
+    !test #2
+    timeRk4 = 100000._Rk4
+    res_test = (string == conv_seconds(timeRk4))
+    CALL Logical_Test(test_var,test1=res_test,info='real (Rk4) time (1000. s)')
+    write(test_var%test_log_file_unit,*) int(timeRk4),' seconds => d,h,m,s: ',conv_seconds(timeRk4)
+
+    !test #3
+    timeRk8 = 100000._Rk8
+    res_test = (string == conv_seconds(timeRk8))
+    CALL Logical_Test(test_var,test1=res_test,info='real (Rk8) time (1000. s)')
+    write(test_var%test_log_file_unit,*) int(timeRk8),' seconds => d,h,m,s: ',conv_seconds(timeRk8)
+
+    !test #4
+    timeRk16 = 100000._Rk16
+    res_test = (string == conv_seconds(timeRk4))
+    CALL Logical_Test(test_var,test1=res_test,info='real (Rk16) time (1000. s)')
+    write(test_var%test_log_file_unit,*) int(timeRk16),' seconds => d,h,m,s: ',conv_seconds(timeRk16)
+
+    ! finalize the tests
+    CALL Finalize_Test(test_var)
+
+  END SUBROUTINE Test_QDUtil_Time
 
 END MODULE QDUtil_Time_m

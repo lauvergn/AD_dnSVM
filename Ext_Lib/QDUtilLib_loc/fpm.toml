@@ -28,7 +28,7 @@ link = ["blas", "lapack"]
 
 
 [preprocess]
-cpp.macros = ["__LAPACK=1","__WITHRK16=1"]
+cpp.macros = ["__LAPACK=1","__RKIND=real64","__WITHRK16=1"]
 
 [fortran]
 implicit-external = true
