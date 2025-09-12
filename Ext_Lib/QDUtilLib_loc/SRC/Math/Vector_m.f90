@@ -34,9 +34,6 @@ MODULE QDUtil_Vector_m
 
   PRIVATE
 
-  INTERFACE compare_tab
-  END INTERFACE
-
   INTERFACE inferior_tab
     MODULE PROCEDURE QDUtil_inferior_tab_Ik4, QDUtil_inferior_tab_Ik8
   END INTERFACE
@@ -46,8 +43,7 @@ MODULE QDUtil_Vector_m
     MODULE PROCEDURE QDUtil_compare_L
   END INTERFACE
 
-  !PUBLIC :: Test_QDUtil_Vector
-  PUBLIC :: Sort_Vec,compare_tab,compare_tab
+  PUBLIC :: Sort_Vec,compare_tab,inferior_tab
 
   CONTAINS
 
@@ -190,15 +186,20 @@ SUBROUTINE Test_QDUtil_Vector()
 
     integer                          :: io,ioerr
     real(kind=Rkind),    allocatable :: R1Vec(:),R2Vec(:)
+    integer(kind=Ik4),   allocatable :: I1Vec(:),I2Vec(:)
+
     real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
     !====================================================================
     ! Tests the sorting
     !
-    ! define the matrices
+    ! define the vectors
+    I1Vec = [0,0,1,2,3,5,10]
+    I2Vec = [2,0,5,0,10,1,3]
     R1Vec = [ZERO,ZERO,ONE,TWO,THREE,FIVE,TEN] ! sorted vector
     R2Vec = [TWO,ZERO,FIVE,ZERO,TEN,ONE,THREE] ! unsorted vector
 
+     
     ! tests
     CALL Initialize_Test(test_var,test_name='Vector')
 
@@ -221,17 +222,53 @@ SUBROUTINE Test_QDUtil_Vector()
       CALL Write_Vec(R1Vec,out_unit, nbcol=7, info='R1Vec')
       CALL Write_Vec(R2Vec,out_unit, nbcol=7, info='R2Vec')
     END IF
+    !====================================================================
 
-    R1Vec = [TEN,FIVE,THREE,TWO,ONE,ZERO,ZERO] ! sorted vector
-    R2Vec = [TWO,ZERO,FIVE,ZERO,TEN,ONE,THREE] ! unsorted vector
+
+    ! tests with inferior_tab
+    res_test = inferior_tab(I1Vec,I2Vec)
+    CALL Logical_Test(test_var,test1=res_test,info='inferior_tab int(Ik4):T')
+    write(test_var%test_log_file_unit,*) 'inferior_tab(I1Vec,I2Vec)',res_test
+
+    res_test = inferior_tab(I2Vec,I1Vec)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info='inferior_tab int(Ik4):F')
+    write(test_var%test_log_file_unit,*) 'inferior_tab(I2Vec,I1Vec)',res_test
+
+    R1Vec = [TEN,FIVE,THREE,TWO,ONE,ZERO,ZERO]
+    R2Vec = [TWO,ZERO,FIVE,ZERO,TEN,ONE,THREE]
+
+    res_test = inferior_tab(R1Vec,R2Vec)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info='inferior_tab real(Rkind):F')
+    write(test_var%test_log_file_unit,*) 'inferior_tab(R1Vec,R2Vec)',res_test
+    CALL Flush_Test(test_var)
+
+    res_test = inferior_tab(R2Vec,R1Vec)
+    CALL Logical_Test(test_var,test1=res_test,info='inferior_tab real(Rkind):F')
+    write(test_var%test_log_file_unit,*) 'inferior_tab(R2Vec,R1Vec)',res_test
+    CALL Flush_Test(test_var)
+
+    ! tests with compare_tab
+    res_test = compare_tab(I2Vec,I1Vec)
+    CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info='compare_tab int(Ik4):F')
+    write(test_var%test_log_file_unit,*) 'compare_tab(I2Vec,I1Vec)',res_test
+
+    res_test = compare_tab(I1Vec,I1Vec)
+    CALL Logical_Test(test_var,test1=res_test,info='compare_tab int(Ik4):T')
+    write(test_var%test_log_file_unit,*) 'compare_tab(I1Vec,I1Vec)',res_test
+
+
+    R1Vec = [TEN,FIVE,THREE,TWO,ONE,ZERO,ZERO]
+    R2Vec = [TWO,ZERO,FIVE,ZERO,TEN,ONE,THREE]
 
     res_test = compare_tab(R1Vec,R1Vec)
     CALL Logical_Test(test_var,test1=res_test,info='compare_tab real(Rkind):T')
+    write(test_var%test_log_file_unit,*) 'compare_tab(R1Vec,R1Vec)',res_test
 
     res_test = compare_tab(R1Vec,R2Vec)
     CALL Logical_Test(test_var,test1=res_test,test2=.FALSE.,info='compare_tab real(Rkind):F')
+    write(test_var%test_log_file_unit,*) 'compare_tab(R1Vec,R2Vec)',res_test
+
     CALL Flush_Test(test_var)
-    !====================================================================
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
