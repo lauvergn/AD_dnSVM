@@ -41,7 +41,6 @@ MODULE QDUtil_Time_m
 
 
   PUBLIC :: Time_t,conv_seconds,time_perso,DeltaTime,Delta_RealTime
-  PUBLIC :: Test_QDUtil_Time
 
   INTERFACE conv_seconds
     MODULE PROCEDURE QDUtil_SecondsIk4_TO_HoursMinutesSeconds
@@ -342,12 +341,12 @@ CONTAINS
     END IF
 
   END FUNCTION QDUtil_Delta_RealTime
+END MODULE QDUtil_Time_m
 
-
-  SUBROUTINE Test_QDUtil_Time()
+SUBROUTINE Test_QDUtil_Time()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
-
+    USE QDUtil_Time_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -357,8 +356,10 @@ CONTAINS
 
     integer (kind=Ik4) :: timeIk4
     real (kind=Rk4)    :: timeRk4
-    real (kind=Rk4)    :: timeRk8
-    real (kind=Rk4)    :: timeRk16
+    real (kind=Rk8)    :: timeRk8
+#if __WITHRK16 == 1
+    real (kind=Rk16)   :: timeRk16
+#endif
 
 
     !----- for debuging --------------------------------------------------
@@ -389,15 +390,15 @@ CONTAINS
     CALL Logical_Test(test_var,test1=res_test,info='real (Rk8) time (1000. s)')
     write(test_var%test_log_file_unit,*) int(timeRk8),' seconds => d,h,m,s: ',conv_seconds(timeRk8)
 
-    !test #4
+#if __WITHRK16 == 1
+    !test #4 or not
     timeRk16 = 100000._Rk16
     res_test = (string == conv_seconds(timeRk4))
     CALL Logical_Test(test_var,test1=res_test,info='real (Rk16) time (1000. s)')
     write(test_var%test_log_file_unit,*) int(timeRk16),' seconds => d,h,m,s: ',conv_seconds(timeRk16)
-
+#endif
     ! finalize the tests
     CALL Finalize_Test(test_var)
 
-  END SUBROUTINE Test_QDUtil_Time
+END SUBROUTINE Test_QDUtil_Time
 
-END MODULE QDUtil_Time_m

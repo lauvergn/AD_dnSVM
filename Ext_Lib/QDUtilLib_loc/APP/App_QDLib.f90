@@ -84,6 +84,7 @@ PROGRAM App_QDLib
     write(out_unit,*) i,matmul(Rmat,REigVec(:,i))-REigVal(i)*REigVec(:,i)
   END DO
 
+
   !====================================================================
   ! Tests for identity matrix
   !
@@ -98,6 +99,10 @@ PROGRAM App_QDLib
   write(out_unit,*) 'RVec(1) and RVec(n)',RVec(1),RVec(n)
   write(out_unit,*) 'diff',maxval(abs((RVec-RVec2)))
 
+
+  CALL Sort_Vec(RVec,sort_type=-1)
+  write(out_unit,*)
+  CALL Write_Vec(RVec,out_unit,5,info='RVec (decending order)')
   !====================================================================
   ! Test on quadrature:
   !

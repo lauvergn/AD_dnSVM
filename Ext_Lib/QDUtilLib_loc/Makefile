@@ -173,7 +173,6 @@ OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
 #===============================================
 .PHONY: all
 all: lib app ut
-
 #===============================================
 #============= Tests ===========================
 #===============================================
@@ -181,7 +180,6 @@ all: lib app ut
 help:
 	@echo " Makefile usage:"
 	@./scripts/makefile_usage.sh
-#
 #===============================================
 #============= Tests ===========================
 #===============================================
@@ -193,8 +191,6 @@ UT ut: $(TESTS).x
 	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' $(TESTSOUT_DIR)/test.log
 	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' $(TESTSOUT_DIR)/test.log
 	@echo "  done Tests"
-
-
 #===============================================
 #============= Main executable and tests  ======
 #===============================================
@@ -236,6 +232,7 @@ doc:
 	ford doc/ford-front-matter.md
 #===============================================
 #================ cleaning =====================
+#===============================================
 .PHONY: clean cleanall
 clean:
 	rm -f $(OBJ_DIR)/*.o

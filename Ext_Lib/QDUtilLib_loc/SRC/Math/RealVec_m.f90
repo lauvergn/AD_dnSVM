@@ -40,8 +40,6 @@ MODULE QDUtil_RealVec_m
   PUBLIC :: alloc_RealVec,dealloc_RealVec,check_alloc_RealVec,alloc_array,dealloc_array
   PUBLIC :: Write_RealVec,Set_ZERO_TO_RealVec
 
-  PUBLIC :: Test_QDUtil_RealVec
-
   INTERFACE get_size
     MODULE PROCEDURE QDUtil_get_Size_FROM_RealVec
   END INTERFACE
@@ -257,6 +255,7 @@ CONTAINS
 
 
   END SUBROUTINE QDUtil_Write_RealVec
+
   SUBROUTINE QDUtil_ZERO_TO_RealVec(RealVec)
     TYPE (RealVec_t), intent(inout) :: RealVec
 
@@ -265,11 +264,12 @@ CONTAINS
     RealVec%vec(:) = 0
 
   END SUBROUTINE QDUtil_ZERO_TO_RealVec
-
-  SUBROUTINE Test_QDUtil_RealVec()
+END MODULE QDUtil_RealVec_m
+SUBROUTINE Test_QDUtil_RealVec()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     USE QDUtil_RW_MatVec_m
+    USE QDUtil_RealVec_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -283,5 +283,4 @@ CONTAINS
     !CALL Initialize_Test(test_var,test_name='RealVec')
     !CALL Logical_Test(test_var,test1=res_test,info='descending sort')
     !CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_RealVec
-END MODULE QDUtil_RealVec_m
+END SUBROUTINE Test_QDUtil_RealVec

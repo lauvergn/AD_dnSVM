@@ -157,7 +157,7 @@ CONTAINS
 
   END SUBROUTINE QDUtil_set_print_level
   SUBROUTINE version_QDUtil(Print_Version)
-    USE iso_fortran_env
+    USE iso_fortran_env, ONLY : compiler_version,compiler_options
     IMPLICIT NONE
 
     logical,             intent(in)    :: Print_Version

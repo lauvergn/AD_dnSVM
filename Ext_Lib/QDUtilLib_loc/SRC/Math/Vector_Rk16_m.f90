@@ -33,17 +33,16 @@ MODULE QDUtil_Vector_Rk16_m
 #if __WITHRK16 == 1
   IMPLICIT NONE
 
-  PUBLIC Sort_Vec
+  PUBLIC
+
   INTERFACE Sort_Vec
     MODULE PROCEDURE QDUtil_Sort_Rk16Vec
   END INTERFACE
 
-  PUBLIC inferior_tab
   INTERFACE inferior_tab
     MODULE PROCEDURE QDUtil_inferior_tab_Rk16
   END INTERFACE
 
-  PUBLIC compare_tab
   INTERFACE compare_tab
     MODULE PROCEDURE QDUtil_compare_Rk16
   END INTERFACE

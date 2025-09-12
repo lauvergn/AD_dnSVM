@@ -53,7 +53,6 @@ MODULE QDUtil_RW_MatVec_m
   END INTERFACE
 
   PUBLIC :: Write_VecMat, Write_Mat, Write_Vec, Read_Mat, Read_Vec
-  PUBLIC :: Test_QDUtil_RW_MatVec
   PUBLIC :: RMatIO_format, CMatIO_format
 
 CONTAINS
@@ -496,11 +495,13 @@ CONTAINS
      END IF
 
   END SUBROUTINE QDUtil_Read_Ik8Vec
+END MODULE QDUtil_RW_MatVec_m
 
 
-  SUBROUTINE Test_QDUtil_RW_MatVec()
+SUBROUTINE Test_QDUtil_RW_MatVec()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -688,5 +689,4 @@ CONTAINS
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_RW_MatVec
-END MODULE QDUtil_RW_MatVec_m
+END SUBROUTINE Test_QDUtil_RW_MatVec

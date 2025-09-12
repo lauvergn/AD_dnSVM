@@ -80,8 +80,7 @@ MODULE QDUtil_Matrix_m
     MODULE PROCEDURE QDUtil_Ortho_GramSchmidt_CMat
   END INTERFACE
   
-  PUBLIC :: Test_QDUtil_Matrix
-  CONTAINS
+CONTAINS
   !================================================================
   !   Inversion of a real matrix Rmat : RMat_inv = Rmat^-1
   !   Function and subroutine
@@ -1364,10 +1363,13 @@ MODULE QDUtil_Matrix_m
     END DO
 
   END FUNCTION QDUtil_Ortho_GramSchmidt_CMat
-  SUBROUTINE Test_QDUtil_Matrix()
+END MODULE QDUtil_Matrix_m
+
+SUBROUTINE Test_QDUtil_Matrix()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     USE QDUtil_RW_MatVec_m
+    USE QDUtil_Matrix_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -1681,5 +1683,4 @@ MODULE QDUtil_Matrix_m
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_Matrix
-END MODULE QDUtil_Matrix_m
+END SUBROUTINE Test_QDUtil_Matrix

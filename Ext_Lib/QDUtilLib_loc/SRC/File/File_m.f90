@@ -57,7 +57,6 @@ MODULE QDUtil_File_m
   PUBLIC :: file_close, file_delete, file_dealloc, file_write
   PUBLIC :: err_FileName,check_file_exist_WITH_FileName
   PUBLIC :: flush_perso
-  PUBLIC :: Test_QDUtil_File
 
   INTERFACE file_GetUnit
     MODULE PROCEDURE QDUtil_file_GetUnit
@@ -740,9 +739,12 @@ CONTAINS
     flush(nio)
 
   END  SUBROUTINE QDUtil_flush_perso
-  SUBROUTINE Test_QDUtil_File
+END MODULE QDUtil_File_m
+
+SUBROUTINE Test_QDUtil_File
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m, only : Rkind, out_unit
+    USE QDUtil_File_m
     IMPLICIT NONE
 
     TYPE(File_t)              :: file1,file2
@@ -812,5 +814,4 @@ CONTAINS
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_File
-END MODULE QDUtil_File_m
+END SUBROUTINE Test_QDUtil_File

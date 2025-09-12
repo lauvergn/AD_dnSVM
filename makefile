@@ -276,7 +276,7 @@ clean:
 	@cd Tests && ./clean
 	@echo "  done cleaning"
 cleanall: clean
-	rm -f *.a
+	rm -f lib*.a
 	rm -rf OBJ
 	cd $(MAIN_path)/Ext_Lib ; ./cleanlib
 	@echo "  done remove *.a libraries and OBJ directory"
@@ -284,15 +284,6 @@ cleanlocextlib: cleanall
 	cd $(MAIN_path)/Ext_Lib ; rm -rf *_loc
 	@echo "  done remove all local library directories (..._loc)"
 #===============================================
-#================ zip and copy the directory ===
-ExtLibSAVEDIR := /Users/lauvergn/git/Ext_Lib
-BaseName := AD_dnSVM
-.PHONY: zip
-zip: cleanall
-	test -d $(ExtLibSAVEDIR) || (echo $(ExtLibDIR) "does not exist" ; exit 1)
-	$(ExtLibSAVEDIR)/makezip.sh $(BaseName)
-	cd $(ExtLibSAVEDIR) ; ./cp_AD_dnSVM.sh
-	@echo "  done zip"
 #===============================================
 #===============================================
 #== external libraries
@@ -300,8 +291,7 @@ zip: cleanall
 .PHONY: getlib
 getlib:
 	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
-$(QDLIBA):
-	cd $(ExtLibDIR) ; ./get_Lib.sh QDUtilLib
+$(QDLIBA): getlib
 	cd $(ExtLibDIR)/QDUtilLib ; make lib FC=$(FFC) OPT=$(OOPT) OMP=$(OOMP) LAPACK=$(LLAPACK) INT=$(INT) ExtLibDIR=$(ExtLibDIR) RKIND=$(RKIND) WITHRK16=$(WWITHRK16) CompilersDIR=$(CompilersDIR)
 	@test -f $(QDLIBA) || (echo $(QDLIBA) "does not exist" ; exit 1)
 	@echo "  done " $(QDLIBA)

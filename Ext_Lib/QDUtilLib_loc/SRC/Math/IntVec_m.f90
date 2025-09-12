@@ -39,8 +39,6 @@ MODULE QDUtil_IntVec_m
   PUBLIC :: alloc_IntVec,dealloc_IntVec,check_alloc_IntVec,alloc_array,dealloc_array
   PUBLIC :: Write_IntVec,Set_ZERO_TO_IntVec
 
-  PUBLIC :: Test_QDUtil_IntVec
-
   INTERFACE get_size
     MODULE PROCEDURE QDUtil_get_Size_FROM_IntVec
   END INTERFACE
@@ -264,11 +262,13 @@ CONTAINS
     IntVec%vec(:) = 0
 
   END SUBROUTINE QDUtil_ZERO_TO_IntVec
+END MODULE QDUtil_IntVec_m
 
-  SUBROUTINE Test_QDUtil_IntVec()
+SUBROUTINE Test_QDUtil_IntVec()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     USE QDUtil_RW_MatVec_m
+    USE QDUtil_IntVec_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -281,5 +281,4 @@ CONTAINS
     !CALL Initialize_Test(test_var,test_name='IntVec')
     !CALL Logical_Test(test_var,test1=res_test,info='descending sort')
     !CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_IntVec
-END MODULE QDUtil_IntVec_m
+END SUBROUTINE Test_QDUtil_IntVec

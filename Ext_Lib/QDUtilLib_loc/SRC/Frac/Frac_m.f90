@@ -219,7 +219,6 @@
   PUBLIC :: Frac_t,IS_integer
   PUBLIC :: TO_string,TO_real
   PUBLIC :: simplification
-  PUBLIC :: Test_QDUtil_Frac
 
 CONTAINS
 
@@ -714,11 +713,13 @@ CONTAINS
     END IF
 
   END SUBROUTINE QDUtil_frac_simplification
+END MODULE QDUtil_Frac_m
 
   !> This subroutine performs tests of the module.
-  SUBROUTINE Test_QDUtil_Frac
+SUBROUTINE Test_QDUtil_Frac
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m, only : Rkind, TEN, ONE, out_unit
+    USE QDUtil_Frac_m
     IMPLICIT NONE
 
     TYPE(Frac_t)              :: frac1,frac2,frac3
@@ -1272,5 +1273,4 @@ CONTAINS
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_Frac
-END MODULE QDUtil_Frac_m
+END SUBROUTINE Test_QDUtil_Frac

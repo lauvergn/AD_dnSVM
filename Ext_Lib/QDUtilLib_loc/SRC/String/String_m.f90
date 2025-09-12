@@ -50,7 +50,7 @@ MODULE QDUtil_String_m
 
   PUBLIC :: alloc_array,dealloc_array
 
-  PUBLIC :: Test_QDUtil_String
+  PUBLIC :: Operator (//)
 
   INTERFACE string_uppercase_TO_lowercase
     MODULE PROCEDURE QDUtil_string_uppercase_TO_lowercase
@@ -739,12 +739,12 @@ CONTAINS
     string = TO_string(i1) // str2
 
   END FUNCTION QDUtil_Ik8_concat_string
+END MODULE QDUtil_String_m
 
-  SUBROUTINE Test_QDUtil_String()
+SUBROUTINE Test_QDUtil_String()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
-    USE QDUtil_String_Rk4_m
-
+    USE QDUtil_String_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -921,5 +921,4 @@ CONTAINS
     ! finalize the tests
     CALL Finalize_Test(test_var)
 
-  END SUBROUTINE Test_QDUtil_String
-END MODULE QDUtil_String_m
+END SUBROUTINE Test_QDUtil_String

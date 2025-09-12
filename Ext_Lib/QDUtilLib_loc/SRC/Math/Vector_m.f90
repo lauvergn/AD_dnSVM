@@ -34,18 +34,21 @@ MODULE QDUtil_Vector_m
 
   PRIVATE
 
-  PUBLIC inferior_tab
+  INTERFACE compare_tab
+  END INTERFACE
+
   INTERFACE inferior_tab
     MODULE PROCEDURE QDUtil_inferior_tab_Ik4, QDUtil_inferior_tab_Ik8
   END INTERFACE
 
-  PUBLIC compare_tab
   INTERFACE compare_tab
     MODULE PROCEDURE QDUtil_compare_Ik4, QDUtil_compare_Ik8
     MODULE PROCEDURE QDUtil_compare_L
   END INTERFACE
 
-  PUBLIC :: Test_QDUtil_Vector
+  !PUBLIC :: Test_QDUtil_Vector
+  PUBLIC :: Sort_Vec,compare_tab,compare_tab
+
   CONTAINS
 
   FUNCTION QDUtil_inferior_tab_Ik4(x1,x2) RESULT (inferior)
@@ -173,11 +176,13 @@ MODULE QDUtil_Vector_m
     end do
   
   END FUNCTION QDUtil_compare_L
-  
-  SUBROUTINE Test_QDUtil_Vector()
+END MODULE QDUtil_Vector_m
+
+SUBROUTINE Test_QDUtil_Vector()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     USE QDUtil_RW_MatVec_m
+    USE QDUtil_Vector_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -230,5 +235,4 @@ MODULE QDUtil_Vector_m
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END SUBROUTINE Test_QDUtil_Vector
-END MODULE QDUtil_Vector_m
+END SUBROUTINE Test_QDUtil_Vector

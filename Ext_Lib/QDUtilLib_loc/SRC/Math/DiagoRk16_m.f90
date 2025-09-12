@@ -40,8 +40,6 @@ MODULE QDUtil_diagoRk16_m
     MODULE PROCEDURE QDUtil_Rk16diagonalization
   END INTERFACE
 
-  PUBLIC :: Test_QDUtil_DiagoRk16
-
 
   real(kind=Rkind), parameter :: ZERO      = 0._Rkind
   real(kind=Rkind), parameter :: ONE       = 1._Rkind
@@ -613,20 +611,36 @@ CONTAINS
 !---------------------------------------------------------------------
 
   end subroutine QDUtil_rota_denerated_Rk16
+#endif
 
-  SUBROUTINE Test_QDUtil_DiagoRk16()
-    USE QDUtil_Test_m
-    USE QDUtil_String_m
-    USE QDUtil_RW_MatVec_m
-    IMPLICIT NONE
+END MODULE QDUtil_diagoRk16_m
+#if __WITHRK16 == 1
+SUBROUTINE Test_QDUtil_DiagoRk16()
+  USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : Rkind => real128, out_unit => OUTPUT_UNIT
+  USE QDUtil_Test_m
+  USE QDUtil_String_m
+  USE QDUtil_RW_MatVec_m
+  USE QDUtil_diagoRk16_m
+  IMPLICIT NONE
 
-    TYPE (test_t)                    :: test_var
-    logical                          :: res_test
-    real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
 
-    integer                          :: i,n,io,ioerr,diago_type
-    real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),RDiag(:,:),RDiffMat(:,:)
-    character (len=:),   allocatable :: info
+  real(kind=Rkind), parameter :: ZERO      = 0._Rkind
+  real(kind=Rkind), parameter :: ONE       = 1._Rkind
+  real(kind=Rkind), parameter :: TWO       = 2._Rkind
+  real(kind=Rkind), parameter :: TEN       = 10._Rkind
+  real(kind=Rkind), parameter :: HUNDRED   = 100._Rkind
+
+  real(kind=Rkind), parameter :: HALF      = 0.5_Rkind
+  real(kind=Rkind), parameter :: ONETENTH  = 0.1_Rkind
+  real(kind=Rkind), parameter :: TWOTENTHS = TWO/TEN
+
+  TYPE (test_t)                    :: test_var
+  logical                          :: res_test
+  real (kind=Rkind),   parameter   :: ZeroTresh    = TEN**2*epsilon(ONE)
+
+  integer                          :: i,n,io,ioerr,diago_type
+  real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),RVec(:,:),R2Mat(:,:),RDiag(:,:),RDiffMat(:,:)
+  character (len=:),   allocatable :: info
 
     !====================================================================
     ! Tests for the matrix digonalization
@@ -678,4 +692,3 @@ CONTAINS
     CALL Finalize_Test(test_var)
   END  SUBROUTINE Test_QDUtil_DiagoRk16
 #endif
-END MODULE QDUtil_diagoRk16_m

@@ -59,9 +59,7 @@ MODULE QDUtil_MathUtil_m
     MODULE PROCEDURE QDUtil_Ibinomial
   END INTERFACE
 
-  PUBLIC :: Test_QDUtil_MathUtil
-
-  CONTAINS
+CONTAINS
   ELEMENTAL FUNCTION QDUtil_gamma_perso(n) RESULT(gamma_perso)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -162,9 +160,12 @@ MODULE QDUtil_MathUtil_m
     !write(out_unit,*) 'combi',n,i,a
     !STOP
   END FUNCTION QDUtil_Ibinomial
-  SUBROUTINE Test_QDUtil_MathUtil()
+ END MODULE QDUtil_MathUtil_m
+
+SUBROUTINE Test_QDUtil_MathUtil()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
+    USE QDUtil_MathUtil_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -255,6 +256,4 @@ MODULE QDUtil_MathUtil_m
     END IF
     flush(out_unit)
     !-----------------------------------------------------------
-
-  END SUBROUTINE Test_QDUtil_MathUtil
-END MODULE QDUtil_MathUtil_m
+END SUBROUTINE Test_QDUtil_MathUtil

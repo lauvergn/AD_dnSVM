@@ -36,9 +36,7 @@ MODULE QDUtil_diago_m
     MODULE PROCEDURE QDUtil_Rdiagonalization,QDUtil_Cdiagonalization,QDUtil_Cdiagonalization_Her
   END INTERFACE
 
-  PUBLIC :: Test_QDUtil_Diago
-
-  CONTAINS
+CONTAINS
   RECURSIVE SUBROUTINE QDUtil_Cdiagonalization(CMat,CEigVal,CEigVec,nb_diago,diago_type,sort,phase)
     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY : real64,int32
     USE QDUtil_NumParameters_m
@@ -1524,12 +1522,14 @@ END SUBROUTINE QDUtil_sort_abs_VecCplx_EneC
       END DO
 stop
   end subroutine QDUtil_Lanczos
+END MODULE QDUtil_diago_m
 
-  SUBROUTINE Test_QDUtil_Diago()
+SUBROUTINE Test_QDUtil_Diago()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
     USE QDUtil_String_m
     USE QDUtil_RW_MatVec_m
+    USE QDUtil_diago_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -1689,5 +1689,4 @@ stop
 
     ! finalize the tests
     CALL Finalize_Test(test_var)
-  END  SUBROUTINE Test_QDUtil_Diago
-END MODULE QDUtil_diago_m
+END  SUBROUTINE Test_QDUtil_Diago

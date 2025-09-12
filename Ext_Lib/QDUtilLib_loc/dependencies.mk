@@ -43,20 +43,24 @@ qdutil_time_m = $(OBJ_DIR)/Time_m.o
 $(OBJ_DIR)/File_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_file_m)
 $(OBJ_DIR)/Frac_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_frac_m)
 $(OBJ_DIR)/Diago_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_rw_matvec_m) \
           $(qdutil_test_m) \
-          $(qdutil_string_m)
+          $(qdutil_string_m) \
+          $(qdutil_diago_m)
 $(OBJ_DIR)/DiagoRk16_m.o : \
           $(qdutil_test_m) \
           $(qdutil_string_m) \
-          $(qdutil_rw_matvec_m)
+          $(qdutil_rw_matvec_m) \
+          $(qdutil_diagork16_m)
 $(OBJ_DIR)/FFT_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m) \
@@ -65,19 +69,23 @@ $(OBJ_DIR)/IntVec_m.o : \
           $(qdutil_memory_m) \
           $(qdutil_numparameters_m) \
           $(qdutil_test_m) \
-          $(qdutil_rw_matvec_m)
+          $(qdutil_rw_matvec_m) \
+          $(qdutil_intvec_m)
 $(OBJ_DIR)/MathUtil_m.o : \
           $(qdutil_numparameters_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_mathutil_m)
 $(OBJ_DIR)/Matrix_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_rw_matvec_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_matrix_m)
 $(OBJ_DIR)/RealVec_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_memory_m) \
           $(qdutil_test_m) \
-          $(qdutil_rw_matvec_m)
+          $(qdutil_rw_matvec_m) \
+          $(qdutil_realvec_m)
 $(OBJ_DIR)/RW_MatVec_base_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m)
@@ -88,7 +96,8 @@ $(OBJ_DIR)/RW_MatVec_m.o : \
           $(qdutil_rw_matvec_rk16_m) \
           $(qdutil_rw_matvec_base_m) \
           $(qdutil_string_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_rw_matvec_m)
 $(OBJ_DIR)/RW_MatVec_Rk16_m.o : \
           $(qdutil_rw_matvec_base_m) \
           $(qdutil_numparameters_m) \
@@ -107,7 +116,8 @@ $(OBJ_DIR)/Vector_m.o : \
           $(qdutil_vector_rk16_m) \
           $(qdutil_numparameters_m) \
           $(qdutil_test_m) \
-          $(qdutil_rw_matvec_m)
+          $(qdutil_rw_matvec_m) \
+          $(qdutil_vector_m)
 $(OBJ_DIR)/Vector_Rk16_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/Vector_Rk4_m.o : \
@@ -122,7 +132,8 @@ $(OBJ_DIR)/Memory_m.o : \
           $(qdutil_memory_notpointer_m) \
           $(qdutil_numparameters_m) \
           $(qdutil_string_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_memory_m)
 $(OBJ_DIR)/Memory_NotPointer_m.o : \
           $(qdutil_numparameters_m) \
           $(qdutil_memory_base_m)
@@ -194,7 +205,8 @@ $(OBJ_DIR)/String_m.o : \
           $(qdutil_string_rk16_m) \
           $(qdutil_numparameters_m) \
           $(qdutil_memory_base_m) \
-          $(qdutil_test_m)
+          $(qdutil_test_m) \
+          $(qdutil_string_m)
 $(OBJ_DIR)/String_Rk16_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/String_Rk4_m.o : \
@@ -202,4 +214,7 @@ $(OBJ_DIR)/String_Rk4_m.o : \
 $(OBJ_DIR)/String_Rk8_m.o : \
           $(qdutil_numparameters_m)
 $(OBJ_DIR)/Time_m.o : \
-          $(qdutil_numparameters_m)
+          $(qdutil_numparameters_m) \
+          $(qdutil_string_m) \
+          $(qdutil_test_m) \
+          $(qdutil_time_m)

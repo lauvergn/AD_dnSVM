@@ -56,10 +56,12 @@ MODULE QDUtil_Memory_m
     string = TO_string(mem_loc,Rformat='f0.0') // ' ' // trim(MemUnit)
 
   END FUNCTION QDUtil_Mem_TO_String
+END MODULE QDUtil_Memory_m
 
-  SUBROUTINE Test_QDUtil_Memory()
+SUBROUTINE Test_QDUtil_Memory()
     USE QDUtil_Test_m
     USE QDUtil_NumParameters_m
+    USE QDUtil_Memory_m
     IMPLICIT NONE
 
     TYPE (test_t)                    :: test_var
@@ -109,5 +111,4 @@ MODULE QDUtil_Memory_m
     ! finalize the tests
     CALL Finalize_Test(test_var)
 
-  END SUBROUTINE Test_QDUtil_Memory
-END MODULE QDUtil_Memory_m
+END SUBROUTINE Test_QDUtil_Memory

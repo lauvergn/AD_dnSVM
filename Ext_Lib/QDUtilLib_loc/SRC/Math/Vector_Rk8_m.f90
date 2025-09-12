@@ -29,17 +29,16 @@
 MODULE QDUtil_Vector_Rk8_m
   IMPLICIT NONE
 
-  PUBLIC Sort_Vec
+  PUBLIC
+
   INTERFACE Sort_Vec
     MODULE PROCEDURE QDUtil_Sort_Rk8Vec
   END INTERFACE
 
-  PUBLIC inferior_tab
   INTERFACE inferior_tab
     MODULE PROCEDURE QDUtil_inferior_tab_Rk8
   END INTERFACE
 
-  PUBLIC compare_tab
   INTERFACE compare_tab
     MODULE PROCEDURE QDUtil_compare_Rk8
   END INTERFACE
