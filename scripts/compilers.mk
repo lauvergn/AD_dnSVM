@@ -1,7 +1,8 @@
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+ifeq ($(FFC),$(filter $(FFC), gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+  $(info IN compilers.mk gfortran block)
 
   # optimization management (default without optimization)
   ifeq ($(OOPT),1)
@@ -50,6 +51,7 @@ endif
 # ifort and ifx compillation v17 v18 with/without mkl
 #=================================================================================
 ifeq ($(FFC),$(filter $(FFC),ifort ifx))
+  $(info IN compilers.mk ifort or ifx block)
 
   # opt management + add/remove some flag to ifort/ifx (mainly to avoid bugs with ifx)
   ifeq ($(OOPT),1)
@@ -110,7 +112,7 @@ endif
 # nag compillation (nagfor)
 #===============================================================================
 ifeq ($(FFC),nagfor)
-
+  $(info IN compilers.mk nagfor block)
   # opt management
   ifeq ($(OOPT),1)
       FFLAGS = -O4 -o -compatible -kind=byte -Ounroll=4 -s

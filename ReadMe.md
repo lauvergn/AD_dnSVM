@@ -9,7 +9,7 @@ Its features are:
 It is similar to Auto_Deriv fortran module:
   <http://www.autodiff.org/?module=Tools&tool=AUTO_DERIV>
 
-date: 07/09/2025
+date: 23/09/2025
 
   Copyright 2021 David Lauvergnat [1]
 
@@ -162,6 +162,12 @@ Remarks :
 
 
 If needed, the .mod files are in the **OBJ/obj_XXX_oppY_ompZ_lapackW_intV_realA** directory.
+
+Remark: the external library(ies) are stored in the Ext_Lib directory. However, it can be modified the makefile variable ExtLibDIR. For instance, to store the external library directory in ../../LIB, use:
+
+```bash
+make lib OPT=0 ExtLibDIR=../../LIB
+```
 
 It has been tested with:
 

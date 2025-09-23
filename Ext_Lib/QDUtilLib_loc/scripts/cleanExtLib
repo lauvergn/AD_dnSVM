@@ -1,0 +1,52 @@
+#!/bin/bash
+
+ARG1=$1
+DIR0=$2
+if test -z "$ARG1"
+then
+  echo The present script, cleanExtLib, must have two arguments:
+  echo     The first argument, the cleaning type: cleanall or cleanlocextlib
+  echo     The second argument, the directory to be cleaned
+  echo The script command is: $0
+  exit 1
+fi
+echo The script command is: $0
+
+if test -z "$DIR0"
+then
+  echo No or empty second argument!
+  exit 0
+fi
+
+if test ! -d $DIR0
+then
+  echo The directory $DIR0 does not exist!
+  exit 0
+fi
+
+ListLink=`find $DIR0/* -maxdepth 0 -type l`
+#echo $ListLink
+
+ListDir=`find $DIR0/* -maxdepth 0 -type d`
+#echo $ListDir
+
+if [ "$ARG1" = "cleanall" ]
+then
+  #remove the links
+  rm -fr $ListLink
+
+  #clean the libraries
+  for dirlib in $ListDir
+  do
+    #echo $dirlib
+    make -C $dirlib --silent cleanall &> /dev/null
+  done
+fi
+
+if [ "$ARG1" = "cleanlocextlib" ]
+then
+  #remove the links
+  rm -fr $ListLink
+
+  rm -fr $ListDir
+fi

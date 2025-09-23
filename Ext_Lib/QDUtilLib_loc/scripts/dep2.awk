@@ -1,11 +1,12 @@
-BEGIN {imod=0} 
+BEGIN {
+  imod=0
+} 
 {
   if (tolower($1) == "use") add_name(tolower($2))
 }
 END {
-  #print "file: " FILENAME
-  #print "imod: " imod
-
+  print "#file+mod_name: " FILENAME " " mod_name
+  #print "#imod: " imod
   n=split(FILENAME,tab,"/")
   if (n > 0) {
     #print n " " tab[n]
@@ -27,18 +28,19 @@ function add_name(name) {
   }
   #
   find=0
-  #print "imod:" imod " name: " name
+  #print "#imod:" imod " name: " name
   if (imod > 0) {
       for (j=1;j<=imod;j=j+1) {
         #print "j:" j " tab_mod: " tab_mod[j]
         if (tab_mod[j] == name) {find=1;break}
       }
   }
-  #print " imod:" imod " find: " find
-  if (find == 0) {
+  # print " imod:" imod " find: " find
+  # the test name != mod_name enables to avoid the circular dependency
+  if (name != mod_name && find == 0) {
     imod=imod+1
     tab_mod[imod]=name
-    #print "add name: " tab_mod[imod] " imod: " imod
+    #print "#add name: " tab_mod[imod] " imod: " imod
     }
   #for (j=1;j<=i;j=j+1) print "end j:" j " tab_mod: " tab_mod[j]
   #print "-------------------------------------"

@@ -1,0 +1,65 @@
+#!/bin/bash
+
+
+CleanType=$1
+CleanDIR=$2
+
+echo "The script command is: \"$0 $@\""
+echo CleanType $CleanType
+echo CleanDIR $CleanDIR
+
+if test -z "$CleanType"
+then
+  echo "The present script, cleanExtLib, has two arguments:"
+  echo "    The first argument (mandatory), the cleaning type: cleanall or cleanlocextlib"
+  echo "    The second argument (optional), the directory to be cleaned"
+  exit 1
+fi
+
+if test -z "$CleanDIR"
+then
+  echo No or empty second argument!
+  exit 0
+fi
+
+if test ! -d $CleanDIR
+then
+  echo The directory $CleanDIR does not exist!
+  exit 0
+fi
+
+
+ListLink=`find $CleanDIR/* -maxdepth 0 -type l`
+echo $ListLink
+
+ListDir=`find $CleanDIR/*_loc -maxdepth 0 -type d`
+echo $ListDir
+
+if [ "$CleanType" = "cleanall" ]
+then
+  #echo cleanall
+
+  #remove the links
+  rm -fr $ListLink
+
+  #clean the libraries
+  for dirlib in $ListDir
+  do
+    echo $dirlib
+    make -C $dirlib --silent cleanall &> /dev/null
+    #make -C $dirlib cleanall
+  done
+elif [ "$CleanType" = "cleanlocextlib" ]
+then
+  #echo cleanlocextlib
+
+  #remove the links
+  rm -fr $ListLink
+
+  rm -fr $ListDir
+else
+  echo "The present script, cleanExtLib, has two arguments:"
+  echo "    The first argument (mandatory), the cleaning type: cleanall or cleanlocextlib"
+  echo "    The second argument (optional), the directory to be cleaned"
+  exit 1
+fi

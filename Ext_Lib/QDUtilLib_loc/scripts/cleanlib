@@ -11,4 +11,3 @@ do
   make --silent cleanall &> /dev/null
   cd ..
 done
-

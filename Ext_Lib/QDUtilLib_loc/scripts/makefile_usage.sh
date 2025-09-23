@@ -21,19 +21,19 @@ echo "
 * lib :
   Create the library (lib*.a) for a given set of options
 
-* ut UT : 
+* ut : 
   Run some tests and analyses the number of errors
   The test executable is: "$base_test.x"
 
-* exe app :
+* app :
   Compilation of main fortran file: "$app"
   The executable is: "$base_app.x"
 
 * clean :
-  Remove the object files (with defined options), the executables, the log files
+  Remove the object files (with defined options), the executables, some log files (without the ones in the TESTS directory)
 
 * cleanall :
-  For all options, remove the object directories, the libraries, executables, the log files
+  For all options, remove the object directories, the libraries, executables, all log files
   Then perform a cleanall for external libraries (if any)
 
 * cleanlocextlib :

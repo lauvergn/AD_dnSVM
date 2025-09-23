@@ -1,0 +1,48 @@
+$(info *********** IN makefile-extlib ****************)
+
+slash := /
+empty :=
+space := $(empty) $(empty)
+
+ifeq ($(LIBA),)
+  $(error ERROR: LIBA is empty. You have to specify it!)
+endif
+$(info LIBA: $(LIBA))
+# extract LibName from LIBA
+LibName := $(dir $(LIBA))
+LibName := $(subst $(slash),$(space),$(LibName))
+LibName := $(lastword $(LibName))
+
+# test LibName
+ifeq ($(LibName),)
+  $(error ERROR: LibName is empty. Problem with the extraction form $(LIBA))
+endif
+$(info LibName: $(LibName))
+
+ifeq ($(BRANCH),)
+  BRANCH := main
+endif
+$(info BRANCH: $(BRANCH))
+
+
+LibVersion := "https://github.com/lauvergn/"$(LibName)"/archive/refs/heads/"$(BRANCH)".zip"
+zipfile    := $(LibName).zip
+LibDir     := $(LibName)_loc
+
+$(LIBA): $(LibName)
+	$(MAKE) -C $(LibDir) lib
+
+$(LibName): $(LibDir)
+	ln -s $(LibDir) $(LibName)
+	@test -L $(LibName) || (echo The linked directory $(LibName) does not exist ; exit 1)
+	@echo The directory, $(LibName), is linked to $(LibDir).
+
+$(LibDir):
+	curl -LJ $(LibVersion) --output $(LibName).zip
+	@test -f $(zipfile) || (echo $(zipfile) "does not exist" ; exit 1)
+	unzip -d $(LibDir) $(zipfile)
+	rm -f $(zipfile)
+	@test -d $(LibDir) || (echo The directory $(LibDir) "does not exist" ; exit 1)
+	cd $(LibDir) ; mv $(LibName)*/* $(LibName)*/.gitignore . ; rm -rf $(LibName)*
+	@echo The library, $(LibName), with the branch $(BRANCH) is downloaded from github.
+	@echo The directory, $(LibDir) is created.
