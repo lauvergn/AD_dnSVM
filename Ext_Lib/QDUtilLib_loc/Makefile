@@ -236,9 +236,9 @@ endif
 ut: $(TESTEXE)
 	mkdir -p $(TESTSOUT_DIR)
 	cd $(TESTSOUT_DIR) ; for X in $(TESTEXE) ; do  ../../$$X ; done > Test.log
-	@grep "Number of error(s)" $(TESTSOUT_DIR)/test.log
-	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' $(TESTSOUT_DIR)/test.log
-	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' $(TESTSOUT_DIR)/test.log
+	@grep "Number of error(s)" $(TESTSOUT_DIR)/Test.log
+	@awk  -F: 'BEGIN{test=0} /Number of tests/ {test+=$$2} END {print "Number of tests: " test}' $(TESTSOUT_DIR)/Test.log
+	@awk  -F: 'BEGIN{err=0} /Number of error/ {err=err+$$2} END {print "Number of error(s) for all tests: " err}' $(TESTSOUT_DIR)/Test.log
 	@echo "  done Tests"
 #
 #===============================================
