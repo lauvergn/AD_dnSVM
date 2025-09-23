@@ -74,7 +74,7 @@ ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
   $(error ERROR: Incompatible option values)
 endif
 ifeq ($(WITHRK16),)
-  override WITHRK16 := $(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &> /dev/null ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+  override WITHRK16 := $(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &> /dev/null ; wait ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
 endif
 WWITHRK16 := $(WITHRK16)
 ifneq ($(WITHRK16),$(filter $(WITHRK16),0 1))
