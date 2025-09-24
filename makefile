@@ -300,13 +300,13 @@ cleanall: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall $(ExtLibDIR); fi  
+	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall "$(ExtLibDIR)" "$(EXTLIB_LIST)"; fi  
 	@echo "  done remove the *.a libraries and the OBJ directory"
 cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib $(ExtLibDIR); fi 
+	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib "$(ExtLibDIR)" "$(EXTLIB_LIST)"; fi 
 	@echo "  done remove all local library directories (..._loc)"
 #===============================================
 #============= make dependencies ===============

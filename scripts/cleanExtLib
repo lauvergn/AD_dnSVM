@@ -1,19 +1,28 @@
-#!/bin/bash
+#!/bin/bash -x
 
 
 CleanType=$1
 CleanDIR=$2
+CleanList=$3
 
 echo "The script command is: \"$0 $@\""
-echo CleanType $CleanType
-echo CleanDIR $CleanDIR
+echo CleanType: $CleanType
+echo CleanDIR:  $CleanDIR
+echo CleanList: $CleanList
 
 if test -z "$CleanType"
 then
-  echo "The present script, cleanExtLib, has two arguments:"
-  echo "    The first argument (mandatory), the cleaning type: cleanall or cleanlocextlib"
-  echo "    The second argument (optional), the directory to be cleaned"
+  echo "The present script, cleanExtLib, has three arguments:"
+  echo "    The first argument, the cleaning type: cleanall or cleanlocextlib"
+  echo "    The second argument, the directory to be cleaned"
+  echo "    The third argument, the list of module(s) to be cleaned"
   exit 1
+fi
+
+if test -z "$CleanList"
+then
+  echo No module to be cleaned!
+  exit 0
 fi
 
 if test -z "$CleanDIR"
@@ -28,38 +37,37 @@ then
   exit 0
 fi
 
-
-ListLink=`find $CleanDIR/* -maxdepth 0 -type l`
-echo $ListLink
-
-ListDir=`find $CleanDIR/*_loc -maxdepth 0 -type d`
-echo $ListDir
-
 if [ "$CleanType" = "cleanall" ]
 then
-  #echo cleanall
-
-  #remove the links
-  rm -fr $ListLink
-
-  #clean the libraries
-  for dirlib in $ListDir
+  cd $CleanDIR
+  for dirlib in $CleanList
   do
     echo $dirlib
-    make -C $dirlib --silent cleanall &> /dev/null
-    #make -C $dirlib cleanall
+
+    #remove the link
+    rm -fr $dirlib
+
+    #clean the libraries
+    test -d $dirlib"_loc" &&  make -C $dirlib"_loc" --silent cleanall &> /dev/null
+    #test -d $dirlib"_loc" && make -C $dirlib"_loc" cleanall
   done
 elif [ "$CleanType" = "cleanlocextlib" ]
 then
-  #echo cleanlocextlib
+  cd $CleanDIR
+  for dirlib in $CleanList
+  do
+    echo $dirlib
+ 
+    #remove the link
+    rm -fr $dirlib
 
-  #remove the links
-  rm -fr $ListLink
-
-  rm -fr $ListDir
+    #remove the directory
+    rm -rf $dirlib"_loc"
+  done
 else
-  echo "The present script, cleanExtLib, has two arguments:"
-  echo "    The first argument (mandatory), the cleaning type: cleanall or cleanlocextlib"
-  echo "    The second argument (optional), the directory to be cleaned"
+  echo "The present script, cleanExtLib, has three arguments:"
+  echo "    The first argument, the cleaning type: cleanall or cleanlocextlib"
+  echo "    The second argument, the directory to be cleaned"
+  echo "    The third argument, the list of module(s) to be cleaned"
   exit 1
 fi
