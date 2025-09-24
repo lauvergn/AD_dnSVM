@@ -19,19 +19,26 @@ For more details, run:
 make help
 ```
 
-To build the library, **libQD_gfortran_opt1_lapack1_omp1_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
+To build the library, **libQDUtilLib_gfortran_opt1_lapack1_omp1_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
 ```bash
 make lib
 ```
-In general, the makefile creates a library with the folowing name: **libQD_XXX_optW_lapackX_ompY_intZ_realR.a**
+In general, the makefile creates a library with the folowing name: **libQDUtilLib_XXX_optW_lapackX_ompY_intZ_realR.a**
 with:
 - XXX: the compiler name (like gfortran)
 - W, X, Y: the value O or 1 
 - Z:  the value 4 or 8
 - R: the value of real kind (32, 64, 128)
 
-For instance, the default library is: **libQD_gfortran_opt1_lapack1_omp1_int4_real64.a**
-The module file (.mod) are in the **OBJ/obj__XXX_optW_lapackX_ompY_intZ_realR** directory.
+For instance, the default library is: **libQDUtilLib_gfortran_opt1_lapack1_omp1_int4_real64.a**
+
+Remarks: To be compatible with previous versions, the library is linked to other library names: 
+- **libQD_XXX_optW_lapackX_ompY_intZ.a**
+- **libQDUtilLib.a**
+
+
+
+The module file (.mod) are in the **OBJ/obj_XXX_optW_lapackX_ompY_intZ_realR** directory.
 
 The compiler options are (the first values are the default):
 
@@ -55,7 +62,7 @@ Two options to clean:
 make clean
 ```
 
-Remove some files, but keep the libraries, **libQD_XXX_optW_lapackX_ompY_intZ_realA.a**
+Remove some files, but keep the libraries, **libQDUtilLib_XXX_optW_lapackX_ompY_intZ_realA.a**
 
 ```bash
 make cleanall
@@ -143,11 +150,11 @@ QDUtilLib = { git = "https://github.com/lauvergn/QDUtilLib" }
 ### 2b) With makefile
 
 If the QDUtil library is build with make, you have to:
-- compile your code (such xxx.f90) with the QDUtil module files (.mod files). Those files are in the **OBJ/obj_XXX_optW_lapackX_ompY_intZ** directory.
-For instance, with gfortran, OpenMP, lapack and integer kind=4:
+- compile your code (such xxx.f90) with the QDUtil module files (.mod files). Those files are in the **OBJ/obj_XXX_optW_lapackX_ompY_intZ_realR** directory.
+For instance, with gfortran, OpenMP, lapack, integer kind=4 and real kin=real64 (double precision):
 
 ```bash
-gfortan -c xxx.f90 -fopenmp -IOBJ/libQD_gfortran_opt0_omp1_lapack1_int4
+gfortan -c xxx.f90 -fopenmp -IOBJ/libQD_gfortran_opt0_omp1_lapack1_int4_real64
 ```
 
 - link with **libQD_XXX_optW_lapackX_ompY_intZ_realR.a** library

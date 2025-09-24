@@ -23,8 +23,7 @@ RKIND := real64
 # For some compilers (like lfortran), real128 (quadruple precision) is not implemented
 # WITHRK16 = 1 (0) compilation with (without) real128
 WITHRK16 :=
-## how to get external libraries;  "loc" (default): from local zip file, Empty or something else, from github
-EXTLIB_TYPE := loc
+## branch of the external libraries
 BRANCH      := dev2
 #=================================================================================
 ifeq ($(FC),)
@@ -277,6 +276,13 @@ $(LIBA): $(OBJ)
 	rm -f $(LIBAshort)
 	ln -s  $(LIBA) $(LIBAshort)
 	@echo "  done Library: "$(LIBA)
+#===============================================
+#============= makefile help ===================
+#===============================================
+.PHONY: help
+help:
+	@echo " Makefile usage:"
+	@./scripts/makefile_usage.sh
 #===============================================
 #===============================================
 #============= External libraries  =============
