@@ -44,5 +44,6 @@ $(LibDir):
 	rm -f $(zipfile)
 	@test -d $(LibDir) || (echo The directory $(LibDir) "does not exist" ; exit 1)
 	cd $(LibDir) ; mv $(LibName)*/* $(LibName)*/.gitignore . ; rm -rf $(LibName)*
+	rm -rf $(LibDir)/Ext_lib/*_loc
 	@echo The library, $(LibName), with the branch $(BRANCH) is downloaded from github.
 	@echo The directory, $(LibDir) is created.
