@@ -69,19 +69,20 @@ PROGRAM Example_dnS
 
   character (len=*), parameter :: name_sub='Example_dnS'
 
+  CALL version_ADdnSVM(Print_Version=.TRUE.)
 
   write(out_unit,'(a)') "== Example_dnS =="
 
   Vec = Variable([HALF,ONE,TWO], nderiv=3)
 
 
-  CALL Write_dnS(Vec(1),info='X: 1st variable. Value: 0.5',nderiv=1)
-  CALL Write_dnS(Vec(2),info='Y: 2d  variable. Value: 1.0',nderiv=1)
-  CALL Write_dnS(Vec(3),info='Z: 3d  variable. Value: 2.0',nderiv=1)
+  CALL Write_dnS(Vec(1),info='X: 1st variable. Value: 0.5',nderiv=1,Rfmt='f20.10')
+  CALL Write_dnS(Vec(2),info='Y: 2d  variable. Value: 1.0',nderiv=1,Rfmt='f20.10')
+  CALL Write_dnS(Vec(3),info='Z: 3d  variable. Value: 2.0',nderiv=1,Rfmt='f20.10')
 
   f = ONE + cos(Vec(1))**2 + sin(Vec(2)*Vec(3))
 
-  CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945',nderiv=1)
+  CALL Write_dnS(f,info='f=1.0 + cos(X)**2 + sin(Y*Z), value: 2.67945',nderiv=1,Rfmt='f20.10')
 
   write(out_unit,*)
   write(out_unit,*)
@@ -131,10 +132,10 @@ PROGRAM Example_dnS
   X = Vec(1) ; Y=Vec(2)
   f     = TWO * X**2 * Y
   g     = deriv(f,ider=1)
-  CALL Write_dnS(g,info='df/dx=4*x*y, value: 8')
+  CALL Write_dnS(g,info='df/dx=4*x*y, value: 8',Rfmt='f20.10')
 
   g     = deriv(f,ider=1)**2 * X/Y
-  CALL Write_dnS(g,info='g=16 * x**3 * y, value: 32')
+  CALL Write_dnS(g,info='g=16 * x**3 * y, value: 32',Rfmt='f20.10')
 
   write(out_unit,*) '== Box(x,i) [0,Pi] =='
   write(out_unit,*) ' [sin(x)/sqrt(pi/2), sin(2x)/sqrt(pi/2), sin(3x)/sqrt(pi/2) ...]'
@@ -143,25 +144,25 @@ PROGRAM Example_dnS
   X   = Variable(Val=HALF, nderiv=1 )
   Vec = dnBox(X,[1,2,3,4,5,6])
   DO i=1,size(Vec)
-    CALL Write_dnS(Vec(i),out_unit,info='dnBox_' // int_TO_char(i))
+    CALL Write_dnS(Vec(i),out_unit,info='dnBox_' // int_TO_char(i),Rfmt='f20.10')
   END DO
 
 
   nderiv = 1
   Vec   = Variable([HALF,ONE,TWO,THREE], nderiv=nderiv)
-  CALL Write_dnS(Vec(1),info='Vec(1)')
-  CALL Write_dnS(Vec(2),info='Vec(2)')
+  CALL Write_dnS(Vec(1),info='Vec(1)',Rfmt='f20.10')
+  CALL Write_dnS(Vec(2),info='Vec(2)',Rfmt='f20.10')
 
   VecXY = Variable([get_d0(Vec(1))*get_d0(Vec(2))],nderiv=nderiv)
-  CALL Write_dnS(VecXY(1),info='VecXY(1)')
+  CALL Write_dnS(VecXY(1),info='VecXY(1)',Rfmt='f20.10')
 
   f     = cos(VecXY(1))
-  CALL Write_dnS(f,info='f')
+  CALL Write_dnS(f,info='f',Rfmt='f20.10')
 
-  CALL Write_dnS(cos(Vec(1)*Vec(2)),info='cos(Vec(1)*Vec(2))')
+  CALL Write_dnS(cos(Vec(1)*Vec(2)),info='cos(Vec(1)*Vec(2))',Rfmt='f20.10')
 
   f   = cos(Vec(1)*Vec(2))-dnF_OF_dnS(f,[Vec(1)*Vec(2)])
-  CALL Write_dnS(f,info='dnF_OF_dnS, value: 0.')
+  CALL Write_dnS(f,info='dnF_OF_dnS, value: 0.',Rfmt='f20.10')
 
 
 END PROGRAM Example_dnS

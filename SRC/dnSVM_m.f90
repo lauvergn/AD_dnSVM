@@ -41,11 +41,64 @@ MODULE ADdnSVM_m
   USE ADdnSVM_dnVec_m
   IMPLICIT NONE
 
+
+  character (len=*), parameter :: AD_version =                         &
+#if defined(__AD_VERSION)
+     __AD_VERSION
+#else
+      'unknown: -D__AD_VERSION=?'
+#endif
+
+  character (len=*), parameter :: compile_date =                          &
+#if defined(__COMPILE_DATE)
+      __COMPILE_DATE
+#else
+      'unknown: -D__COMPILE_DATE=?'
+#endif
+
+  character (len=*), parameter :: compile_host =                          &
+#if defined(__COMPILE_HOST)
+      __COMPILE_HOST
+#else
+      "unknown: -D__COMPILE_HOST=?"
+#endif
+
+  logical, private :: Print_Version_done = .FALSE.
+
+
   PRIVATE ADdnSVM_dnS_TO_TaylorDeltaQ, ADdnSVM_dnS_TO_TaylordnDeltaQ
   INTERFACE TO_Taylor
      MODULE PROCEDURE ADdnSVM_dnS_TO_TaylorDeltaQ, ADdnSVM_dnS_TO_TaylordnDeltaQ
   END INTERFACE
 CONTAINS
+  SUBROUTINE version_ADdnSVM(Print_Version)
+    USE iso_fortran_env
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    logical,             intent(in)    :: Print_Version
+
+    IF (Print_Version) THEN
+      Print_Version_done = .TRUE.
+      write(out_unit,*) '================================================='
+      write(out_unit,*) '================================================='
+      write(out_unit,*) '== AD_dnSVM library ============================='
+      write(out_unit,*) '== AD_dnSVM version:       ',AD_version
+      write(out_unit,*) '-------------------------------------------------'
+      write(out_unit,*) '== Compiled on       "',compile_host, '" the ',compile_date
+      write(out_unit,*) '== Compiler:         ',compiler_version()
+      write(out_unit,*) '== Compiler options: ',compiler_options()
+      write(out_unit,*) '-------------------------------------------------'
+      write(out_unit,*) 'AD_dnSVM* is a free software under the MIT Licence.'
+      write(out_unit,*) '  Copyright (c) 2022 David Lauvergnat [1]'
+      write(out_unit,*) 
+      write(out_unit,*) '  [1]: Institut de Chimie Physique, UMR 8000, CNRS-Université Paris-Saclay, France'
+      write(out_unit,*) '    *Originally, it has been developed for Quantum Model Lib (QML):'
+      write(out_unit,*) '       <https://github.com/lauvergn/QuantumModelLib>'
+      write(out_unit,*) '================================================='
+    END IF
+    
+  END SUBROUTINE version_ADdnSVM
   FUNCTION ADdnSVM_dnS_TO_TaylorDeltaQ(dnS,DeltaQ,nderiv) RESULT(Val)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
