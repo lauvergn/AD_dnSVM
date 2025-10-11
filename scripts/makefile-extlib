@@ -1,3 +1,6 @@
+# Disable the default rules
+MAKEFLAGS += --no-builtin-rules --no-builtin-variables
+#
 $(info *********** IN makefile-extlib ****************)
 
 slash := /

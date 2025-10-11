@@ -5,8 +5,8 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortr
 
   # optimization management (default without optimization)
   ifeq ($(OOPT),1)
-    FFLAGS = -O5 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
-    CFLAGS = -O5 -g             -funroll-loops -ftree-vectorize -falign-loops=16
+    FFLAGS = -O3 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
+    CFLAGS = -O3 -g             -funroll-loops -ftree-vectorize -falign-loops=16
   else
     FFLAGS = -Og -g -fbacktrace -fcheck=all -fwhole-file -fcheck=pointer -Wuninitialized -finit-real=nan -finit-integer=nan
     CFLAGS = -O0 -g                         -fwhole-file -Wuninitialized
