@@ -1,14 +1,23 @@
-#!/bin/bash -x
+#!/bin/bash
 
 
 CleanType=$1
 CleanDIR=$2
 CleanList=$3
+RecClean=$4
+
+if test -z "$RecClean"
+then
+  echo "RecClean is not defined."
+  echo "=> It is set to 0 (no recursive cleaning)"
+  RecClean=0
+fi
 
 echo "The script command is: \"$0 $@\""
 echo CleanType: $CleanType
 echo CleanDIR:  $CleanDIR
 echo CleanList: $CleanList
+echo RecClean:  $RecClean
 
 if test -z "$CleanType"
 then
@@ -48,8 +57,8 @@ then
     rm -fr $dirlib
 
     #clean the libraries
-    test -d $dirlib"_loc" &&  make -C $dirlib"_loc" --silent cleanall &> /dev/null
-    #test -d $dirlib"_loc" && make -C $dirlib"_loc" cleanall
+    #test -d $dirlib"_loc" &&  make -C $dirlib"_loc" --silent cleanall RECCLEAN=$RecClean &> /dev/null
+     test -d $dirlib"_loc" && make -C $dirlib"_loc"           cleanall RECCLEAN=$RecClean
   done
 elif [ "$CleanType" = "cleanlocextlib" ]
 then
@@ -57,7 +66,7 @@ then
   for dirlib in $CleanList
   do
     echo $dirlib
- 
+
     #remove the link
     rm -fr $dirlib
 

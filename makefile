@@ -26,8 +26,10 @@ RKIND := real64
 # For some compilers (like lfortran), real128 (quadruple precision) is not implemented
 # WITHRK16 = 1 (0) compilation with (without) real128
 WITHRK16 :=
-## branch of the external libraries
+## branch of the external libraries (main, dev)
 BRANCH      := dev2
+# how to clean (recursively (1) or not (0)) the external libraries (*_loc)
+RECCLEAN    := 1
 #=================================================================================
 ifeq ($(FC),)
   override FC := gfortran
@@ -304,19 +306,19 @@ clean:
 	rm -fr *.dSYM
 	rm -fr build
 	rm -f $(OBJ_DIR)/*.o $(OBJ_DIR)/*.mod $(OBJ_DIR)/*.MOD
-	@echo "  done cleaning"
+	@echo "  done cleaning for "$(LIB_NAME)
 cleanall: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanall "$(ExtLibDIR)" "$(EXTLIB_LIST)"; fi  
-	@echo "  done remove the *.a libraries and the OBJ directory"
+	if [ "$(EXTLIB_LIST)" != "" -a "$(RECCLEAN)" = "1" ]; then ./scripts/cleanExtLib cleanall "$(ExtLibDIR)" "$(EXTLIB_LIST)" 0; fi
+	@echo "  done remove the *.a libraries and the OBJ directory for "$(LIB_NAME)
 cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	if test "$(EXTLIB_LIST)" != ""; then ./scripts/cleanExtLib cleanlocextlib "$(ExtLibDIR)" "$(EXTLIB_LIST)"; fi 
-	@echo "  done remove all local library directories (..._loc)"
+	if [ "$(EXTLIB_LIST)" != "" -a "$(RECCLEAN)" = "1" ] ; then ./scripts/cleanExtLib cleanlocextlib "$(ExtLibDIR)" "$(EXTLIB_LIST)" 0; fi 
+	@echo "  done remove all local library directories (..._loc) for "$(LIB_NAME)
 #===============================================
 #============= make dependencies ===============
 #===============================================
