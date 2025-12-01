@@ -27,7 +27,7 @@ RKIND := real64
 # WITHRK16 = 1 (0) compilation with (without) real128
 WITHRK16 :=
 ## branch of the external libraries (main, dev)
-BRANCH      := dev2
+BRANCH      := dev
 # how to clean (recursively (1) or not (0)) the external libraries (*_loc)
 RECCLEAN    := 1
 #=================================================================================
