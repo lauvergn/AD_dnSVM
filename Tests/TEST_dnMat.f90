@@ -45,6 +45,7 @@ PROGRAM TEST_dnMat
     real (kind=Rkind)                :: x,y,z,r,th,err,maxdiff,maxdnS
     real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
     real (kind=Rkind), allocatable   :: FlatdnM(:),FlatdnM_ref(:),Mat(:,:)
+    real (kind=Rkind), allocatable   :: d0(:,:),d1(:,:,:),d2(:,:,:,:),d3(:,:,:,:,:)
 
     integer                          :: nderiv,nio_test,nderiv_Mat,err_dnMat
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
@@ -123,7 +124,19 @@ PROGRAM TEST_dnMat
 
   CALL Flush_Test(test_var)
 
-   ! test diago
+  ! check set_dnMat
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  d0 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1.],shape=[3,2])
+  d1 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2])
+  d2 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2,2])
+  !d2 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2,3])
+
+  CALL set_dnMat(dnM1,d0=d0)
+  CALL set_dnMat(dnM1,d0=d0,d1=d1)
+  CALL set_dnMat(dnM1,d0=d0,d1=d1,d2=d2)
+  CALL write_dnMat(dnM1,info='check set_dnMat')
+
+  ! test diago
   deallocate(Mat_dnS)
   allocate(Mat_dnS(2,2))
   DO j=1,size(Mat_dnS,dim=2)

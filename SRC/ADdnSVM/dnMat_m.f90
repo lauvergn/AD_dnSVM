@@ -75,7 +75,7 @@ MODULE ADdnSVM_dnMat_m
                                            AD_set_dnMat_FROM_Mat
   END TYPE dnMat_t
 
-  PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,Write_dnMat,Check_NotAlloc_dnMat
+  PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,set_dnMat,Write_dnMat,Check_NotAlloc_dnMat
   PUBLIC :: transpose,matmul,operator (*),operator (**),operator (+),operator (-)
   PUBLIC :: DIAG_dnMat,SYM_dnMat
   PUBLIC :: submatrix_dnMat2_TO_dnMat1,dnS_TO_dnMat,dnMat_TO_dnS
@@ -110,6 +110,10 @@ MODULE ADdnSVM_dnMat_m
 
   INTERFACE dealloc_dnMat
     MODULE PROCEDURE AD_dealloc_dnMat
+  END INTERFACE
+
+  INTERFACE set_dnMat
+    MODULE PROCEDURE AD_set_dnMat
   END INTERFACE
 
   INTERFACE Write_dnMat
@@ -181,7 +185,7 @@ MODULE ADdnSVM_dnMat_m
      MODULE PROCEDURE AD_get_Flatten_dnMat
   END INTERFACE
 
-  CONTAINS
+CONTAINS
 !> @brief Public subroutine which allocates a derived type dnMat.
 !!
 !> @author David Lauvergnat
@@ -445,6 +449,46 @@ MODULE ADdnSVM_dnMat_m
     Mat%nderiv = -1
 
   END SUBROUTINE AD_dealloc_dnMat
+  SUBROUTINE AD_check_dim_dnMat(Mat,err_dnMat)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    TYPE (dnMat_t),    intent(inout)   :: Mat   !< derived type, which contains, matrix potential, its derivatives
+    integer,           intent(out)     :: err_dnMat  !< to handle the errors
+
+    ! local variables
+    integer :: dim0(2),dim1(3),dim2(4),dim3(5)
+
+    err_dnMat = 0 ! no error
+
+    dim0 = 0
+    IF (allocated(Mat%d0)) dim0 = shape(Mat%d0)
+    dim1 = 0
+    IF (allocated(Mat%d1)) THEN 
+      dim1 = shape(Mat%d1)
+      IF (any(dim0 /= dim1(1:2))) err_dnMat = 1
+    END IF
+    dim2 = 0
+    IF (allocated(Mat%d2)) THEN
+      dim2 = shape(Mat%d2)
+      IF (any(dim0 /= dim2(1:2))) err_dnMat = 1
+      IF (dim2(3) /= dim2(4) .OR. dim2(3) /= dim1(3)) err_dnMat = 2
+    END IF
+    dim3 = 0
+    IF (allocated(Mat%d3)) THEN 
+      dim3 = shape(Mat%d3)
+      IF (any(dim0 /= dim3(1:2))) err_dnMat = 1
+      IF (dim3(3) /= dim3(4) .OR. dim3(3) /= dim3(5) .OR. dim3(3) /= dim1(3)) err_dnMat = 2
+    END IF
+
+    IF (err_dnMat /= 0) THEN
+      IF (allocated(Mat%d0)) write(out_unit,*) 'shape(Mat%d0):',shape(Mat%d0)
+      IF (allocated(Mat%d1)) write(out_unit,*) 'shape(Mat%d1):',shape(Mat%d1)
+      IF (allocated(Mat%d2)) write(out_unit,*) 'shape(Mat%d2):',shape(Mat%d2)
+      IF (allocated(Mat%d3)) write(out_unit,*) 'shape(Mat%d3):',shape(Mat%d3)
+    END IF
+
+  END SUBROUTINE AD_check_dim_dnMat
 !> @brief Public subroutine which copies two "dnMat" derived types.
 !!
 !> @author David Lauvergnat
@@ -739,6 +783,68 @@ MODULE ADdnSVM_dnMat_m
     END IF
 
   END SUBROUTINE AD_sub_dnMat_TO_dnS
+
+  SUBROUTINE AD_set_dnMat(dnMat,d0,d1,d2,d3)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    CLASS (dnMat_t),   intent(inout)         :: dnMat
+    real (kind=Rkind), intent(in), optional  :: d0(:,:)
+    real (kind=Rkind), intent(in), optional  :: d1(:,:,:)
+    real (kind=Rkind), intent(in), optional  :: d2(:,:,:,:)
+    real (kind=Rkind), intent(in), optional  :: d3(:,:,:,:,:)
+
+    integer :: err_dim
+    character (len=*), parameter :: name_sub='AD_set_dnMat'
+
+    IF (present(d0)) THEN
+      dnMat%d0     = d0
+      dnMat%nderiv = 0
+    END IF
+
+    IF (present(d1)) THEN
+      dnMat%d1     = d1
+      dnMat%nderiv = 1
+      IF (.NOT. present(d0)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d1 is present but not d0'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnMat'
+      END IF
+    END IF
+
+    IF (present(d2)) THEN
+      dnMat%d2     = d2
+      dnMat%nderiv = 2
+      IF (.NOT. present(d1)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d2 is present but not d1'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnMat'
+      END IF
+    END IF
+
+    IF (present(d3)) THEN
+      dnMat%d3     = d3
+      dnMat%nderiv = 3
+      IF (.NOT. present(d2)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d3 is present but not d2'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnMat'
+      END IF
+    END IF
+
+    err_dim = 0
+    CALL AD_check_dim_dnMat(dnMat,err_dim)
+    IF (err_dim /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' inconsistent dimensions of dnM'
+      STOP 'ERROR in AD_set_dnMat: inconsistent dimensions'
+    END IF
+  
+  END SUBROUTINE AD_set_dnMat
 !> @brief Public subroutine which copies a dnS derived type to one element of dnMat derived type.
 !!
 !> @author David Lauvergnat
