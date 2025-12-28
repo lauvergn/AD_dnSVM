@@ -46,7 +46,9 @@ Remark: for Y (the second variable), its value is ONE, the three 1st derivatives
 
 ### 1b) Variable operations
 Operations with X, Y and Z:
-Remarks: X, Y, Z, f, df, gradf are of dnS_t type and gradf is a table.
+Most of the intrinsic functions (cos, sin, exp, ...) and operations (+, -, *, /, **) are possible to use with dnS_t.
+
+Remarks: X, Y, Z, f, df, gradf are of dnS_t type and gradf is a table of dnS_t.
 
 ```Fortran
     f = ONE + cos(X)**2 + sin(Y*Z)
@@ -115,12 +117,51 @@ The vector intialization has optional arguments:
   VecOld = Variable([r,th], nVar=3, iVar=[1,2], nderiv=2 )
 ```
 
-### 1d) Special functions/subroutines
+### 1d) Full list of functions and operations
+
+- `=` : from another dnS_t, a real(kind=Rkind), an integer (default kind)
+- `+`, `-`, `*`, `/` : from one dnS_t and another dnS_t, a real(kind=Rkind), an integer (default kind)
+- `**` : from one dnS_t (left argument) and a real(kind=Rkind), an integer (default kind) (right argument)
+
+- `>`, `>=`, `<`, `<=`, `==`, `/=`,  (`.GT.`, `.GE.`, `.LT.`, `.LE.`, `.EQ.`, `.NEQ.`) : between two dnS_t (it uses only the d0 components)
+
+- `sqrt`, `exp`, `log`, `log10`, `abs`
+- `sin`, `asin`, `cos`, `acos`, `tan`, `atan`
+- `sinh`, `asinh`, `cosh`, `acosh`, `tanh`, `atanh`
+
+- `mod`, `modulo` : only with the d0 components
+
+- `atan2` : with two dnS_t arguments
+
+- `dot_product` : from two vectors of dnS_t or on vector of dnS_t and another real vector
+- `sum` : from a vector or a matrix of dnS_t
+- `transpose` : from a matrix of dnS_t
+- `matmul`: from two of dnS_t or on matrix of dnS_t and another real one
+- `cross_product` : from two vectors (size=3) of dnS_t or on vector of dnS_t and another real vector
+
+- `dnMonomial(x,i)`: polynomials: `x**i`
+- `dnBox(x,i,[ReNorm])`: sine or particle-in-a-box between ]0,pi[. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+- `dnFourier(x,i,[ReNorm])`: Fourier series (order: `cos(0*x)`, `sin(1*x)`, `cos(1*x)`, `sin(2*x)`, `cos(2*x)` ...) between ]-pi,pi[. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+- `dnFourier2(x,i,[ReNorm])`: Fourier series (order: ..., `sin(2*x)`, `sin(1*x)`, `cos(0*x)`, `cos(1*x)`, , `cos(2*x)` ...) between ]-pi,pi[. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+
+- `dnLegendre0(x,i,[ReNorm])`: Legendre polynomials [-1,1]. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+- `dnLegendre(x,l,m,[ReNorm])`: Associated Legendre polynomials ]-1,1[ (`l >= 0` and `-l <= m <= l`). If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+
+- `dnJocobi(x,n,alpha,beta,[ReNorm])`: Jacobi polynomials ]-1,1[ (`n`,`alpha`,`beta` are integers). If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+
+- `dnHermite(x,l,[ReNorm])`: Physicist Hermite polynomials between ]-inf,+inf[. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+- `dnExpHermite(x,l,[ReNorm])`: Hermite functions or Hermite-Gaussian functions between ]-inf,+inf[. If the optional argument `ReNorm=.TRUE.` or if `ReNorm` is not present, the function is renormalized.
+
+- `RSphericalHarmonics(th,phi,l,lm,ReNorm)`: Real Spherical Harmonics $Y_{l}^{lm}(th,phi)$. It uses the `dnFourier` order.
+- `RSphericalHarmonics2(th,phi,l,lm,ReNorm)`: Real Spherical Harmonics $Y_{l}^{lm}(th,phi)$. It uses the `dnFourier2` order.
+
+### 1e) Special functions/subroutines
 
 - Subroutine `set_dnS(S,d0,d1,d2,d3)`to set the corresponding derivatives of `S` (`dnS_t`). `d0` is real (scalar), `d1` is a vector of real, `d2` is a matrix of real and `d3` has a rank 3. `d0`, `d1`, `d2` and `d3` are optional. `nderiv` is defined accordingly to the presence of  `d0`, `d1`, `d2` or `d3`.
 
 - Functions `get_d0`, `get_d1`, `get_d2` and `get_d3` to get, respectively, the corresponding derivatives, `dnS%d0`, `dnS%d1(:)`, `dnS%d2(:,:)` and `dnS%d3(:,:,:)`.
 - Function `get_Flatten` to get all `dnS` derivatives (`dnS%d0`, `dnS%d1(:)` ...) in a single real vector.
+
 
 ## 2) Installation
 
