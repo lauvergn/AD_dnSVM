@@ -113,7 +113,7 @@ MODULE ADdnSVM_dnMat_m
   END INTERFACE
 
   INTERFACE set_dnMat
-    MODULE PROCEDURE AD_set_dnMat
+    MODULE PROCEDURE AD_set_dnMat,AD_set_dnMat_FROM_Vec
   END INTERFACE
 
   INTERFACE Write_dnMat
@@ -845,7 +845,138 @@ CONTAINS
     END IF
   
   END SUBROUTINE AD_set_dnMat
-!> @brief Public subroutine which copies a dnS derived type to one element of dnMat derived type.
+  SUBROUTINE AD_set_dnMat_FROM_Vec(dnMat,Vec,nsurf,sizeL,sizeC,nVar,nderiv,err_dnMat)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    CLASS (dnMat_t),   intent(inout)         :: dnMat
+    real (kind=Rkind), intent(in),  target   :: Vec(:) ! a vector which contains d0, d1 ...
+    integer,           intent(in),  optional :: nsurf !< number of electronic surfaces
+    integer,           intent(in),  optional :: sizeL,sizeC !< numbers of lines and columns
+
+    integer,           intent(in),  optional :: nVar  !< number of coordinates (for the derivatives)
+    integer,           intent(in),  optional :: nderiv  !< order of the derivatives [0,1,2]
+    integer,           intent(out), optional :: err_dnMat  !< to handle the errors
+
+    ! local variables
+    integer :: sizeL_loc,sizeC_loc,nVar_loc,err_dnMat_loc,nderiv_loc
+    integer :: ni0,nf0,ni1,nf1,ni2,nf2,ni3,nf3
+    real (kind=Rkind), pointer  :: d0(:,:),d1(:,:,:),d2(:,:,:,:),d3(:,:,:,:,:)
+
+
+    integer :: err_dim
+    character (len=*), parameter :: name_sub='AD_set_dnMat_FROM_Vec'
+
+    err_dnMat_loc = 0 ! no error
+
+    CALL AD_dealloc_dnMat(dnMat,err_dnMat_loc)
+    IF (err_dnMat_loc /= 0) THEN
+      write(out_unit,*) ' ERROR in AD_set_dnMat_FROM_Vec'
+      write(out_unit,*) ' Problem in AD_dealloc_dnMat CALL in AD_set_dnMat_FROM_Vec'
+      IF (present(err_dnMat)) THEN
+        err_dnMat = err_dnMat_loc
+        RETURN
+      ELSE
+        STOP 'Problem in AD_dealloc_dnMat CALL in AD_set_dnMat_FROM_Vec'
+      END IF
+    END IF
+
+    ! test nsurf, sizeL, sizeL
+    !       T      F       F    => ok
+    !       F      T       T    => ok
+    !   all other posiblities are wrong
+    IF ( (present(nsurf) .AND. .NOT. present(sizeL) .AND. .NOT. present(sizeC) ) .OR. &
+         (.NOT. present(nsurf) .AND. present(sizeL) .AND. present(sizeC) ) ) THEN
+      CONTINUE ! the two possiblities
+      !write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      !write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      !write(out_unit,*) 'present(sizeC): ',present(sizeC)
+    ELSE
+      write(out_unit,*) ' ERROR in AD_set_dnMat_FROM_Vec'
+      write(out_unit,*) ' wrong parameter presence:'
+      write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      write(out_unit,*) 'present(sizeC): ',present(sizeC)
+      write(out_unit,*)
+      write(out_unit,*) ' The two correct possibilities are:'
+      write(out_unit,*) '----------------------------------------------'
+      write(out_unit,*) ' present(nsurf) present(sizeL) present(sizeC)'
+      write(out_unit,*) '    true           false           false'
+      write(out_unit,*) '    false          true            true'
+      write(out_unit,*) '----------------------------------------------'
+
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_set_dnMat_FROM_Vec: wrong parameter presence,nsurf and sizeL or sizeC'
+      END IF
+    END IF
+
+    IF (present(nsurf)) THEN
+      sizeL_loc = nsurf
+      sizeC_loc = nsurf
+    ELSE IF (present(sizeL) .AND. present(sizeC)) THEN
+      sizeL_loc = sizeL
+      sizeC_loc = sizeC
+    ELSE
+      sizeL_loc = 1
+      sizeC_loc = 1
+    END IF
+    IF (sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
+      write(out_unit,*) ' ERROR in AD_set_dnMat_FROM_Vec'
+      write(out_unit,*) '  sizeL_loc < 0 or sizeC_loc < 0',sizeL_loc,sizeC_loc
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_set_dnMat_FROM_Vec: sizeL < 0 or sizeC < 0'
+      END IF
+    END IF
+
+    ! test nVar
+    IF (present(nVar)) THEN
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = 1
+    END IF
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+      nderiv_loc = min(3,nderiv_loc)
+    ELSE
+      nderiv_loc = 0
+    END IF
+    dnMat%nderiv = nderiv_loc
+
+    IF (nderiv_loc >= 0) THEN
+      ni0 = 1
+      nf0 = sizeL_loc*sizeC_loc
+      d0(1:sizeL_loc,1:sizeC_loc) => Vec(ni0:nf0)
+      dnMat%d0 = d0
+    END IF
+    IF (nderiv >= 1) THEN
+      ni1 = nf0 + 1
+      nf1 = nf0  + nf0*nVar_loc
+      d1(1:sizeL_loc,1:sizeC_loc,1:nVar_loc) => Vec(ni1:nf1)
+      dnMat%d1 = d1
+    END IF
+    IF (nderiv >= 2) THEN
+      ni2 = nf1 + 1
+      nf2 = nf1  + nf0*nVar_loc**2
+      d2(1:sizeL_loc,1:sizeC_loc,1:nVar_loc,1:nVar_loc) => Vec(ni2:nf2)
+      dnMat%d2 = d2
+    END IF  
+    IF (nderiv >= 3) THEN
+      ni3 = nf2 + 1
+      nf3 = nf2  + nf0*nVar_loc**3
+      d3(1:sizeL_loc,1:sizeC_loc,1:nVar_loc,1:nVar_loc,1:nVar_loc) => Vec(ni1:nf1)
+      dnMat%d3 = d3
+    END IF
+  END SUBROUTINE AD_set_dnMat_FROM_Vec
+  !> @brief Public subroutine which copies a dnS derived type to one element of dnMat derived type.
 !!
 !> @author David Lauvergnat
 !! @date 30/07/2019
