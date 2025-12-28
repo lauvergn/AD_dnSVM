@@ -31,9 +31,10 @@ $(info BRANCH: $(BRANCH))
 LibVersion := "https://github.com/lauvergn/"$(LibName)"/archive/refs/heads/"$(BRANCH)".zip"
 zipfile    := $(LibName).zip
 LibDir     := $(LibName)_loc
+TARGET     := lib
 
 $(LIBA): $(LibName)
-	$(MAKE) -C $(LibDir) lib
+	$(MAKE) -C $(LibDir) $(TARGET)
 
 $(LibName): $(LibDir)
 	ln -s $(LibDir) $(LibName)

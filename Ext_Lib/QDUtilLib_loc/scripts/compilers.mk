@@ -1,10 +1,11 @@
 #=================================================================================
 # gfortran (osx and linux)
 #=================================================================================
-ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+ifeq ($(FC),$(filter $(FC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran-14 gfortran-15))
+  $(info IN compilers.mk gfortran block)
 
   # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
     FFLAGS = -O3 -g -fbacktrace -funroll-loops -ftree-vectorize -falign-loops=16
     CFLAGS = -O3 -g             -funroll-loops -ftree-vectorize -falign-loops=16
   else
@@ -24,7 +25,7 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortr
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
-  ifeq ($(OOMP),1)
+  ifeq ($(OMP),1)
     FFLAGS += -fopenmp
     CFLAGS += -fopenmp
   endif
@@ -34,26 +35,27 @@ ifeq ($(FFC),$(filter $(FFC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortr
 
 
   # lapack management
-  ifeq ($(LLAPACK),1)
+  ifeq ($(LAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB = -LAPACK -lblas
     endif
   endif
 
-   FC_VER = $(shell $(FFC) --version | head -1 )
+   FC_VER = $(shell $(FC) --version | head -1 )
 
 endif
 #=================================================================================
 # nvfortran (linux)
 #=================================================================================
-ifeq ($(FFC),nvfortran)
+ifeq ($(FC),nvfortran)
+  $(info IN compilers.mk nvfortran block)
 
   # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
     FFLAGS = -fast
     CFLAGS = -fast
   else
@@ -73,7 +75,7 @@ ifeq ($(FFC),nvfortran)
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
-  ifeq ($(OOMP),1)
+  ifeq ($(OMP),1)
     FFLAGS += -mp
     CFLAGS += -mp
   endif
@@ -82,27 +84,28 @@ ifeq ($(FFC),nvfortran)
   FFLAGS += -cpp $(CPPSHELL)
 
   # lapack management
-  ifeq ($(LLAPACK),1)
+  ifeq ($(LAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB = -LAPACK -lblas
     endif
   endif
 
-   FC_VER = $(shell $(FFC) --version | grep nvfortran )
+   FC_VER = $(shell $(FC) --version | grep nvfortran )
 
 endif
 #=================================================================================
 # flang (aocc, amd) (linux)
 # (it does not work)
 #=================================================================================
-ifeq ($(FFC),flang)
+ifeq ($(FC),flang)
+  $(info IN compilers.mk flang (aocc, amd) block)
 
   # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
     FFLAGS = -Ofast -Mallocatable=03
   else
     FFLAGS = -O0 -Mallocatable=03
@@ -120,7 +123,7 @@ ifeq ($(FFC),flang)
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
-  ifeq ($(OOMP),1)
+  ifeq ($(OMP),1)
     FFLAGS += -mp
   else
     FFLAGS += -nomp
@@ -130,26 +133,27 @@ ifeq ($(FFC),flang)
   FFLAGS += -Mpreprocess $(CPPSHELL)
 
   # lapack management
-  ifeq ($(LLAPACK),1)
+  ifeq ($(LAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB = -LAPACK -lblas
     endif
   endif
 
-   FC_VER = $(shell $(FFC) --version | grep "AMD clang" )
+   FC_VER = $(shell $(FC) --version | grep "AMD clang" )
 
 endif
 #=================================================================================
 # lfortran (it does not work)
 #=================================================================================
-ifeq ($(FFC),lfortran)
+ifeq ($(FC),lfortran)
+  $(info IN compilers.mk lfortran block)
 
   # optimization management (default without optimization)
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
     FFLAGS = --fast --realloc-lhs
   else
     FFLAGS = --realloc-lhs
@@ -167,7 +171,7 @@ ifeq ($(FFC),lfortran)
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management (default with openmp)
-  ifeq ($(OOMP),1)
+  ifeq ($(OMP),1)
     FFLAGS += --openmp
   endif
 
@@ -175,35 +179,35 @@ ifeq ($(FFC),lfortran)
   FFLAGS += --cpp $(CPPSHELL)
 
   # lapack management
-  ifeq ($(LLAPACK),1)
+  ifeq ($(LAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB = -LAPACK -lblas
     endif
   endif
 
-   FC_VER = $(shell $(FFC) --version | head -1 )
+   FC_VER = $(shell $(FC) --version | head -1 )
 
 endif
 #=================================================================================
 # ifort and ifx compillation v17 v18 with/without mkl
 #=================================================================================
-ifeq ($(FFC),$(filter $(FFC),ifort ifx))
-
+ifeq ($(FC),$(filter $(FC),ifort ifx))
+  $(info IN compilers.mk ifort or ifx block)
   # opt management + add/remove some flag to ifort/ifx (mainly to avoid bugs with ifx)
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
     FFLAGS = -O  -g -traceback 
     CFLAGS = -O  -g -traceback
-    ifeq ($(FFC),ifort)
+    ifeq ($(FC),ifort)
       FFLAGS += -heap-arrays
     endif
   else
     FFLAGS = -O0  -g -traceback
     CFLAGS = -O0  -g -traceback
-    ifeq ($(FFC),ifort)
+    ifeq ($(FC),ifort)
       FFLAGS += -heap-arrays -check all
     else
       FFLAGS += -check all,nouninit
@@ -222,8 +226,8 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management
-  ifeq ($(OOMP),1)
-    ifeq ($(FFC),ifort)
+  ifeq ($(OMP),1)
+    ifeq ($(FC),ifort)
       FFLAGS += -qopenmp -parallel
       CFLAGS += -qopenmp -parallel
     else # ifx
@@ -235,8 +239,8 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
   # cpreprocessing management
   FFLAGS += -cpp $(CPPSHELL)
 
-  ifeq ($(LLAPACK),1)
-    ifeq ($(FFC),ifort)
+  ifeq ($(LAPACK),1)
+    ifeq ($(FC),ifort)
       FLIB += -mkl -lpthread
     else # ifx
     FLIB += -qmkl -lpthread
@@ -245,20 +249,21 @@ ifeq ($(FFC),$(filter $(FFC),ifort ifx))
     FLIB += -lpthread
   endif
 
-  FC_VER = $(shell $(FFC) --version | head -1 )
+  FC_VER = $(shell $(FC) --version | head -1 )
 
 endif
 #===============================================================================
 # nag compillation (nagfor)
 #===============================================================================
-ifeq ($(FFC),nagfor)
+ifeq ($(FC),nagfor)
+  $(info IN compilers.mk nagfor block)
 
   # opt management
-  ifeq ($(OOPT),1)
+  ifeq ($(OPT),1)
       FFLAGS = -O4 -o -compatible -kind=byte -Ounroll=4 -s
   else
-    ifeq ($(OOMP),0)
-      ifeq ($(LLAPACK),0)
+    ifeq ($(OMP),0)
+      ifeq ($(LAPACK),0)
           FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf -C=undefined
       else
           FFLAGS = -O0 -g -gline -kind=byte -C -C=alias -C=intovf
@@ -280,7 +285,7 @@ ifeq ($(FFC),nagfor)
   FFLAGS += -I$(MOD_DIR) $(EXTMod)
 
   # omp management
-  ifeq ($(OOMP),1)
+  ifeq ($(OMP),1)
     FFLAGS += -openmp
   endif
 
@@ -288,16 +293,16 @@ ifeq ($(FFC),nagfor)
   FFLAGS += -fpp $(CPPSHELL)
 
   # lapact management (default with openmp), with cpreprocessing
-  ifeq ($(LLAPACK),1)
+  ifeq ($(LAPACK),1)
     ifeq ($(OS),Darwin)    # OSX
       # OSX libs (included lapack+blas)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -llapack -lblas
+      FLIB = -LAPACK -lblas
     endif
   endif
 
-  FC_VER = $(shell $(FFC) -V 3>&1 1>&2 2>&3 | head -1 )
+  FC_VER = $(shell $(FC) -V 3>&1 1>&2 2>&3 | head -1 )
 
 endif

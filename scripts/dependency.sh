@@ -1,33 +1,40 @@
 #!/bin/bash
 
 name_dep=scripts/dependencies.mk
-SRCFile=scripts/fortranlist.mk
 
-list=`find SRC -name "*.f90"`
-ExcludeList=''
+mkdeps_dir=Ext_Lib/mk-fdeps-dev
+mkdeps_exe=$mkdeps_dir/mk-fdeps
+#echo $mkdeps_exe
+#pwd
 
-echo "#===============================================" > $name_dep
-echo "#===============================================" > $SRCFile
-echo "SRCFILES := \\" >> $SRCFile
+LibName=mk-deps
+BRANCH=dev
+echo $LibName $BRANCH
 
-for ff90 in $list
-do
-   ff=`basename $ff90`
-   #echo $ff
-   if grep -vq $ff <<< $ExcludeList;  then
-     echo $ff " \\" >> $SRCFile
-     awk -f scripts/mod2file.awk $ff90 >> $name_dep
-   fi
+LibVersion=https://github.com/lauvergn/mk-fdeps/archive/refs/heads/dev.zip
+echo $LibVersion
 
-done
-echo "#===============================================" >> $name_dep
-for ff90 in $list
-do
-   ff=`basename $ff90`
-   #echo '# '$ff >> $name_dep
-   if grep -vq $ff <<< $ExcludeList;  then
-     mname=`awk -f scripts/get_modname.awk $ff90`
-     #echo "#mname: " $mname >> $name_dep
-     awk -v mod_name=$mname -f scripts/dep2.awk $ff90 >> $name_dep
-   fi
-done
+mkdir -p Ext_Lib
+
+if [ ! -d "$mkdeps_dir" ] ; then
+  echo "get the source file"
+  curl -LJ $LibVersion --output Ext_lib/$LibName.zip
+  unzip -d Ext_lib Ext_lib/$LibName.zip
+  rm Ext_lib/$LibName.zip
+fi
+
+if [ ! -x "$mkdeps_exe" ] ; then
+  echo "The executable "$mkdeps_exe" does not exist => compilation"
+  make -C $mkdeps_dir all
+  mv $mkdeps_dir/build/mk-fdeps $mkdeps_exe
+  make -C $mkdeps_dir clean
+fi
+
+if [ -x "$mkdeps_exe" ] ; then
+  echo "Create dependencies ..."
+  ./$mkdeps_exe SRC/**/*.f90 --with-parent '$(OBJ_DIR)/'  --strip-parents 3 --output $name_dep
+  echo "Create dependencies: done"
+else
+  echo "The executable "$mkdeps_exe" does not exist"
+  exit 1
+fi
