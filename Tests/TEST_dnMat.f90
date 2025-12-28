@@ -45,12 +45,13 @@ PROGRAM TEST_dnMat
     real (kind=Rkind)                :: x,y,z,r,th,err,maxdiff,maxdnS
     real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
     real (kind=Rkind), allocatable   :: FlatdnM(:),FlatdnM_ref(:),Mat(:,:)
+    real (kind=Rkind), allocatable   :: d0(:,:),d1(:,:,:),d2(:,:,:,:),d3(:,:,:,:,:)
 
     integer                          :: nderiv,nio_test,nderiv_Mat,err_dnMat
     real (kind=Rkind)                :: dnSerr_test = FIVE*ONETENTH**4
     real (kind=Rkind),   parameter   :: ZeroTresh   = TEN**2*epsilon(ONE)
 
-    integer                          :: i,j
+    integer                          :: i,j,nsize_flat
 
 
     character (len=*), parameter :: name_sub='TEST_dnMat'
@@ -84,7 +85,8 @@ PROGRAM TEST_dnMat
   FlatdnM_ref = [real(kind=Rkind) :: 2.5,2.25,4.5,4.25,8.5,8.25,   1.,1.,1.,1.,1.,1.,   1.,1.,4.,4.,12.,12.]
   res_test = all(FlatdnM_ref == FlatdnM)
   CALL Logical_Test(test_var,test1=res_test,info='init dnMat (rect)')
-
+  deallocate(FlatdnM)
+  deallocate(FlatdnM_ref)
   !CALL Write_dnMat(dnM1, info='dnM1')
 
   dnM2 = transpose(dnM1)
@@ -94,7 +96,8 @@ PROGRAM TEST_dnMat
   FlatdnM_ref = [real(kind=Rkind) :: 2.5,4.5,8.5,2.25,4.25,8.25,   1.,1.,1.,1.,1.,1.,   1.,4.,12.,1.,4.,12.]
   res_test = all(FlatdnM_ref == FlatdnM)
   CALL Logical_Test(test_var,test1=res_test,info='transpose dnMat (rect)')
-
+  deallocate(FlatdnM)
+  deallocate(FlatdnM_ref)
   CALL Flush_Test(test_var)
 
    ! test the allocate / deallocate
@@ -123,7 +126,51 @@ PROGRAM TEST_dnMat
 
   CALL Flush_Test(test_var)
 
-   ! test diago
+  ! check set_dnMat
+  CALL dealloc_dnMat(dnM1,err_dnMat)
+  d0 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1.],shape=[3,2])
+  d1 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2])
+  d2 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2,2])
+  !d2 = reshape([real(kind=Rkind) :: 1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1,1.,1.,1.,1.,1.,1.],shape=[3,2,2,3])
+
+  CALL set_dnMat(dnM1,d0=d0)
+  nsize_flat = size(d0)
+  allocate(FlatdnM_ref(nsize_flat))
+  FlatdnM_ref(:) = ONE
+  res_test = all(FlatdnM_ref == get_Flatten(dnM1))
+  CALL Logical_Test(test_var,test1=res_test,info='set_dnMat (nderiv=0)')
+  deallocate(FlatdnM_ref)
+
+  CALL set_dnMat(dnM1,d0=d0,d1=d1)
+  nsize_flat = size(d0)+size(d1)
+  allocate(FlatdnM_ref(nsize_flat))
+  FlatdnM_ref(:) = ONE
+  res_test = all(FlatdnM_ref == get_Flatten(dnM1))
+  CALL Logical_Test(test_var,test1=res_test,info='set_dnMat (nderiv=1)')
+  deallocate(FlatdnM_ref)
+
+  CALL set_dnMat(dnM1,d0=d0,d1=d1,d2=d2)
+  nsize_flat = size(d0)+size(d1)+size(d2)
+  allocate(FlatdnM_ref(nsize_flat))
+  FlatdnM_ref(:) = ONE
+  res_test = all(FlatdnM_ref == get_Flatten(dnM1))
+  CALL Logical_Test(test_var,test1=res_test,info='set_dnMat (nderiv=2)')
+  deallocate(FlatdnM_ref)
+
+  CALL Flush_Test(test_var)
+
+
+  nsize_flat = size(d0)+size(d1)+size(d2)
+  allocate(FlatdnM_ref(nsize_flat))
+  FlatdnM_ref(:) = ONE
+  CALL set_dnMat(dnM1,Vec=FlatdnM_ref,sizeL=3,sizeC=2,nVar=2,nderiv=2)
+  res_test = all(FlatdnM_ref == get_Flatten(dnM1))
+  CALL Logical_Test(test_var,test1=res_test,info='set_dnMat (from Vec)')
+  deallocate(FlatdnM_ref)
+  CALL Flush_Test(test_var)
+
+
+  ! test diago
   deallocate(Mat_dnS)
   allocate(Mat_dnS(2,2))
   DO j=1,size(Mat_dnS,dim=2)
