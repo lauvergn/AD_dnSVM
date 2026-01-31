@@ -57,6 +57,8 @@ MODULE ADdnSVM_dnMat_m
   IMPLICIT NONE
   PRIVATE
 
+  integer, public :: print_level_dia_dnMat = 0
+
   TYPE dnMat_t
      integer                        :: nderiv = -1
 
@@ -2486,7 +2488,7 @@ CONTAINS
     integer,            intent(in),    optional :: type_diag
 
     integer                       :: nVar,nderiv,nsurf
-    real(kind=Rkind), allocatable :: Vec(:,:),tVec(:,:),Eig(:),Mtemp(:,:),Vi(:),Vj(:)
+    real(kind=Rkind), allocatable :: Vec(:,:),tVec(:,:),Eig(:),Mtemp(:,:),Vi(:),Vj(:),tab_sii(:)
     TYPE (dnMat_t)                :: dnMat_OnVec
     integer                       :: i,j,k,id,jd,kd,i_max
     real (kind=Rkind)             :: ai,aj,aii,aij,aji,ajj,th,cc,ss,aii_max,max_diff
@@ -2622,11 +2624,13 @@ CONTAINS
           END IF
        END DO
 
-
        max_diff = -ONE
        i_max    = 0
+       allocate(tab_sii(nsurf))
+       tab_sii(:) = ZERO
        DO i=1,nsurf
          aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
+         tab_sii(i) = aii
          IF (abs(aii-ONE) > max_diff) THEN
            aii_max  = aii
            max_diff = abs(aii-ONE)
@@ -2636,11 +2640,14 @@ CONTAINS
        END DO
        IF (max_diff > 0.2_Rkind .OR. debug) THEN
          write(out_unit,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
-         write(out_unit,*) 'Vec:'
-         CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
-         write(out_unit,*) 'Vec0:'
-         CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
+         IF (debug) THEN
+          write(out_unit,*) 'Vec:'
+          CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
+          write(out_unit,*) 'Vec0:'
+          CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
+         END IF
        END IF
+       IF (print_level_dia_dnMat > 1) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',tab_sii(:)
     ELSE
       IF (debug) write(out_unit,*) 'Vec0 is absent: the eigenvector phases are not checked'
     END IF
