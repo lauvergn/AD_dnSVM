@@ -27,14 +27,13 @@ RKIND := real64
 # WITHRK16 = 1 (0) compilation with (without) real128
 WITHRK16 :=
 ## branch of the external libraries (not used here)
-BRANCH      := dev2
+BRANCH      := main
 # how to clean (recursively (1) or not (0)) the external libraries (*_loc)
-RECCLEAN    := 0
+RECCLEAN := 0
 #=================================================================================
 ifeq ($(FC),)
   override FC := gfortran
 endif
-FFC := $(FC)
 
 ifeq ($(OPT),)
   override OPT := 1
@@ -44,7 +43,6 @@ ifneq ($(OPT),$(filter $(OPT),0 1))
   $(info Possible values: 0, 1)
   $(error ERROR: Incompatible option values)
 endif
-OOPT := $(OPT)
 
 ifeq ($(OMP),)
   override OMP := 1
@@ -54,7 +52,6 @@ ifneq ($(OMP),$(filter $(OMP),0 1))
   $(info Possible values: 0, 1)
   $(error ERROR: Incompatible option values)
 endif
-OOMP := $(OMP)
 
 ifeq ($(LAPACK),)
   override LAPACK := 1
@@ -64,7 +61,6 @@ ifneq ($(LAPACK),$(filter $(LAPACK),0 1))
   $(info Possible values: 0, 1)
   $(error ERROR: Incompatible option values)
 endif
-LLAPACK := $(LAPACK)
 
 ifneq ($(INT),$(filter $(INT),4 8))
   $(info *********** INT (change default integer):        $(INT))
@@ -78,16 +74,15 @@ ifneq ($(RKIND),$(filter $(RKIND),real32 real64 real128))
   $(error ERROR: Incompatible option values)
 endif
 ifeq ($(WITHRK16),)
-  override WITHRK16 := $(shell $(FFC) -o scripts/testreal128.exe scripts/testreal128.f90 &> /dev/null ; wait ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
+  override WITHRK16 := $(shell $(FC) -o scripts/testreal128.exe scripts/testreal128.f90 &> /dev/null ; wait ; ./scripts/testreal128.exe ; rm scripts/testreal128.exe)
 endif
-WWITHRK16 := $(WITHRK16)
 ifneq ($(WITHRK16),$(filter $(WITHRK16),0 1))
   $(info *********** WITHRK16 (compilation with real128):        $(WITHRK16))
   $(info Possible values: 0, 1)
   $(error ERROR: Incompatible option values)
 endif
 ifeq ($(RKIND),real128)
-  ifeq ($(WWITHRK16),0)
+  ifeq ($(WITHRK16),0)
     $(info "Incompatible options:")
     $(info ***********RKIND:        $(RKIND))
     $(info ***********WITHRK16:     $(WITHRK16))
@@ -95,7 +90,6 @@ ifeq ($(RKIND),real128)
   endif
 endif
 export RKIND WITHRK16 INT  LAPACK  FC  OPT  OMP BRANCH
-export      WWITHRK16     LLAPACK FFC OOPT OOMP
 #
 #=================================================================================
 # Operating system, OS? automatic using uname:
@@ -141,21 +135,22 @@ else
   include $(CompilersDIR)/compilers.mk
 endif
 #=================================================================================
-# External Libraries : QDUtilLib
+# External Libraries :
 #=================================================================================
 EXTLIB_LIST :=
-ifneq ($(EXTLIB_LIST),)
-  ifeq ($(ExtLibDIR),)
-    ExtLibDIR := $(MAIN_path)/Ext_Lib
-  endif
-  $(info ***********ExtLibDIR:       $(ExtLibDIR))
-  OK := $(shell if test -d $(ExtLibDIR); then echo "ok"; fi)
-  #$(info ***********OK:       $(OK))
-  ifeq ($(OK),)
-    $(error ERROR: $(ExtLibDIR) does not exist!)
-  endif
-  export ExtLibDIR
 
+ifeq ($(ExtLibDIR),)
+  ExtLibDIR := $(MAIN_path)/Ext_Lib
+endif
+$(info ***********ExtLibDIR:       $(ExtLibDIR))
+OK := $(shell if test -d $(ExtLibDIR); then echo "ok"; fi)
+#$(info ***********OK:       $(OK))
+ifeq ($(OK),)
+  $(error ERROR: $(ExtLibDIR) does not exist!)
+endif
+export ExtLibDIR
+
+ifneq ($(EXTLIB_LIST),)
   EXTLib_DIR  := $(addprefix $(ExtLibDIR)/, $(EXTLIB_LIST))
   EXTMod      := $(addsuffix /OBJ/obj$(ext_obj), $(EXTLib_DIR))
   EXTMod      := $(addprefix -I,$(EXTMod))
@@ -176,7 +171,7 @@ $(info ***********OPTIMIZATION:    $(OPT))
 $(info ***********OpenMP:          $(OMP))
 $(info ***********INT:             $(INT))
 $(info ***********RKIND:           $(RKIND))
-$(info ***********WITHRK16:        $(WWITHRK16))
+$(info ***********WITHRK16:        $(WITHRK16))
 $(info ***********LAPACK:          $(LAPACK))
 $(info ***********FFLAGS:          $(FFLAGS))
 $(info ***********FLIB:            $(FLIB))
@@ -189,7 +184,10 @@ $(info ***********************************************************************)
 SRCPATH := $(shell find $(SRC_DIR)/* -maxdepth 1 -type d )
 VPATH := $(APP_DIR):$(TESTS_DIR):$(SRC_DIR):$(SRCPATH)
 #
-include scripts/fortranlist.mk
+SRCFILES := $(shell find $(SRC_DIR) -name '*.f90')
+SRCFILES := $(notdir $(SRCFILES))
+$(info ***********SRCFILES:          $(SRCFILES))
+#include scripts/fortranlist.mk
 
 OBJ0=$(SRCFILES:.f90=.o)
 OBJ=$(addprefix $(OBJ_DIR)/, $(OBJ0))
@@ -295,7 +293,7 @@ help:
 getlib: $(EXTLib)
 #
 $(EXTLib):
-	$(MAKE) -C $(ExtLibDIR) -f $(MAIN_path)/makefile-extlib LIBA=$@
+	$(MAKE) -C $(ExtLibDIR) -f $(MAIN_path)/scripts/makefile-extlib TARGET=all LIBA=$@
 #===============================================
 #================ cleaning =====================
 .PHONY: clean cleanall cleanlocextlib
@@ -316,8 +314,10 @@ cleanlocextlib: clean
 	rm -f lib*.a
 	rm -rf OBJ
 	cd $(TESTS_DIR) && ./clean
-	#if [ "$(EXTLIB_LIST)" != "" -a "$(RECCLEAN)" = "1" ] ; then ./scripts/cleanExtLib cleanlocextlib "$(ExtLibDIR)" "$(EXTLIB_LIST)" 0; fi 
+	#if [ "$(EXTLIB_LIST)" != "" -a "$(RECCLEAN)" = "1" ] ; then ./scripts/cleanExtLib cleanlocextlib "$(ExtLibDIR)" "$(EXTLIB_LIST)" 0; fi
+	if [ -d "$(ExtLibDIR)/mk-fdeps-dev" ] ; then rm -r $(ExtLibDIR)/mk-fdeps-dev ; fi
 	@echo "  done remove all local library directories (..._loc) for "$(LIB_NAME)
+
 #===============================================
 #============= make dependencies ===============
 #===============================================
