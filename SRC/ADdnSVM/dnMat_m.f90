@@ -2538,116 +2538,124 @@ CONTAINS
     CALL diagonalization(dnMat%d0,Eig,Vec,nsurf,diago_type=type_diag_loc,sort=1,phase=.TRUE.)
 
     IF (present(dnVec0)) THEN
-      IF (debug) write(out_unit,*) 'Vec0 is present: the eigenvector phases are checked'
-      flush(out_unit)
+      IF (abs(dot_product(dnVec0%d0(:,1),dnVec0%d0(:,1))-ONE) < ONETENTH**6) THEN
+        IF (debug) THEN
+          write(out_unit,*) 'Vec0 is present: the eigenvector phases are checked'
+          flush(out_unit)
+        END IF
 
-       DO i=1,nsurf
-         IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
-            IF (debug) write(out_unit,*) 'Change phase:',i
-            Vec(:,i) = -Vec(:,i)
-          END IF
-       END DO
-
-       IF (debug) THEN
-         write(out_unit,*) 'Vec before rotation'
-         CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
-       END IF
-
-       !For degenerated eigenvectors (works only with 2 vectors)
-       DO i=1,nsurf-1
-         IF ( abs(Eig(i)-Eig(i+1)) < TEN*epsi) THEN
-           j = i+1
-           IF (debug) write(out_unit,*) 'degenerated vectors',i,j
-
-           aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
-           aji = dot_product(dnVec0%d0(:,j),Vec(:,i))
-           aij = dot_product(dnVec0%d0(:,i),Vec(:,j))
-           ajj = dot_product(dnVec0%d0(:,j),Vec(:,j))
-
-           !change the phase of one vector (i) if det(Mij)<0
-           IF ((aii*ajj-aij*aji) < 0) THEN
-             IF (debug) write(out_unit,*) 'det < 0',(aii*ajj-aij*aji)
+        DO i=1,nsurf
+          IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
+             IF (debug) write(out_unit,*) 'Change phase:',i
              Vec(:,i) = -Vec(:,i)
-             aii = -aii
-             aji = -aji
-           ELSE
-             IF (debug) write(out_unit,*) 'det > 0'
            END IF
-           IF (debug) write(out_unit,*) 'aii,ajj,aji,aij',aii,ajj,aji,aij
+        END DO
 
-           Mij(1,:) = [aii,aij]
-           Mij(2,:) = [aji,ajj]
-
-           th = atan2(aji-aij,aii+ajj) ! we have to test with +pi as well
-
-           cc = cos(th)
-           ss = sin(th)
-
-           Rot(1,:) = [ cc,ss]
-           Rot(2,:) = [-ss,cc]
-
-           RMij = matmul(Rot,Mij)
-           RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
-           IF (debug) write(out_unit,*) 'RMij',RMij
-           err1 = sqrt(sum(RMij**2))
-           IF (debug) write(out_unit,*) 'Err, th',th,err1
-           ! th+pi => Rot=-Rot
-           RMij = -matmul(Rot,Mij) ; RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
-           IF (debug) write(out_unit,*) 'RMij',RMij
-           err2 = sqrt(sum(RMij**2))
-           IF (debug) write(out_unit,*) 'Err, th+pi',th+pi,err2
-
-           IF (err2 < err1) THEN
-             th = th+pi
-             cc = -cc
-             ss = -ss
-           END IF
-
-           IF (debug) write(out_unit,*) 'theta',th
-
-           IF (abs(th) < epsi) CYCLE
-
-           Vj       = Vec(:,j)
-           Vi       = Vec(:,i)
-           Vec(:,i) =  cc * Vi + ss * Vj
-           Vec(:,j) = -ss * Vi + cc * Vj
-         END IF
-       END DO
-
-       IF (debug) write(out_unit,*) 'Change phase?'
-       flush(out_unit)
-
-       DO i=1,nsurf
-         IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
-            IF (debug) write(out_unit,*) 'Change phase:',i
-            Vec(:,i) = -Vec(:,i)
-          END IF
-       END DO
-
-       max_diff = -ONE
-       i_max    = 0
-       allocate(tab_sii(nsurf))
-       tab_sii(:) = ZERO
-       DO i=1,nsurf
-         aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
-         tab_sii(i) = aii
-         IF (abs(aii-ONE) > max_diff) THEN
-           aii_max  = aii
-           max_diff = abs(aii-ONE)
-           i_max    = i
-         END IF
-         IF (debug) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',i,aii
-       END DO
-       IF (max_diff > 0.2_Rkind .OR. debug) THEN
-         write(out_unit,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
-         IF (debug) THEN
-          write(out_unit,*) 'Vec:'
+        IF (debug) THEN
+          write(out_unit,*) 'Vec before rotation'
           CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
-          write(out_unit,*) 'Vec0:'
-          CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
-         END IF
-       END IF
-       IF (print_level_dia_dnMat > 1) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',tab_sii(:)
+        END IF
+
+        !For degenerated eigenvectors (works only with 2 vectors)
+        DO i=1,nsurf-1
+          IF ( abs(Eig(i)-Eig(i+1)) < TEN*epsi) THEN
+            j = i+1
+            IF (debug) write(out_unit,*) 'degenerated vectors',i,j
+
+            aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
+            aji = dot_product(dnVec0%d0(:,j),Vec(:,i))
+            aij = dot_product(dnVec0%d0(:,i),Vec(:,j))
+            ajj = dot_product(dnVec0%d0(:,j),Vec(:,j))
+
+            !change the phase of one vector (i) if det(Mij)<0
+            IF ((aii*ajj-aij*aji) < 0) THEN
+              IF (debug) write(out_unit,*) 'det < 0',(aii*ajj-aij*aji)
+              Vec(:,i) = -Vec(:,i)
+              aii = -aii
+              aji = -aji
+            ELSE
+              IF (debug) write(out_unit,*) 'det > 0'
+            END IF
+            IF (debug) write(out_unit,*) 'aii,ajj,aji,aij',aii,ajj,aji,aij
+
+            Mij(1,:) = [aii,aij]
+            Mij(2,:) = [aji,ajj]
+
+            th = atan2(aji-aij,aii+ajj) ! we have to test with +pi as well
+
+            cc = cos(th)
+            ss = sin(th)
+
+            Rot(1,:) = [ cc,ss]
+            Rot(2,:) = [-ss,cc]
+
+            RMij = matmul(Rot,Mij)
+            RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
+            IF (debug) write(out_unit,*) 'RMij',RMij
+            err1 = sqrt(sum(RMij**2))
+            IF (debug) write(out_unit,*) 'Err, th',th,err1
+            ! th+pi => Rot=-Rot
+            RMij = -matmul(Rot,Mij) ; RMij(1,1) = RMij(1,1)-1 ; RMij(2,2) = RMij(2,2)-1
+            IF (debug) write(out_unit,*) 'RMij',RMij
+            err2 = sqrt(sum(RMij**2))
+            IF (debug) write(out_unit,*) 'Err, th+pi',th+pi,err2
+
+            IF (err2 < err1) THEN
+              th = th+pi
+              cc = -cc
+              ss = -ss
+            END IF
+
+            IF (debug) write(out_unit,*) 'theta',th
+
+            IF (abs(th) < epsi) CYCLE
+
+            Vj       = Vec(:,j)
+            Vi       = Vec(:,i)
+            Vec(:,i) =  cc * Vi + ss * Vj
+            Vec(:,j) = -ss * Vi + cc * Vj
+          END IF
+        END DO
+
+        IF (debug) THEN 
+          write(out_unit,*) 'Change phase?'
+          flush(out_unit)
+        END IF
+
+        DO i=1,nsurf
+          IF (dot_product(dnVec0%d0(:,i),Vec(:,i)) < ZERO) THEN
+             IF (debug) write(out_unit,*) 'Change phase:',i
+             Vec(:,i) = -Vec(:,i)
+           END IF
+        END DO
+
+        max_diff = -ONE
+        i_max    = 0
+        allocate(tab_sii(nsurf))
+        tab_sii(:) = ZERO
+        DO i=1,nsurf
+          aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
+          tab_sii(i) = aii
+          IF (abs(aii-ONE) > max_diff) THEN
+            aii_max  = aii
+            max_diff = abs(aii-ONE)
+            i_max    = i
+          END IF
+          IF (debug) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',i,aii
+        END DO
+        IF (max_diff > 0.2_Rkind .OR. debug) THEN
+          write(out_unit,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
+          IF (debug) THEN
+           write(out_unit,*) 'Vec:'
+           CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
+           write(out_unit,*) 'Vec0:'
+           CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
+          END IF
+        END IF
+        IF (print_level_dia_dnMat > 1) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',tab_sii(:)
+      ELSE
+        dnVec0%d0 = Vec
+      END IF
     ELSE
       IF (debug) write(out_unit,*) 'Vec0 is absent: the eigenvector phases are not checked'
     END IF
