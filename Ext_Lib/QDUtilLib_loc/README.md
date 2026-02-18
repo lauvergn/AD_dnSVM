@@ -19,7 +19,7 @@ For more details, run:
 make help
 ```
 
-To build the library, **libQDUtilLib_gfortran_opt1_lapack1_omp1_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
+To build the library, **libQDUtilLib_gfortran_opt1_lapack1_omp1_int4_real64.a**, with the default options (OPT=1, OMP=1, LAPACK=1, INT=4, RKIND=real64)
 ```bash
 make lib
 ```

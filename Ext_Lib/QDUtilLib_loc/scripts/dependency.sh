@@ -4,8 +4,8 @@ name_dep=scripts/dependencies.mk
 
 mkdeps_dir=Ext_Lib/mk-fdeps-dev
 mkdeps_exe=$mkdeps_dir/mk-fdeps
-#echo $mkdeps_exe
-#pwd
+echo $mkdeps_exe
+pwd
 
 LibName=mk-deps
 BRANCH=dev
@@ -32,7 +32,7 @@ fi
 
 if [ -x "$mkdeps_exe" ] ; then
   echo "Create dependencies ..."
-  ./$mkdeps_exe SRC/**/*.f90 --with-parent '$(OBJ_DIR)/'  --strip-parents 3 --output $name_dep
+  ./$mkdeps_exe SRC/*/*.f90 SRC/*.f90 --with-parent '$(OBJ_DIR)/'  --strip-parents 3 --output $name_dep
   echo "Create dependencies: done"
 else
   echo "The executable "$mkdeps_exe" does not exist"

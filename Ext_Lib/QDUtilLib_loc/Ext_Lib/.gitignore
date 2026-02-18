@@ -3,3 +3,4 @@
 */*.a
 */obj/*
 */OBJ/*
+mk-fdeps-dev/mk-fdeps
