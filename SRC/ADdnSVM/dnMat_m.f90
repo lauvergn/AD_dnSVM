@@ -76,9 +76,26 @@ MODULE ADdnSVM_dnMat_m
                                            AD_set_dnMat_FROM_MatOFdnS,         &
                                            AD_set_dnMat_FROM_Mat
   END TYPE dnMat_t
+  TYPE dnCMat_t
+     integer                        :: nderiv = -1
+
+     complex (kind=Rkind), allocatable :: d0(:,:)
+     complex (kind=Rkind), allocatable :: d1(:,:,:)
+     complex (kind=Rkind), allocatable :: d2(:,:,:,:)
+     complex (kind=Rkind), allocatable :: d3(:,:,:,:,:)
+
+  CONTAINS
+    !PROCEDURE, PRIVATE :: AD_sub_dnCMat2_TO_dnCMat1
+    PROCEDURE, PRIVATE :: AD_set_dnMat_TO_C
+    !PROCEDURE, PRIVATE :: AD_set_dnMat_FROM_MatOFdnS
+    !PROCEDURE, PRIVATE :: AD_set_dnCMat_FROM_CMat
+    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnMat_TO_C!,                  &
+    !                                       AD_set_dnCMat_FROM_CMat
+  END TYPE dnCMat_t
 
   PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,set_dnMat,Write_dnMat,Check_NotAlloc_dnMat
-  PUBLIC :: transpose,matmul,operator (*),operator (**),operator (+),operator (-)
+  PUBLIC :: transpose,matmul,conjg,real,aimag
+  PUBLIC :: operator (*),operator (**),operator (+),operator (-)
   PUBLIC :: DIAG_dnMat,SYM_dnMat
   PUBLIC :: submatrix_dnMat2_TO_dnMat1,dnS_TO_dnMat,dnMat_TO_dnS
   PUBLIC :: Mat_wADDTO_dnMat2_ider
@@ -86,15 +103,30 @@ MODULE ADdnSVM_dnMat_m
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
   PUBLIC :: get_d0,get_d1,get_d2,get_d3,get_Flatten
 
+  PUBLIC :: dnCMat_t
+
   INTERFACE transpose
-    MODULE PROCEDURE AD_TRANSPOSE_dnMat
+    MODULE PROCEDURE AD_TRANSPOSE_dnMat,AD_TRANSPOSE_dnCMat
+  END INTERFACE
+  INTERFACE conjg
+    MODULE PROCEDURE AD_conjg_dnCMat
+  END INTERFACE
+  INTERFACE real
+    MODULE PROCEDURE AD_REAL_dnCMat
+  END INTERFACE
+  INTERFACE aimag
+    MODULE PROCEDURE AD_AIMAG_dnCMat
   END INTERFACE
   INTERFACE matmul
     MODULE PROCEDURE AD_MATMUL_dnMat1_dnMat2,AD_MATMUL_dnMat1_Mat2, &
                      AD_MATMUL_Mat1_dnMat2
+    MODULE PROCEDURE AD_MATMUL_dnCMat1_dnCMat2,AD_MATMUL_dnCMat1_CMat2, &
+                     AD_MATMUL_CMat1_dnCMat2
   END INTERFACE
   INTERFACE operator (*)
     MODULE PROCEDURE AD_sub_dnMat_TIME_R,AD_sub_R_TIME_dnMat
+    MODULE PROCEDURE AD_sub_dnCMat_TIME_C,AD_sub_C_TIME_dnCMat
+    MODULE PROCEDURE AD_sub_dnCMat_TIME_R,AD_sub_R_TIME_dncMat
   END INTERFACE
   INTERFACE operator (**)
     MODULE PROCEDURE AD_sub_dnMat_EXP_R
@@ -104,26 +136,28 @@ MODULE ADdnSVM_dnMat_m
   END INTERFACE
   INTERFACE operator (-)
     MODULE PROCEDURE AD_dnMat2_MINUS_dnMat1,AD_sub_dnMat_MINUS_R,AD_sub_R_MINUS_dnMat
+    MODULE PROCEDURE AD_dnCMat2_MINUS_dnCMat1
   END INTERFACE
 
   INTERFACE alloc_dnMat
-    MODULE PROCEDURE AD_alloc_dnMat
+    MODULE PROCEDURE AD_alloc_dnMat,AD_alloc_dnCMat
   END INTERFACE
 
   INTERFACE dealloc_dnMat
-    MODULE PROCEDURE AD_dealloc_dnMat
+    MODULE PROCEDURE AD_dealloc_dnMat,AD_dealloc_dnCMat
   END INTERFACE
 
   INTERFACE set_dnMat
     MODULE PROCEDURE AD_set_dnMat,AD_set_dnMat_FROM_Vec
+    MODULE PROCEDURE AD_set_dnCMat,AD_set_dnCMat_FROM_dnMat
   END INTERFACE
 
   INTERFACE Write_dnMat
-    MODULE PROCEDURE AD_Write_dnMat
+    MODULE PROCEDURE AD_Write_dnMat,AD_Write_dnCMat
   END INTERFACE
 
   INTERFACE DIAG_dnMat
-    MODULE PROCEDURE AD_DIAG_dnMat
+    MODULE PROCEDURE AD_DIAG_dnMat,AD_DIAG_dnCMat_Hermitian
   END INTERFACE
   INTERFACE SYM_dnMat
     MODULE PROCEDURE AD_SYM_dnMat
@@ -145,29 +179,29 @@ MODULE ADdnSVM_dnMat_m
 
 
   INTERFACE Check_dnMat_IS_ZERO
-    MODULE PROCEDURE AD_Check_dnMat_IS_ZERO
+    MODULE PROCEDURE AD_Check_dnMat_IS_ZERO,AD_Check_dnCMat_IS_ZERO
   END INTERFACE
   INTERFACE get_maxval_OF_dnMat
-    MODULE PROCEDURE AD_get_maxval_OF_dnMat
+    MODULE PROCEDURE AD_get_maxval_OF_dnMat,AD_get_maxval_OF_dnCMat
   END INTERFACE
   INTERFACE Check_NotAlloc_dnMat
-    MODULE PROCEDURE AD_Check_NotAlloc_dnMat
+    MODULE PROCEDURE AD_Check_NotAlloc_dnMat,AD_Check_NotAlloc_dnCMat
   END INTERFACE
 
   INTERFACE get_nderiv
-    MODULE PROCEDURE AD_get_nderiv_FROM_dnMat
+    MODULE PROCEDURE AD_get_nderiv_FROM_dnMat,AD_get_nderiv_FROM_dnCMat
   END INTERFACE
   INTERFACE get_nVar
-    MODULE PROCEDURE AD_get_nVar_FROM_dnMat
+    MODULE PROCEDURE AD_get_nVar_FROM_dnMat,AD_get_nVar_FROM_dnCMat
   END INTERFACE
   INTERFACE get_nsurf
-    MODULE PROCEDURE AD_get_nsurf_FROM_dnMat
+    MODULE PROCEDURE AD_get_nsurf_FROM_dnMat,AD_get_nsurf_FROM_dnCMat
   END INTERFACE
   INTERFACE get_sizeC
-    MODULE PROCEDURE AD_get_sizeC_FROM_dnMat
+    MODULE PROCEDURE AD_get_sizeC_FROM_dnMat,AD_get_sizeC_FROM_dnCMat
   END INTERFACE
   INTERFACE get_sizeL
-    MODULE PROCEDURE AD_get_sizeL_FROM_dnMat
+    MODULE PROCEDURE AD_get_sizeL_FROM_dnMat,AD_get_sizeL_FROM_dnCMat
   END INTERFACE
 
   INTERFACE get_d0
@@ -509,10 +543,10 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat2_TO_dnMat1'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat2)
-    sizeL_loc  = AD_get_sizeL_FROM_dnMat(dnMat2)
-    sizeC_loc  = AD_get_sizeC_FROM_dnMat(dnMat2)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nderiv_loc = get_nderiv(dnMat2)
+    sizeL_loc  = get_sizeL(dnMat2)
+    sizeC_loc  = get_sizeC(dnMat2)
+    nVar_loc   = get_nVar(dnMat2)
 
     !write(out_unit,*) 'in ',name_sub,' nVar,sizeL,sizeC,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
@@ -554,9 +588,9 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_Reduced_dnMat2_TO_dnMat1'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat2)
-    nsurf_loc  = AD_get_nsurf_FROM_dnMat(dnMat2)
-    nVar_loc   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nderiv_loc = get_nderiv(dnMat2)
+    nsurf_loc  = get_nsurf(dnMat2)
+    nVar_loc   = get_nVar(dnMat2)
 
     !write(out_unit,*) 'in ',name_sub,' nVar,nsurf,nderiv',nVar_loc,nsurf_loc,nderiv_loc
 
@@ -622,10 +656,10 @@ CONTAINS
     nderiv_dnS = get_nderiv(S)
     nVar_dnS   = get_nVar(S)
 
-    nderiv_dnMat = AD_get_nderiv_FROM_dnMat(Mat)
-    sizeL_loc    = AD_get_sizeL_FROM_dnMat(Mat)
-    sizeC_loc    = AD_get_sizeC_FROM_dnMat(Mat)
-    nVar_dnMat   = AD_get_nVar_FROM_dnMat(Mat)
+    nderiv_dnMat = get_nderiv(Mat)
+    sizeL_loc    = get_sizeL(Mat)
+    sizeC_loc    = get_sizeC(Mat)
+    nVar_dnMat   = get_nVar(Mat)
 
     i_loc = 1
     j_loc = 1
@@ -659,7 +693,7 @@ CONTAINS
       IF (nderiv_dnMat >= 2) Mat%d2(i_loc,j_loc,:,:) = ZERO
     ELSE
 
-      IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR.                  &
+      IF (check_notalloc_dnmat(Mat,nderiv_dnS) .OR.                  &
            nderiv_dnS /= nderiv_dnMat  .OR.  nVar_dnS /= nVar_dnMat .OR.  &
            sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
         write(out_unit,*) ' ERROR in ',name_sub
@@ -724,10 +758,10 @@ CONTAINS
     nderiv_dnS = get_nderiv(S)
     nVar_dnS   = get_nVar(S)
 
-    nderiv_dnMat = AD_get_nderiv_FROM_dnMat(Mat)
+    nderiv_dnMat = get_nderiv(Mat)
     sizeL_loc    = AD_get_sizeL_FROM_dnMat(Mat)
     sizeC_loc    = AD_get_sizeC_FROM_dnMat(Mat)
-    nVar_dnMat   = AD_get_nVar_FROM_dnMat(Mat)
+    nVar_dnMat   = get_nVar(Mat)
 
     i_loc = 1
     j_loc = 1
@@ -755,7 +789,7 @@ CONTAINS
       !CALL set_dnS_TO_R(S,Mat%d0(i_loc,j_loc))
     ELSE
 
-      IF ( AD_check_notalloc_dnmat(Mat,nderiv_dnS) .OR. sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
+      IF (check_notalloc_dnmat(Mat,nderiv_dnS) .OR. sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
         write(out_unit,*) ' ERROR in ',name_sub
         write(out_unit,*) ' dnMat is not allocated or ...'
         write(out_unit,*) '  ... sizeL or sizeC from dnMat are < 1'
@@ -1048,10 +1082,10 @@ CONTAINS
 
     character (len=*), parameter :: name_sub='AD_Mat_wADDTO_dnMat2_ider'
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat2)
+    nderiv = get_nderiv(dnMat2)
     sizeL  = AD_get_sizeL_FROM_dnMat(dnMat2)
     sizeC  = AD_get_sizeC_FROM_dnMat(dnMat2)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nVar   = get_nVar(dnMat2)
 
     IF (.NOT. allocated(dnMat2%d0)) THEN
       write(out_unit,*) ' ERROR in ',name_sub
@@ -1198,7 +1232,7 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_set_dnMat_TO_R'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
+    nderiv_loc = get_nderiv(dnMat)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
@@ -1244,7 +1278,7 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_dnMat_TIME_R'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
+    nderiv_loc = get_nderiv(dnMat)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
@@ -1293,7 +1327,7 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_R_TIME_dnMat'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
+    nderiv_loc = get_nderiv(dnMat)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
@@ -1345,10 +1379,10 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_dnMat2_PLUS_dnMat1'
 
-    nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
+    nderiv = min(get_nderiv(dnMat1),get_nderiv(dnMat2))
 
-    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
-    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nVar1   = get_nVar(dnMat1)
+    nVar2   = get_nVar(dnMat2)
 
     sizeL1   = AD_get_sizeL_FROM_dnMat(dnMat1)
     sizeL2   = AD_get_sizeL_FROM_dnMat(dnMat2)
@@ -1476,10 +1510,10 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_dnMat2_MINUS_dnMat1'
 
-    nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
+    nderiv = min(get_nderiv(dnMat1),get_nderiv(dnMat2))
 
-    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
-    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nVar1   = get_nVar(dnMat1)
+    nVar2   = get_nVar(dnMat2)
 
     sizeL1   = AD_get_sizeL_FROM_dnMat(dnMat1)
     sizeL2   = AD_get_sizeL_FROM_dnMat(dnMat2)
@@ -1577,7 +1611,7 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_sub_R_MINUS_dnMat'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
+    nderiv_loc = get_nderiv(dnMat)
 
     sub_R_MINUS_dnMat%nderiv = nderiv_loc
 
@@ -1630,8 +1664,8 @@ CONTAINS
     integer :: id,jd,kd
     character (len=*), parameter :: name_sub='AD_sub_dnMat_EXP_R'
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(dnMat)
-    nVar_loc = AD_get_nVar_FROM_dnMat(dnMat)
+    nderiv_loc = get_nderiv(dnMat)
+    nVar_loc = get_nVar(dnMat)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
@@ -1709,10 +1743,10 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_TRANSPOSE_dnMat'
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat)
+    nderiv = get_nderiv(dnMat)
     sizeL  = AD_get_sizeL_FROM_dnMat(dnMat)
     sizeC  = AD_get_sizeC_FROM_dnMat(dnMat)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat)
+    nVar   = get_nVar(dnMat)
     !write(out_unit,*) 'in ',name_sub,' sizeL,sizeC,nVar,nderiv',sizeL,sizeC,nVar,nderiv
 
 
@@ -1766,9 +1800,9 @@ CONTAINS
     integer :: err_dnMat_loc
     character (len=*), parameter :: name_sub='AD_SYM_dnMat'
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat)
+    nderiv = get_nderiv(dnMat)
+    nsurf  = get_nsurf(dnMat)
+    nVar   = get_nVar(dnMat)
 
     !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
 
@@ -1824,10 +1858,10 @@ CONTAINS
     character (len=*), parameter :: name_sub='AD_MATMUL_dnMat1_dnMat2'
 
 
-    nderiv = min(AD_get_nderiv_FROM_dnMat(dnMat1),AD_get_nderiv_FROM_dnMat(dnMat2))
+    nderiv = min(get_nderiv(dnMat1),get_nderiv(dnMat2))
 
-    nVar1   = AD_get_nVar_FROM_dnMat(dnMat1)
-    nVar2   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nVar1   = get_nVar(dnMat1)
+    nVar2   = get_nVar(dnMat2)
     IF (nVar1 /= nVar2) STOP ' ERROR in AD_MATMUL_dnMat1_dnMat2: nVar1 and nVar2 differ'
 
     sizeL1  = AD_get_sizeL_FROM_dnMat(dnMat1)
@@ -1901,8 +1935,8 @@ CONTAINS
     character (len=*), parameter :: name_sub='AD_MATMUL_dnMat1_Mat2'
 
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat1)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat1)
+    nderiv = get_nderiv(dnMat1)
+    nVar   = get_nVar(dnMat1)
 
     sizeL1  = AD_get_sizeL_FROM_dnMat(dnMat1)
     sizeC1  = AD_get_sizeC_FROM_dnMat(dnMat1)
@@ -1961,8 +1995,8 @@ CONTAINS
     character (len=*), parameter :: name_sub='AD_MATMUL_Mat1_dnMat2'
 
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat2)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat2)
+    nderiv = get_nderiv(dnMat2)
+    nVar   = get_nVar(dnMat2)
 
 
     sizeL2  = AD_get_sizeL_FROM_dnMat(dnMat2)
@@ -2035,7 +2069,7 @@ CONTAINS
     sizeL  = AD_get_sizeL_FROM_dnMat(Mat)
     sizeC  = AD_get_sizeC_FROM_dnMat(Mat)
 
-    nVar_loc   = AD_get_nVar_FROM_dnMat(Mat)
+    nVar_loc   = get_nVar(Mat)
 
     IF (sizeL == 1 .AND. sizeC == 1 .AND. nVar_loc > 1) THEN
       IF (allocated(Mat%d0)) THEN
@@ -2144,7 +2178,7 @@ CONTAINS
       write(out_unit,*) ' ERROR in AD_get_nderiv_FROM_dnMat'
       write(out_unit,*) '  Problem with nderiv in Mat'
       write(out_unit,*) '  nderiv,Mat%nderiv',nderiv,Mat%nderiv
-      CALL AD_Write_dnMat(Mat)
+      CALL Write_dnMat(Mat)
       STOP 'ERROR in AD_get_nderiv_FROM_dnMat'
     END IF
 
@@ -2399,9 +2433,9 @@ CONTAINS
 
 
     IF (present(epsi)) THEN
-      IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= epsi
+      IS_ZERO = get_maxval_OF_dnMat(Mat) <= epsi
     ELSE
-      IS_ZERO = AD_get_maxval_OF_dnMat(Mat) <= ONETENTH**10
+      IS_ZERO = get_maxval_OF_dnMat(Mat) <= ONETENTH**10
     END IF
 
     END FUNCTION AD_Check_dnMat_IS_ZERO
@@ -2423,7 +2457,7 @@ CONTAINS
     real(kind=Rkind) :: e0,e1,e2,e3
     integer          :: nderiv_loc
 
-    nderiv_loc = AD_get_nderiv_FROM_dnMat(Mat)
+    nderiv_loc = get_nderiv(Mat)
     IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
 
     IF (allocated(Mat%d0) .AND. nderiv_loc >= 0) THEN
@@ -2513,9 +2547,9 @@ CONTAINS
     IF (present(type_diag)) type_diag_loc = type_diag
     IF (debug) write(out_unit,*) 'type_diag',type_diag_loc
 
-    nderiv = AD_get_nderiv_FROM_dnMat(dnMat)
-    nVar   = AD_get_nVar_FROM_dnMat(dnMat)
-    nsurf  = AD_get_nsurf_FROM_dnMat(dnMat)
+    nderiv = get_nderiv(dnMat)
+    nVar   = get_nVar(dnMat)
+    nsurf  = get_nsurf(dnMat)
 
     CALL AD_dealloc_dnMat(dnMatDiag)
     CALL AD_dealloc_dnMat(dnVec)
@@ -2816,13 +2850,1608 @@ CONTAINS
     CALL AD_dealloc_dnMat(dnMat_OnVec)
 
     IF (debug) THEN
-      IF (present(dnVecProj)) CALL AD_Write_dnMat(dnVecProj,info='dnVecProj')
-      CALL AD_Write_dnMat(dnVec,info='dnVec')
-      CALL AD_Write_dnMat(dnMatDiag,info='dnMatDiag')
+      IF (present(dnVecProj)) CALL Write_dnMat(dnVecProj,info='dnVecProj')
+      CALL Write_dnMat(dnVec,info='dnVec')
+      CALL Write_dnMat(dnMatDiag,info='dnMatDiag')
       write(out_unit,*) ' END ',name_sub
       flush(out_unit)
     END IF
 
   END SUBROUTINE AD_DIAG_dnMat
+!! @param Mat                TYPE (dnCMat_t):       derived type which deals with the derivatives of a matrix.
+!! @param nsurf              integer (optional):    number of electronic surfaces.
+!! @param nVar               integer (optional):    number of coordinates (for the derivatives).
+!! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 2).
+!! @param err_dnMat          integer (optional):    to handle the errors errors (0: no error).
+!! @param name_var           character (optional):  Name of the variable from the calling subroutine (debuging purpose).
+!! @param name_sub           character (optional):  Name of the calling subroutine (debuging purpose).
+  SUBROUTINE AD_alloc_dnCMat(Mat,nsurf,sizeL,sizeC,nVar,nderiv,name_var,name_sub,err_dnMat)
+    USE QDUtil_m
+    IMPLICIT NONE
 
+    TYPE (dnCMat_t),   intent(inout)         :: Mat   !< derived type, which contains, matrix potential, its derivatives
+
+    integer,           intent(in),  optional :: nsurf !< number of electronic surfaces
+    integer,           intent(in),  optional :: sizeL,sizeC !< numbers of lines and columns
+
+    integer,           intent(in),  optional :: nVar  !< number of coordinates (for the derivatives)
+    integer,           intent(in),  optional :: nderiv  !< order of the derivatives [0,1,2]
+    character (len=*), intent(in),  optional :: name_var,name_sub
+    integer,           intent(out), optional :: err_dnMat  !< to handle the errors
+
+    ! local variables
+    integer :: sizeL_loc,sizeC_loc,nVar_loc,err_dnMat_loc,nderiv_loc
+
+
+    err_dnMat_loc = 0 ! no error
+
+    CALL AD_dealloc_dnCMat(Mat,err_dnMat_loc)
+    IF (err_dnMat_loc /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Problem in AD_dealloc_dnCMat CALL in AD_alloc_dnCMat'
+      IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+      IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
+      IF (present(err_dnMat)) THEN
+        err_dnMat = err_dnMat_loc
+        RETURN
+      ELSE
+        STOP 'Problem in AD_dealloc_dnCMat CALL in AD_alloc_dnCMat'
+      END IF
+    END IF
+
+    ! test nsurf, sizeL, sizeL
+    !       T      F       F    => ok
+    !       F      T       T    => ok
+    !   all other posiblities are wrong
+    IF ( (present(nsurf) .AND. .NOT. present(sizeL) .AND. .NOT. present(sizeC) ) .OR. &
+         (.NOT. present(nsurf) .AND. present(sizeL) .AND. present(sizeC) ) ) THEN
+      CONTINUE ! the two possiblities
+      !write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      !write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      !write(out_unit,*) 'present(sizeC): ',present(sizeC)
+    ELSE
+      write(out_unit,*) ' ERROR in AD_alloc_dnCMat'
+      write(out_unit,*) ' wrong parameter presence:'
+      write(out_unit,*) 'present(nsurf): ',present(nsurf)
+      write(out_unit,*) 'present(sizeL): ',present(sizeL)
+      write(out_unit,*) 'present(sizeC): ',present(sizeC)
+      write(out_unit,*)
+      write(out_unit,*) ' The two correct possibilities are:'
+      write(out_unit,*) '----------------------------------------------'
+      write(out_unit,*) ' present(nsurf) present(sizeL) present(sizeC)'
+      write(out_unit,*) '    true           false           false'
+      write(out_unit,*) '    false          true            true'
+      write(out_unit,*) '----------------------------------------------'
+
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_alloc_dnCMat: wrong parameter presence,nsurf and sizeL or sizeC'
+      END IF
+    END IF
+
+    IF (present(nsurf)) THEN
+      sizeL_loc = nsurf
+      sizeC_loc = nsurf
+    ELSE IF (present(sizeL) .AND. present(sizeC)) THEN
+      sizeL_loc = sizeL
+      sizeC_loc = sizeC
+    ELSE
+      sizeL_loc = 1
+      sizeC_loc = 1
+    END IF
+    IF (sizeL_loc < 1 .OR. sizeC_loc < 1) THEN
+      write(out_unit,*) ' ERROR in AD_alloc_dnCMat'
+      write(out_unit,*) '  sizeL_loc < 0 or sizeC_loc < 0',sizeL_loc,sizeC_loc
+      IF (present(err_dnMat)) THEN
+        err_dnMat = 1
+        RETURN
+      ELSE
+        STOP 'ERROR in AD_alloc_dnCMat: sizeL < 0 or sizeC < 0'
+      END IF
+    END IF
+
+    ! test nVar
+    IF (present(nVar)) THEN
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = 1
+    END IF
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+      nderiv_loc = min(3,nderiv_loc)
+    ELSE
+      nderiv_loc = 0
+    END IF
+    Mat%nderiv = nderiv_loc
+
+    !write(out_unit,*) 'Mat%nderiv in alloc_dnMat',Mat%nderiv
+
+    allocate(Mat%d0(sizeL_loc,sizeC_loc),stat=err_dnMat_loc)
+    IF (err_dnMat_loc /= 0) THEN
+      write(out_unit,*) ' ERROR in AD_alloc_dnCMat'
+      write(out_unit,*) '  Problem with allocate of Mat%d0'
+      IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+      IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
+      IF (present(err_dnMat)) THEN
+        err_dnMat = err_dnMat_loc
+        RETURN
+      ELSE
+        STOP 'Problem with allocate in AD_alloc_dnCMat'
+      END IF
+    END IF
+
+    IF (nderiv_loc >= 1) THEN
+      allocate(Mat%d1(sizeL_loc,sizeC_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in AD_alloc_dnCMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d1'
+        write(out_unit,*) '  nVar > 0?',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    IF (nderiv_loc >= 2) THEN
+      allocate(Mat%d2(sizeL_loc,sizeC_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in AD_alloc_dnMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d2'
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    IF (nderiv_loc >= 3) THEN
+      allocate(Mat%d3(sizeL_loc,sizeC_loc,nVar_loc,nVar_loc,nVar_loc),stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in AD_alloc_dnCMat'
+        write(out_unit,*) '  Problem with allocate of Mat%d2'
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(name_var)) write(out_unit,*) '  for the variable: ',name_var
+        IF (present(name_sub)) write(out_unit,*) '  call from the subroutine: ',name_sub
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+  END SUBROUTINE AD_alloc_dnCMat
+!> @brief Public subroutine which deallocates a derived type dnCMat.
+!!
+!> @author David Lauvergnat
+!! @date 21/06/2018
+!!
+!! @param Mat                TYPE (dnMat_t):        derived type which deals with the derivatives of a matrix.
+!! @param err_dnMat       integer (optional):    to handle the errors errors (0: no error).
+  SUBROUTINE AD_dealloc_dnCMat(Mat,err_dnMat)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t), intent(inout)         :: Mat        !< derived type, which contains, matrix potential, its derivatives
+    integer,         intent(out), optional :: err_dnMat  !< to handle the errors
+
+    ! local variables
+    integer :: err_dnMat_loc
+
+    err_dnMat_loc = 0
+    IF (present(err_dnMat)) err_dnMat = 0
+
+    IF (allocated(Mat%d0)) THEN
+      deallocate(Mat%d0,stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in dealloc_dnCMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d0'
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with deallocate in dealloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    IF (allocated(Mat%d1)) THEN
+      deallocate(Mat%d1,stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in dealloc_dnCMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d1'
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with deallocate in dealloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    IF (allocated(Mat%d2)) THEN
+      deallocate(Mat%d2,stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in dealloc_dnCMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d2'
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with deallocate in dealloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    IF (allocated(Mat%d3)) THEN
+      deallocate(Mat%d3,stat=err_dnMat_loc)
+      IF (err_dnMat_loc /= 0) THEN
+        write(out_unit,*) ' ERROR in dealloc_dnCMat'
+        write(out_unit,*) '  Problem with deallocate of Mat%d3'
+        IF (present(err_dnMat)) THEN
+          err_dnMat = err_dnMat_loc
+          RETURN
+        ELSE
+          STOP 'Problem with deallocate in dealloc_dnCMat'
+        END IF
+      END IF
+    END IF
+
+    Mat%nderiv = -1
+
+  END SUBROUTINE AD_dealloc_dnCMat
+  FUNCTION AD_Check_NotAlloc_dnCMat(Mat,nderiv) RESULT(NotAlloc)
+
+    logical                        :: NotAlloc
+    TYPE (dnCMat_t), intent(in)    :: Mat
+    integer,         intent(in)    :: nderiv
+
+    NotAlloc =               (nderiv >= 0 .AND. .NOT. allocated(Mat%d0))
+    NotAlloc = NotAlloc .OR. (nderiv >= 1 .AND. .NOT. allocated(Mat%d1))
+    NotAlloc = NotAlloc .OR. (nderiv >= 2 .AND. .NOT. allocated(Mat%d2))
+    NotAlloc = NotAlloc .OR. (nderiv >= 3 .AND. .NOT. allocated(Mat%d3))
+
+  END FUNCTION AD_Check_NotAlloc_dnCMat
+  FUNCTION AD_get_nderiv_FROM_dnCMat(Mat) RESULT(nderiv)
+    USE QDUtil_m, ONLY : out_unit
+    IMPLICIT NONE
+
+    integer                       :: nderiv
+    TYPE (dnCMat_t), intent(in)   :: Mat
+
+    nderiv = Mat%nderiv
+
+    IF (.NOT. allocated(Mat%d0)) THEN
+      nderiv = -1
+    ELSE IF (.NOT. allocated(Mat%d1)) THEN
+      nderiv = 0
+    ELSE IF (.NOT. allocated(Mat%d2)) THEN
+      nderiv = 1
+    ELSE IF (.NOT. allocated(Mat%d3)) THEN
+      nderiv = 2
+    ELSE
+      nderiv = 3
+    END IF
+
+    IF (Mat%nderiv /= nderiv) THEN
+      write(out_unit,*) ' ERROR in AD_get_nderiv_FROM_dnCMat'
+      write(out_unit,*) '  Problem with nderiv in Mat'
+      write(out_unit,*) '  nderiv,Mat%nderiv',nderiv,Mat%nderiv
+      CALL Write_dnMat(Mat)
+      STOP 'ERROR in AD_get_nderiv_FROM_dnCMat'
+    END IF
+
+  END FUNCTION AD_get_nderiv_FROM_dnCMat
+
+  FUNCTION AD_get_nsurf_FROM_dnCMat(Mat) RESULT(nsurf)
+    USE QDUtil_m, ONLY : out_unit
+
+    integer                       :: nsurf
+    TYPE (dnCMat_t), intent(in)    :: Mat
+
+    integer :: sizeL_loc,sizeC_loc
+
+    IF (.NOT. allocated(Mat%d0)) THEN
+      sizeL_loc = 0
+      sizeC_loc = 0
+    ELSE
+      sizeL_loc = size(Mat%d0,dim=1)
+      sizeC_loc = size(Mat%d0,dim=2)
+    END IF
+    IF (sizeL_loc /= sizeC_loc) THEN
+      write(out_unit,*) ' ERROR in AD_get_nsurf_FROM_dnMat'
+      write(out_unit,*) '  Mat is not a square matrix!'
+      write(out_unit,*) '  shape(mat)',shape(Mat)
+      STOP 'ERROR in AD_get_nsurf_FROM_dnMat: Mat is not a square matrix'
+    ELSE
+      nsurf = sizeL_loc
+    END IF
+
+  END FUNCTION AD_get_nsurf_FROM_dnCMat
+  FUNCTION AD_get_sizeC_FROM_dnCMat(Mat) RESULT(sizeC)
+
+    integer                       :: sizeC
+    TYPE (dnCMat_t), intent(in)    :: Mat
+  
+  
+    IF (.NOT. allocated(Mat%d0)) THEN
+      sizeC = 0
+    ELSE
+      sizeC = size(Mat%d0,dim=2)
+    END IF
+
+  END FUNCTION AD_get_sizeC_FROM_dnCMat
+  FUNCTION AD_get_sizeL_FROM_dnCMat(Mat) RESULT(sizeL)
+
+    integer                       :: sizeL
+    TYPE (dnCMat_t), intent(in)   :: Mat
+  
+  
+    IF (.NOT. allocated(Mat%d0)) THEN
+      sizeL = 0
+    ELSE
+      sizeL = size(Mat%d0,dim=1)
+    END IF
+
+  END FUNCTION AD_get_sizeL_FROM_dnCMat
+
+  FUNCTION AD_get_nVar_FROM_dnCMat(Mat) RESULT(nVar)
+
+    integer                       :: nVar
+    TYPE (dnCMat_t), intent(in)    :: Mat
+
+    IF (.NOT. allocated(Mat%d1)) THEN
+      nVar = 0
+    ELSE
+      nVar = size(Mat%d1,dim=3)
+    END IF
+
+  END FUNCTION AD_get_nVar_FROM_dnCMat
+  SUBROUTINE AD_Write_dnCMat(Mat,nio,info)
+    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, &
+                         out_unit, RMatIO_format
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t),  intent(in)           :: Mat
+    integer,          intent(in), optional :: nio
+    character(len=*), intent(in), optional :: info
+
+    integer :: i,j,k,nio_loc,sizeL,sizeC,nVar_loc
+
+    IF (present(nio)) THEN
+      nio_loc = nio
+    ELSE
+      nio_loc = out_unit
+    END IF
+
+    sizeL    = get_sizeL(Mat)
+    sizeC    = get_sizeC(Mat)
+    nVar_loc = AD_get_nVar_FROM_dnCMat(Mat)
+
+    IF (sizeL == 1 .AND. sizeC == 1 .AND. nVar_loc > 1) THEN
+      IF (allocated(Mat%d0)) THEN
+        write(nio_loc,'(a,' // RMatIO_format // ')') ' no derivative',Mat%d0
+      END IF
+
+      IF (allocated(Mat%d1)) THEN
+        write(nio_loc,*) ' 1st derivative'
+        CALL Write_Vec(Mat%d1(1,1,:),nio_loc,5)
+      END IF
+
+      IF (allocated(Mat%d2)) THEN
+        write(nio_loc,*) ' 2d derivative'
+        CALL Write_Mat(Mat%d2(1,1,:,:),nio_loc,5)
+      END IF
+      IF (allocated(Mat%d3)) THEN
+        write(nio_loc,*) ' 3d derivative'
+        DO i=1,ubound(Mat%d3,dim=5)
+        DO j=1,ubound(Mat%d3,dim=4)
+        DO k=1,ubound(Mat%d3,dim=3)
+          write(nio_loc,'(3(1x,i0)," : ",' // RMatIO_format // ')') k,j,i,Mat%d3(1,1,k,j,i)
+        END DO
+        END DO
+        END DO
+      END IF
+    ELSE
+      IF (allocated(Mat%d0)) THEN
+         IF (present(info)) THEN
+           write(nio_loc,*) ' no derivative of ',info
+         ELSE
+           write(nio_loc,*) ' no derivative'
+         END IF
+        CALL Write_Mat(Mat%d0,nio_loc,5)
+      END IF
+
+      IF (allocated(Mat%d1)) THEN
+        DO i=1,ubound(Mat%d1,dim=3)
+          IF (present(info)) THEN
+            write(nio_loc,*) ' 1st derivative of ',info,i
+          ELSE
+            write(nio_loc,*) ' 1st derivative',i
+          END IF
+          CALL Write_Mat(Mat%d1(:,:,i),nio_loc,5)
+        END DO
+      END IF
+
+      IF (allocated(Mat%d2)) THEN
+        DO i=1,ubound(Mat%d2,dim=4)
+        DO j=1,ubound(Mat%d2,dim=3)
+          IF (present(info)) THEN
+            write(nio_loc,*) ' 2d derivative of ',info,j,i
+          ELSE
+            write(nio_loc,*) ' 2d derivative',j,i
+          END IF
+          CALL Write_Mat(Mat%d2(:,:,j,i),nio_loc,5)
+        END DO
+        END DO
+      END IF
+
+      IF (allocated(Mat%d3)) THEN
+        DO i=1,ubound(Mat%d3,dim=5)
+        DO j=1,ubound(Mat%d3,dim=4)
+        DO k=1,ubound(Mat%d3,dim=3)
+          IF (present(info)) THEN
+            write(nio_loc,*) ' 3d derivative of ',info,k,j,i
+          ELSE
+            write(nio_loc,*) ' 3d derivative',k,j,i
+          END IF
+          CALL Write_Mat(Mat%d3(:,:,k,j,i),nio_loc,5)
+        END DO
+        END DO
+        END DO
+      END IF
+    END IF
+    flush(nio_loc)
+  END SUBROUTINE AD_Write_dnCMat
+  SUBROUTINE AD_check_dim_dnCMat(Mat,err_dnMat)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t),   intent(inout)   :: Mat   !< derived type, which contains, matrix potential, its derivatives
+    integer,           intent(out)     :: err_dnMat  !< to handle the errors
+
+    ! local variables
+    integer :: dim0(2),dim1(3),dim2(4),dim3(5)
+
+    err_dnMat = 0 ! no error
+
+    dim0 = 0
+    IF (allocated(Mat%d0)) dim0 = shape(Mat%d0)
+    dim1 = 0
+    IF (allocated(Mat%d1)) THEN 
+      dim1 = shape(Mat%d1)
+      IF (any(dim0 /= dim1(1:2))) err_dnMat = 1
+    END IF
+    dim2 = 0
+    IF (allocated(Mat%d2)) THEN
+      dim2 = shape(Mat%d2)
+      IF (any(dim0 /= dim2(1:2))) err_dnMat = 1
+      IF (dim2(3) /= dim2(4) .OR. dim2(3) /= dim1(3)) err_dnMat = 2
+    END IF
+    dim3 = 0
+    IF (allocated(Mat%d3)) THEN 
+      dim3 = shape(Mat%d3)
+      IF (any(dim0 /= dim3(1:2))) err_dnMat = 1
+      IF (dim3(3) /= dim3(4) .OR. dim3(3) /= dim3(5) .OR. dim3(3) /= dim1(3)) err_dnMat = 2
+    END IF
+
+    IF (err_dnMat /= 0) THEN
+      IF (allocated(Mat%d0)) write(out_unit,*) 'shape(Mat%d0):',shape(Mat%d0)
+      IF (allocated(Mat%d1)) write(out_unit,*) 'shape(Mat%d1):',shape(Mat%d1)
+      IF (allocated(Mat%d2)) write(out_unit,*) 'shape(Mat%d2):',shape(Mat%d2)
+      IF (allocated(Mat%d3)) write(out_unit,*) 'shape(Mat%d3):',shape(Mat%d3)
+    END IF
+
+  END SUBROUTINE AD_check_dim_dnCMat
+  FUNCTION AD_Check_dnCMat_IS_ZERO(Mat,epsi) RESULT(IS_ZERO)
+    USE QDUtil_m, ONLY : Rkind, ONETENTH
+    IMPLICIT NONE
+
+    logical                                   :: IS_ZERO
+    TYPE (dnCMat_t),     intent(in)           :: Mat
+    real(kind=Rkind),    intent(in), optional :: epsi
+
+
+    IF (present(epsi)) THEN
+      IS_ZERO = get_maxval_OF_dnMat(Mat) <= epsi
+    ELSE
+      IS_ZERO = get_maxval_OF_dnMat(Mat) <= ONETENTH**10
+    END IF
+
+  END FUNCTION AD_Check_dnCMat_IS_ZERO
+  FUNCTION AD_get_maxval_OF_dnCMat(Mat,nderiv) RESULT(mval)
+    USE QDUtil_m, ONLY : Rkind, ZERO
+    IMPLICIT NONE
+
+    real(kind=Rkind)                      :: mval
+    TYPE (dnCMat_t), intent(in)           :: Mat
+    integer,         intent(in), optional :: nderiv
+
+    real(kind=Rkind) :: e0,e1,e2,e3
+    integer          :: nderiv_loc
+
+    nderiv_loc = get_nderiv(Mat)
+    IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
+
+    IF (allocated(Mat%d0) .AND. nderiv_loc >= 0) THEN
+      e0 = maxval(abs(Mat%d0))
+    ELSE
+      e0 = ZERO
+    END IF
+
+    IF (allocated(Mat%d1) .AND. nderiv_loc >= 1) THEN
+      e1 = maxval(abs(Mat%d1))
+    ELSE
+      e1 = ZERO
+    END IF
+
+    IF (allocated(Mat%d2) .AND. nderiv_loc >= 2) THEN
+      e2 = maxval(abs(Mat%d2))
+    ELSE
+      e2 = ZERO
+    END IF
+
+    IF (allocated(Mat%d3) .AND. nderiv_loc >= 3) THEN
+      e3 = maxval(abs(Mat%d3))
+    ELSE
+      e3 = ZERO
+    END IF
+
+    mval = max(e0,e1,e2,e3)
+
+  END FUNCTION AD_get_maxval_OF_dnCMat
+  FUNCTION AD_CONJG_dnCMat(dnMat)  RESULT(ResdnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+
+    TYPE (dnCMat_t)                    :: ResdnMat
+    TYPE (dnCMat_t),     intent(in)    :: dnMat
+
+    integer :: nderiv,nVar,sizeL,sizeC
+    character (len=*), parameter :: name_sub='AD_CONJG_dnCMat'
+
+
+    nderiv = get_nderiv(dnMat)
+    nVar   = get_nVar(dnMat)
+    sizeL  = get_sizeL(dnMat)
+    sizeC  = get_sizeC(dnMat)
+
+    IF (nderiv < 0 .OR. sizeL < 1 .OR. sizeC < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+
+    ResdnMat%nderiv = nderiv
+
+    IF (nderiv >= 0) ResdnMat%d0 = conjg(dnMat%d0)
+    IF (nderiv >= 1) ResdnMat%d1 = conjg(dnMat%d1)
+    IF (nderiv >= 2) ResdnMat%d2 = conjg(dnMat%d2)
+    IF (nderiv >= 3) ResdnMat%d3 = conjg(dnMat%d3)
+
+  END FUNCTION AD_CONJG_dnCMat
+  FUNCTION AD_REAL_dnCMat(dnMat)  RESULT(ResdnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+
+    TYPE (dnMat_t)                     :: ResdnMat
+    TYPE (dnCMat_t),     intent(in)    :: dnMat
+
+    integer :: nderiv,nVar,sizeL,sizeC
+    character (len=*), parameter :: name_sub='AD_REAL_dnCMat'
+
+
+    nderiv = get_nderiv(dnMat)
+    nVar   = get_nVar(dnMat)
+    sizeL  = get_sizeL(dnMat)
+    sizeC  = get_sizeC(dnMat)
+
+    IF (nderiv < 0 .OR. sizeL < 1 .OR. sizeC < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+
+    ResdnMat%nderiv = nderiv
+
+    IF (nderiv >= 0) ResdnMat%d0 = real(dnMat%d0,kind=Rkind)
+    IF (nderiv >= 1) ResdnMat%d1 = real(dnMat%d1,kind=Rkind)
+    IF (nderiv >= 2) ResdnMat%d2 = real(dnMat%d2,kind=Rkind)
+    IF (nderiv >= 3) ResdnMat%d3 = real(dnMat%d3,kind=Rkind)
+
+  END FUNCTION AD_REAL_dnCMat
+  FUNCTION AD_AIMAG_dnCMat(dnMat)  RESULT(ResdnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+
+    TYPE (dnMat_t)                     :: ResdnMat
+    TYPE (dnCMat_t),     intent(in)    :: dnMat
+
+    integer :: nderiv,nVar,sizeL,sizeC
+    character (len=*), parameter :: name_sub='AD_AIMAG_dnCMat'
+
+    nderiv = get_nderiv(dnMat)
+    nVar   = get_nVar(dnMat)
+    sizeL  = get_sizeL(dnMat)
+    sizeC  = get_sizeC(dnMat)
+
+    IF (nderiv < 0 .OR. sizeL < 1 .OR. sizeC < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+
+    ResdnMat%nderiv = nderiv
+
+    IF (nderiv >= 0) ResdnMat%d0 = aimag(dnMat%d0)
+    IF (nderiv >= 1) ResdnMat%d1 = aimag(dnMat%d1)
+    IF (nderiv >= 2) ResdnMat%d2 = aimag(dnMat%d2)
+    IF (nderiv >= 3) ResdnMat%d3 = aimag(dnMat%d3)
+
+  END FUNCTION AD_AIMAG_dnCMat
+  FUNCTION AD_TRANSPOSE_dnCMat(dnMat)  RESULT(TransdnMat) ! check with t(t(dnmat))-dnMat
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                :: TransdnMat
+    TYPE (dnCMat_t), intent(in)    :: dnMat
+
+    integer :: nderiv,sizeL,sizeC,nVar,id,jd,kd
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_TRANSPOSE_dnMat'
+
+    nderiv = get_nderiv(dnMat)
+    sizeL  = get_sizeL(dnMat)
+    sizeC  = get_sizeC(dnMat)
+    nVar   = get_nVar(dnMat)
+
+    CALL alloc_dnMat(TransdnMat,sizeL=sizeC,sizeC=sizeL,nVar=nVar,nderiv=nderiv)
+
+    nderiv = get_nderiv(TransdnMat)
+
+    IF (nderiv < 0) RETURN
+
+    IF (nderiv >= 0) TransdnMat%d0 = transpose(dnMat%d0)
+    IF (nderiv >= 1) THEN
+      DO id=1,nVar
+        TransdnMat%d1(:,:,id) = transpose(dnMat%d1(:,:,id))
+      END DO
+    END IF
+    IF (nderiv >= 2) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        TransdnMat%d2(:,:,jd,id) = transpose(dnMat%d2(:,:,jd,id))
+      END DO
+      END DO
+    END IF
+    IF (nderiv >= 3) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        TransdnMat%d3(:,:,kd,jd,id) = transpose(dnMat%d3(:,:,kd,jd,id))
+      END DO
+      END DO
+      END DO
+    END IF
+
+    nderiv = get_nderiv(TransdnMat)
+
+  END FUNCTION AD_TRANSPOSE_dnCMat
+  SUBROUTINE AD_set_dnCMat(dnMat,d0,d1,d2,d3)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    CLASS (dnCMat_t),     intent(inout)         :: dnMat
+    complex (kind=Rkind), intent(in), optional  :: d0(:,:)
+    complex (kind=Rkind), intent(in), optional  :: d1(:,:,:)
+    complex (kind=Rkind), intent(in), optional  :: d2(:,:,:,:)
+    complex (kind=Rkind), intent(in), optional  :: d3(:,:,:,:,:)
+
+    integer :: err_dim
+    character (len=*), parameter :: name_sub='AD_set_dnCMat'
+
+    IF (present(d0)) THEN
+      dnMat%d0     = d0
+      dnMat%nderiv = 0
+    END IF
+
+    IF (present(d1)) THEN
+      dnMat%d1     = d1
+      dnMat%nderiv = 1
+      IF (.NOT. present(d0)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d1 is present but not d0'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCMat'
+      END IF
+    END IF
+
+    IF (present(d2)) THEN
+      dnMat%d2     = d2
+      dnMat%nderiv = 2
+      IF (.NOT. present(d1)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d2 is present but not d1'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCMat'
+      END IF
+    END IF
+
+    IF (present(d3)) THEN
+      dnMat%d3     = d3
+      dnMat%nderiv = 3
+      IF (.NOT. present(d2)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d3 is present but not d2'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCMat'
+      END IF
+    END IF
+
+    err_dim = 0
+    CALL AD_check_dim_dnCMat(dnMat,err_dim)
+    IF (err_dim /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' inconsistent dimensions of dnM'
+      STOP 'ERROR in AD_set_dnCMat: inconsistent dimensions'
+    END IF
+  
+  END SUBROUTINE AD_set_dnCMat
+
+  SUBROUTINE AD_set_dnCMat_FROM_dnMat(dnMat,dnRMat,dnIMat)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+    IMPLICIT NONE
+
+    CLASS (dnCMat_t),    intent(inout)         :: dnMat
+    TYPE (dnMat_t),      intent(in)            :: dnRMat
+    TYPE (dnMat_t),      intent(in), optional  :: dnIMat
+
+    integer :: err_dim
+    character (len=*), parameter :: name_sub='AD_set_dnCMat_FROM_dnMat'
+
+    IF (get_nderiv(dnRMat) /= get_nderiv(dnIMat)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv from dnRMat and dnIMat are different'
+      write(out_unit,*) ' dnRMat%nderiv',get_nderiv(dnRMat)
+      write(out_unit,*) ' dnIMat%nderiv',get_nderiv(dnIMat)
+      flush(out_unit)
+      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nderiv from dnRMat and dnIMat are different'
+    ELSE
+      dnMat%nderiv = get_nderiv(dnRMat)
+    END IF
+    IF (get_nVar(dnRMat) /= get_nVar(dnIMat)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar from dnRMat and dnIMat are different'
+      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nVar from dnRMat and dnIMat are different'
+    END IF
+    IF (get_sizeC(dnRMat) /= get_sizeC(dnIMat)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' get_sizeC from dnRMat and dnIMat are different'
+      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeC from dnRMat and dnIMat are different'
+    END IF
+    IF (get_sizeL(dnRMat) /= get_sizeL(dnIMat)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' get_sizeL from dnRMat and dnIMat are different'
+      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeL from dnRMat and dnIMat are different'
+    END IF
+
+    IF (present(dnIMat)) THEN
+      SELECT CASE(dnMat%nderiv)
+      CASE(0)
+        dnMat%d0 = cmplx(dnRMat%d0,dnIMat%d0,kind=Rkind)
+      CASE(1)
+        dnMat%d0 = cmplx(dnRMat%d0,dnIMat%d0,kind=Rkind)
+        dnMat%d1 = cmplx(dnRMat%d1,dnIMat%d1,kind=Rkind)
+      CASE(2)
+        dnMat%d0 = cmplx(dnRMat%d0,dnIMat%d0,kind=Rkind)
+        dnMat%d1 = cmplx(dnRMat%d1,dnIMat%d1,kind=Rkind)
+        dnMat%d2 = cmplx(dnRMat%d2,dnIMat%d2,kind=Rkind)
+      CASE(3)
+        dnMat%d0 = cmplx(dnRMat%d0,dnIMat%d0,kind=Rkind)
+        dnMat%d1 = cmplx(dnRMat%d1,dnIMat%d1,kind=Rkind)
+        dnMat%d2 = cmplx(dnRMat%d2,dnIMat%d2,kind=Rkind)
+        dnMat%d3 = cmplx(dnRMat%d3,dnIMat%d3,kind=Rkind)
+      CASE Default
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nderiv wrong value'
+      END SELECT
+    ELSE
+      SELECT CASE(dnMat%nderiv)
+      CASE(0)
+        dnMat%d0 = dnRMat%d0
+      CASE(1)
+        dnMat%d0 = dnRMat%d0
+        dnMat%d1 = dnRMat%d1
+      CASE(2)
+        dnMat%d0 = dnRMat%d0
+        dnMat%d1 = dnRMat%d1
+        dnMat%d2 = dnRMat%d2
+      CASE(3)
+        dnMat%d0 = dnRMat%d0
+        dnMat%d1 = dnRMat%d1
+        dnMat%d2 = dnRMat%d2
+        dnMat%d3 = dnRMat%d3
+      CASE Default
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nderiv wrong value'
+      END SELECT
+    END IF
+
+    err_dim = 0
+    CALL AD_check_dim_dnCMat(dnMat,err_dim)
+    IF (err_dim /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' inconsistent dimensions of dnM'
+      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: inconsistent dimensions'
+    END IF
+  
+  END SUBROUTINE AD_set_dnCMat_FROM_dnMat
+  SUBROUTINE AD_set_dnMat_TO_C(dnMat,C)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+    CLASS (dnCMat_t),     intent(inout) :: dnMat
+    complex (kind=Rkind), intent(in)    :: C
+
+    integer :: nderiv_loc
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_set_dnMat_TO_C'
+
+    nderiv_loc = get_nderiv(dnMat)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+
+    IF (nderiv_loc == 0) THEN
+       dnMat%d0 = C
+    ELSE IF (nderiv_loc == 1) THEN
+       dnMat%d0 = C
+       dnMat%d1 = ZERO
+    ELSE IF (nderiv_loc == 2) THEN
+       dnMat%d0 = C
+       dnMat%d1 = ZERO
+       dnMat%d2 = ZERO
+    ELSE IF (nderiv_loc == 3) THEN
+       dnMat%d0 = C
+       dnMat%d1 = ZERO
+       dnMat%d2 = ZERO
+       dnMat%d3 = ZERO
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 or nderiv < 0 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END SUBROUTINE AD_set_dnMat_TO_C
+ FUNCTION AD_dnCMat2_MINUS_dnCMat1(dnMat1,dnMat2) RESULT (dnMat2_MINUS_dnMat1)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                :: dnMat2_MINUS_dnMat1
+    TYPE (dnCMat_t), intent(in)    :: dnMat1,dnMat2
+
+    integer :: nderiv
+    integer :: nVar1,nVar2
+    integer :: sizeL1,sizeL2
+    integer :: sizeC1,sizeC2
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_dnCMat2_MINUS_dnCMat1'
+
+    nderiv = min(get_nderiv(dnMat1),get_nderiv(dnMat2))
+
+    nVar1   = get_nVar(dnMat1)
+    nVar2   = get_nVar(dnMat2)
+
+    sizeL1   = get_sizeL(dnMat1)
+    sizeL2   = get_sizeL(dnMat2)
+    sizeC1   = get_sizeC(dnMat1)
+    sizeC2   = get_sizeC(dnMat2)
+
+    IF (nVar1 /= nVar2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar1 and nVar2 differ'
+      write(out_unit,*) ' nVar1,nVar2',nVar1,nVar2
+      STOP 'ERROR in AD_dnCMat2_MINUS_dnCMat1: nVar1 and nVar2 differ'
+    END IF
+
+    IF (nderiv < 0 .OR. (nderiv > 0  .AND. nVar1 < 1)) RETURN
+
+    IF (sizeL1 /= sizeL2 .OR. sizeC1 /= sizeC2) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' The shapes of the matrices differ.'
+      write(out_unit,*) ' sizeL1,sizeL2',sizeL1,sizeL2
+      write(out_unit,*) ' sizeC1,sizeC2',sizeC1,sizeC2
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnCMat2_MINUS_dnCMat1: The shapes of the matrices differ'
+    END IF
+
+    CALL dealloc_dnMat(dnMat2_MINUS_dnMat1)
+
+    dnMat2_MINUS_dnMat1%nderiv = nderiv
+
+    IF (nderiv == 0) THEN
+       dnMat2_MINUS_dnMat1%d0 = dnMat1%d0 - dnMat2%d0
+    ELSE IF (nderiv == 1) THEN
+       dnMat2_MINUS_dnMat1%d0 = dnMat1%d0 - dnMat2%d0
+       dnMat2_MINUS_dnMat1%d1 = dnMat1%d1 - dnMat2%d1
+    ELSE IF (nderiv == 2) THEN
+       dnMat2_MINUS_dnMat1%d0 = dnMat1%d0 - dnMat2%d0
+       dnMat2_MINUS_dnMat1%d1 = dnMat1%d1 - dnMat2%d1
+       dnMat2_MINUS_dnMat1%d2 = dnMat1%d2 - dnMat2%d2
+    ELSE IF (nderiv == 3) THEN
+       dnMat2_MINUS_dnMat1%d0 = dnMat1%d0 - dnMat2%d0
+       dnMat2_MINUS_dnMat1%d1 = dnMat1%d1 - dnMat2%d1
+       dnMat2_MINUS_dnMat1%d2 = dnMat1%d2 - dnMat2%d2
+       dnMat2_MINUS_dnMat1%d3 = dnMat1%d3 - dnMat2%d3
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_dnCMat2_MINUS_dnCMat1
+  FUNCTION AD_sub_dnCMat_TIME_R(dnMat,R) RESULT (sub_dnMat_TIME_R)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                 :: sub_dnMat_TIME_R
+    TYPE (dnCMat_t),   intent(in)   :: dnMat
+    real (kind=Rkind), intent(in)   :: R
+
+    integer :: nderiv_loc
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_sub_dnCMat_TIME_R'
+
+    nderiv_loc = get_nderiv(dnMat)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    sub_dnMat_TIME_R%nderiv = dnMat%nderiv
+
+    IF (nderiv_loc == 0) THEN
+       sub_dnMat_TIME_R%d0 = dnMat%d0 * R
+
+    ELSE IF (nderiv_loc == 1) THEN
+       sub_dnMat_TIME_R%d0 = dnMat%d0 * R
+       sub_dnMat_TIME_R%d1 = dnMat%d1 * R
+
+    ELSE IF (nderiv_loc == 2) THEN
+       sub_dnMat_TIME_R%d0 = dnMat%d0 * R
+       sub_dnMat_TIME_R%d1 = dnMat%d1 * R
+       sub_dnMat_TIME_R%d2 = dnMat%d2 * R
+    ELSE IF (nderiv_loc == 3) THEN
+       sub_dnMat_TIME_R%d0 = dnMat%d0 * R
+       sub_dnMat_TIME_R%d1 = dnMat%d1 * R
+       sub_dnMat_TIME_R%d2 = dnMat%d2 * R
+       sub_dnMat_TIME_R%d3 = dnMat%d3 * R
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_sub_dnCMat_TIME_R
+
+  FUNCTION AD_sub_R_TIME_dnCMat(R,dnMat)  RESULT(sub_R_TIME_dnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                :: sub_R_TIME_dnMat
+    TYPE (dnCMat_t),   intent(in)  :: dnMat
+    real (kind=Rkind), intent(in)  :: R
+
+    integer :: nderiv_loc
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_sub_R_TIME_dnCMat'
+
+    nderiv_loc = get_nderiv(dnMat)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    sub_R_TIME_dnMat%nderiv = dnMat%nderiv
+
+    IF (nderiv_loc == 0) THEN
+       sub_R_TIME_dnMat%d0 = dnMat%d0 * R
+
+    ELSE IF (nderiv_loc == 1) THEN
+       sub_R_TIME_dnMat%d0 = dnMat%d0 * R
+       sub_R_TIME_dnMat%d1 = dnMat%d1 * R
+
+    ELSE IF (nderiv_loc == 2) THEN
+       sub_R_TIME_dnMat%d0 = dnMat%d0 * R
+       sub_R_TIME_dnMat%d1 = dnMat%d1 * R
+       sub_R_TIME_dnMat%d2 = dnMat%d2 * R
+    ELSE IF (nderiv_loc == 3) THEN
+       sub_R_TIME_dnMat%d0 = dnMat%d0 * R
+       sub_R_TIME_dnMat%d1 = dnMat%d1 * R
+       sub_R_TIME_dnMat%d2 = dnMat%d2 * R
+       sub_R_TIME_dnMat%d3 = dnMat%d3 * R
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_sub_R_TIME_dnCMat
+  FUNCTION AD_sub_dnCMat_TIME_C(dnMat,C) RESULT (ResdnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                    :: ResdnMat
+    TYPE (dnCMat_t),      intent(in)   :: dnMat
+    complex (kind=Rkind), intent(in)   :: C
+
+    integer :: nderiv_loc
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_sub_dnCMat_TIME_R'
+
+    nderiv_loc = get_nderiv(dnMat)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    ResdnMat%nderiv = dnMat%nderiv
+
+   IF (nderiv_loc == 0) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+
+    ELSE IF (nderiv_loc == 1) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+
+    ELSE IF (nderiv_loc == 2) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+       ResdnMat%d2 = dnMat%d2 * C
+    ELSE IF (nderiv_loc == 3) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+       ResdnMat%d2 = dnMat%d2 * C
+       ResdnMat%d3 = dnMat%d3 * C
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_sub_dnCMat_TIME_C
+
+  FUNCTION AD_sub_C_TIME_dnCMat(C,dnMat)  RESULT(ResdnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                   :: ResdnMat
+    TYPE (dnCMat_t),      intent(in)  :: dnMat
+    complex (kind=Rkind), intent(in)  :: C
+
+    integer :: nderiv_loc
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_sub_C_TIME_dnCMat'
+
+    nderiv_loc = get_nderiv(dnMat)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    ResdnMat%nderiv = dnMat%nderiv
+
+    IF (nderiv_loc == 0) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+
+    ELSE IF (nderiv_loc == 1) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+
+    ELSE IF (nderiv_loc == 2) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+       ResdnMat%d2 = dnMat%d2 * C
+    ELSE IF (nderiv_loc == 3) THEN
+       ResdnMat%d0 = dnMat%d0 * C
+       ResdnMat%d1 = dnMat%d1 * C
+       ResdnMat%d2 = dnMat%d2 * C
+       ResdnMat%d3 = dnMat%d3 * C
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_sub_C_TIME_dnCMat
+
+  FUNCTION AD_MATMUL_dnCMat1_dnCMat2(dnMat1,dnMat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCMat_t)                :: MatmuldnMat
+    TYPE (dnCMat_t), intent(in)    :: dnMat1,dnMat2
+
+    integer :: nderiv
+    integer :: nVar1,nVar2
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
+    integer :: id,jd,kd
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_MATMUL_dnCMat1_dnCMat2'
+
+
+    nderiv = min(get_nderiv(dnMat1),get_nderiv(dnMat2))
+
+    nVar1   = get_nVar(dnMat1)
+    nVar2   = get_nVar(dnMat2)
+    IF (nVar1 /= nVar2) STOP ' ERROR in AD_MATMUL_dnCMat1_dnCMat2: nVar1 and nVar2 differ'
+
+    sizeL1  = get_sizeL(dnMat1)
+    sizeC1  = get_sizeC(dnMat1)
+    sizeL2  = get_sizeL(dnMat2)
+    sizeC2  = get_sizeC(dnMat2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_dnCMat1_dnCMat2: sizeC1 and sizeL2 differ'
+
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar1 < 1)) RETURN
+
+    CALL alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar1,nderiv=nderiv,                  &
+                    name_var='MatmuldnMat',name_sub=name_sub)
+
+    IF (nderiv >= 0) THEN
+      MatmuldnMat%d0(:,:) = matmul(dnMat1%d0,dnMat2%d0)
+    END IF
+
+    IF (nderiv >= 1) THEN
+      DO id=1,nVar1
+        MatmuldnMat%d1(:,:,id) = matmul(dnMat1%d0,dnMat2%d1(:,:,id)) +  &
+                                 matmul(dnMat1%d1(:,:,id),dnMat2%d0)
+      END DO
+    END IF
+
+    IF (nderiv >= 2) THEN
+      DO id=1,nVar1
+      DO jd=1,nVar1
+        MatmuldnMat%d2(:,:,jd,id) =                                     &
+                    matmul(dnMat1%d0,           dnMat2%d2(:,:,jd,id)) + &
+                    matmul(dnMat1%d1(:,:,jd),   dnMat2%d1(:,:,id))    + &
+                    matmul(dnMat1%d1(:,:,id),   dnMat2%d1(:,:,jd))    + &
+                    matmul(dnMat1%d2(:,:,jd,id),dnMat2%d0)
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv >= 3) THEN
+      DO id=1,nVar1
+      DO jd=1,nVar1
+      DO kd=1,nVar1
+        MatmuldnMat%d3(:,:,kd,jd,id) =                                  &
+             matmul(dnMat1%d0,              dnMat2%d3(:,:,kd,jd,id))  + &
+             matmul(dnMat1%d1(:,:,kd),      dnMat2%d2(:,:,jd,id))     + &
+             matmul(dnMat1%d1(:,:,id),      dnMat2%d2(:,:,kd,jd))     + &
+             matmul(dnMat1%d1(:,:,jd),      dnMat2%d2(:,:,id,kd))     + &
+             matmul(dnMat1%d2(:,:,jd,id),   dnMat2%d1(:,:,kd))        + &
+             matmul(dnMat1%d2(:,:,kd,jd),   dnMat2%d1(:,:,id))        + &
+             matmul(dnMat1%d2(:,:,id,kd),   dnMat2%d1(:,:,jd))        + &
+             matmul(dnMat1%d3(:,:,kd,jd,id),dnMat2%d0)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_MATMUL_dnCMat1_dnCMat2
+  FUNCTION AD_MATMUL_dnCMat1_CMat2(dnMat1,Mat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+
+    TYPE (dnCMat_t)                    :: MatmuldnMat
+    TYPE (dnCMat_t),     intent(in)    :: dnMat1
+    complex(kind=Rkind), intent(in)    :: Mat2(:,:)
+
+    integer :: nderiv,nVar,id,jd,kd
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_MATMUL_dnCMat1_CMat2'
+
+
+    nderiv = get_nderiv(dnMat1)
+    nVar   = get_nVar(dnMat1)
+
+    sizeL1  = get_sizeL(dnMat1)
+    sizeC1  = get_sizeC(dnMat1)
+    sizeL2  = size(Mat2,dim=1)
+    sizeC2  = size(Mat2,dim=2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_dnCMat1_CMat2: sizeC1 and sizeL2 differ'
+
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+
+    CALL alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar,nderiv=nderiv,                  &
+                    name_var='MatmuldnMat',name_sub=name_sub)
+
+    IF (nderiv >= 0) THEN
+      MatmuldnMat%d0(:,:) = matmul(dnMat1%d0,Mat2)
+    END IF
+
+    IF (nderiv >= 1) THEN
+      DO id=1,nVar
+        MatmuldnMat%d1(:,:,id) = matmul(dnMat1%d1(:,:,id),Mat2)
+      END DO
+    END IF
+
+    IF (nderiv >= 2) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        MatmuldnMat%d2(:,:,jd,id) = matmul(dnMat1%d2(:,:,jd,id),Mat2)
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv >= 3) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        MatmuldnMat%d3(:,:,kd,jd,id) = matmul(dnMat1%d3(:,:,kd,jd,id),Mat2)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_MATMUL_dnCMat1_CMat2
+  FUNCTION AD_MATMUL_CMat1_dnCMat2(Mat1,dnMat2)  RESULT(MatmuldnMat)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+
+    TYPE (dnCMat_t)                    :: MatmuldnMat
+    complex(kind=Rkind), intent(in)    :: Mat1(:,:)
+    TYPE (dnCMat_t),     intent(in)    :: dnMat2
+
+    integer :: nderiv,nVar,id,jd,kd
+    integer :: sizeL1,sizeC1,sizeL2,sizeC2
+    integer :: err_dnMat_loc
+    character (len=*), parameter :: name_sub='AD_MATMUL_CMat1_dnCMat2'
+
+
+    nderiv = get_nderiv(dnMat2)
+    nVar   = get_nVar(dnMat2)
+
+
+    sizeL2  = get_sizeL(dnMat2)
+    sizeC2  = get_sizeC(dnMat2)
+    sizeL1  = size(Mat1,dim=1)
+    sizeC1  = size(Mat1,dim=2)
+    IF (sizeC1 /= sizeL2) STOP ' ERROR in AD_MATMUL_CMat1_dnCMat2: sizeC1 and sizeL2 differ'
+
+    !write(out_unit,*) 'in ',name_sub,' nsurf,nVar,nderiv',nsurf,nVar,nderiv
+
+ 
+    IF (nderiv < 0 .OR. sizeL1 < 1 .OR. sizeC2 < 1 .OR. (nderiv > 0  .AND. nVar < 1)) RETURN
+
+    CALL alloc_dnMat(MatmuldnMat,sizeL=sizeL1,sizeC=sizeC2,nVar=nVar,nderiv=nderiv,                  &
+                    name_var='MatmuldnMat',name_sub=name_sub)
+
+    IF (nderiv >= 0) THEN
+      MatmuldnMat%d0(:,:) = matmul(Mat1,dnMat2%d0)
+    END IF
+
+    IF (nderiv >= 1) THEN
+      DO id=1,nVar
+        MatmuldnMat%d1(:,:,id) = matmul(Mat1,dnMat2%d1(:,:,id))
+      END DO
+    END IF
+
+    IF (nderiv >= 2) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        MatmuldnMat%d2(:,:,jd,id) = matmul(Mat1,dnMat2%d2(:,:,jd,id))
+      END DO
+      END DO
+    END IF
+
+    IF (nderiv >= 3) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        MatmuldnMat%d3(:,:,kd,jd,id) = matmul(Mat1,dnMat2%d3(:,:,kd,jd,id))
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_MATMUL_CMat1_dnCMat2
+
+  SUBROUTINE AD_DIAG_dnCMat_Hermitian(dnMat,dnMatDiag,dnVec,dnVecProj,dnVec0,type_diag)
+    USE QDUtil_m
+    IMPLICIT NONE
+
+
+    TYPE (dnCMat_t),    intent(in)              :: dnMat
+    TYPE (dnCMat_t),    intent(inout)           :: dnMatDiag ! we keep it as a matrix
+    TYPE (dnCMat_t),    intent(inout)           :: dnVec
+    TYPE (dnCMat_t),    intent(inout), optional :: dnVecProj
+    TYPE (dnCMat_t),    intent(inout), optional :: dnVec0
+    integer,            intent(in),    optional :: type_diag
+
+    integer                       :: nVar,nderiv,nsurf
+    real(kind=Rkind), allocatable :: Eig(:),Vi(:),Vj(:)
+    complex(kind=Rkind), allocatable :: Vec(:,:),tVec(:,:),tab_sii(:),Mtemp(:,:)
+
+    TYPE (dnCMat_t)               :: dnMat_OnVec
+    integer                       :: i,j,k,id,jd,kd,i_max
+    real (kind=Rkind)             :: ai,aj,th,cc,ss,max_diff
+    real (kind=Rkind)             :: err1,err2,Rot(2,2),Mij(2,2),RMij(2,2)
+    complex (kind=Rkind)          :: ps,aii,aij,aji,ajj,aii_max
+    real (kind=Rkind)             :: epsi = ONETENTH**10
+    integer                       :: type_diag_loc
+
+
+!----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='AD_DIAG_dnCMat_Hermitian'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+!-----------------------------------------------------------
+
+    IF (debug) THEN
+      write(out_unit,*) ' BEGINNING ',name_sub
+      flush(out_unit)
+    END IF
+
+    type_diag_loc = 3
+    IF (present(type_diag)) type_diag_loc = type_diag
+    IF (debug) write(out_unit,*) 'type_diag',type_diag_loc
+
+    nderiv = get_nderiv(dnMat)
+    nVar   = get_nVar(dnMat)
+    nsurf  = get_nsurf(dnMat)
+
+    CALL dealloc_dnMat(dnMatDiag)
+    CALL dealloc_dnMat(dnVec)
+    IF (present(dnVecProj)) CALL dealloc_dnMat(dnVecProj)
+
+    IF (nderiv < 0) RETURN
+
+    CALL alloc_dnMat(dnMatDiag,nsurf=nsurf,nVar=nVar,nderiv=nderiv)
+    dnMatDiag = CZERO
+    CALL alloc_dnMat(dnVec,nsurf=nsurf,nVar=nVar,nderiv=nderiv)
+    dnVec     = CZERO
+
+    ! the zero order: normal diagonalization
+    allocate(Eig(nsurf))
+    allocate(Vec(nsurf,nsurf))
+    allocate(tVec(nsurf,nsurf))
+    allocate(Mtemp(nsurf,nsurf))
+
+    CALL diagonalization(dnMat%d0,Eig,Vec,diago_type=type_diag_loc,sort=1,phase=.TRUE.)
+    IF (present(dnVec0)) THEN
+      IF (abs(dot_product(dnVec0%d0(:,1),dnVec0%d0(:,1))-ONE) < ONETENTH**6) THEN
+        IF (debug) THEN
+          write(out_unit,*) 'Vec0 is present: the eigenvector phases are checked'
+          flush(out_unit)
+        END IF
+
+        DO i=1,nsurf
+          ps = dot_product(dnVec0%d0(:,i),Vec(:,i))
+          th = atan2(aimag(ps),real(ps,kind=Rkind))
+          IF (abs(ps) > ONETENTH**6) THEN
+            IF (debug) write(out_unit,*) 'Change phase:',i
+            Vec(:,i) = Vec(:,i) * exp(-EYE*th)
+          END IF
+        END DO
+
+        IF (debug) THEN
+          write(out_unit,*) 'Vec before rotation'
+          CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
+        END IF
+
+        !For degenerated eigenvectors (works only with 2 vectors) ; not yet for complex
+
+        IF (debug) THEN 
+          write(out_unit,*) 'Change phase?'
+          flush(out_unit)
+        END IF
+
+        DO i=1,nsurf
+          ps = dot_product(dnVec0%d0(:,i),Vec(:,i))
+          th = atan2(aimag(ps),real(ps,kind=Rkind))
+          IF (abs(ps) > ONETENTH**6) THEN
+            IF (debug) write(out_unit,*) 'Change phase:',i
+            Vec(:,i) = Vec(:,i) * exp(-EYE*th)
+          END IF
+        END DO
+
+        max_diff = -ONE
+        i_max    = 0
+        allocate(tab_sii(nsurf))
+        tab_sii(:) = CZERO
+        DO i=1,nsurf
+          aii = dot_product(dnVec0%d0(:,i),Vec(:,i))
+          tab_sii(i) = aii
+          IF (abs(aii-ONE) > max_diff) THEN
+            aii_max  = aii
+            max_diff = abs(aii-ONE)
+            i_max    = i
+          END IF
+          IF (debug) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',i,aii
+        END DO
+        IF (max_diff > 0.2_Rkind .OR. debug) THEN
+          write(out_unit,*) 'Largest difference to one of <Vec0(:,i)|Vec(:,i)> :',i_max,aii_max
+          IF (debug) THEN
+           write(out_unit,*) 'Vec:'
+           CALL Write_Mat(Vec,nio=out_unit,nbcol=5)
+           write(out_unit,*) 'Vec0:'
+           CALL Write_Mat(dnVec0%d0,nio=out_unit,nbcol=5)
+          END IF
+        END IF
+        IF (print_level_dia_dnMat > 1) write(out_unit,*) '<Vec0(:,i)|Vec(:,i)> :',tab_sii(:)
+      ELSE
+        dnVec0%d0 = Vec
+      END IF
+    ELSE
+      IF (debug) write(out_unit,*) 'Vec0 is absent: the eigenvector phases are not checked'
+    END IF
+
+    tVec         = conjg(transpose(Vec))
+    dnVec%d0     = matmul(tVec,Vec)                  ! Identity matrix
+    dnMatDiag%d0 = matmul(tVec,matmul(dnMat%d0,Vec)) ! diagonal matrix
+
+    dnMat_OnVec = matmul(tVec,matmul(dnMat,Vec)) ! dnMat on the Eigenvector basis
+    !  for dnMat_OnVec%d0: Eigenvalues on the diagonal
+
+    IF (nderiv > 0) THEN
+
+      DO id=1,nVar
+        Mtemp = dnMat_OnVec%d1(:,:,id)
+
+        DO i=1,nsurf
+          ! d1Eig
+          dnMatDiag%d1(i,i,id) = Mtemp(i,i)
+
+          ! d1Vec: projection on <i|
+          dnVec%d1(i,i,id) = ZERO
+
+          ! d1Vec: projection on <j|
+          DO j=1,nsurf
+            IF (j == i) CYCLE ! already done
+            IF (abs(Eig(i)-Eig(j)) < epsi) CYCLE ! for degenerated eigenvalues
+
+            dnVec%d1(j,i,id) = Mtemp(j,i)/(Eig(i)-Eig(j))
+
+          END DO
+
+        END DO
+
+      END DO
+
+
+    END IF
+
+    IF (nderiv > 1) THEN
+
+      DO id=1,nVar
+      DO jd=1,nVar
+        Mtemp = dnMat_OnVec%d2(:,:,jd,id) +                             &
+                      matmul(dnMat_OnVec%d1(:,:,id),dnVec%d1(:,:,jd)) + &
+                      matmul(dnMat_OnVec%d1(:,:,jd),dnVec%d1(:,:,id))
+        DO i=1,nsurf
+          Mtemp(:,i) = Mtemp(:,i) -                                     &
+                                dnMatDiag%d1(i,i,id)*dnVec%d1(:,i,jd) - &
+                                dnMatDiag%d1(i,i,jd)*dnVec%d1(:,i,id)
+        END DO
+
+        DO i=1,nsurf
+          ! d1Eig
+          dnMatDiag%d2(i,i,jd,id) = Mtemp(i,i)
+
+          ! d1Vec: projection on <i|
+          dnVec%d2(i,i,jd,id) = -dot_product(dnVec%d1(:,i,id),dnVec%d1(:,i,jd))
+
+          ! d1Vec: projection on <j|
+          DO j=1,nsurf
+            IF (j == i) CYCLE ! already done
+            IF (abs(Eig(i)-Eig(j)) < epsi) CYCLE ! for degenerated eigenvalues
+
+            dnVec%d2(j,i,jd,id) = Mtemp(j,i)/(Eig(i)-Eig(j))
+
+          END DO
+
+        END DO
+
+      END DO
+      END DO
+
+    END IF
+
+    IF (nderiv > 2) THEN
+
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+
+        Mtemp = dnMat_OnVec%d3(:,:,kd,jd,id) +                          &
+                   matmul(dnMat_OnVec%d2(:,:,kd,id),dnVec%d1(:,:,jd)) + &
+                   matmul(dnMat_OnVec%d2(:,:,jd,kd),dnVec%d1(:,:,id)) + &
+                   matmul(dnMat_OnVec%d2(:,:,id,jd),dnVec%d1(:,:,kd)) + &
+                   matmul(dnMat_OnVec%d1(:,:,id),dnVec%d2(:,:,jd,kd)) + &
+                   matmul(dnMat_OnVec%d1(:,:,kd),dnVec%d2(:,:,id,jd)) + &
+                   matmul(dnMat_OnVec%d1(:,:,jd),dnVec%d2(:,:,kd,id))
+
+        DO i=1,nsurf
+          Mtemp(:,i) = Mtemp(:,i) -                                     &
+                             dnMatDiag%d2(i,i,kd,id)*dnVec%d1(:,i,jd) - &
+                             dnMatDiag%d2(i,i,jd,kd)*dnVec%d1(:,i,id) - &
+                             dnMatDiag%d2(i,i,id,jd)*dnVec%d1(:,i,kd) - &
+                             dnMatDiag%d1(i,i,id)*dnVec%d2(:,i,jd,kd) - &
+                             dnMatDiag%d1(i,i,kd)*dnVec%d2(:,i,id,jd) - &
+                             dnMatDiag%d1(i,i,jd)*dnVec%d2(:,i,kd,id)
+        END DO
+
+        DO i=1,nsurf
+          ! d1Eig
+          dnMatDiag%d3(i,i,kd,jd,id) = Mtemp(i,i)
+
+          ! d1Vec: projection on <i|
+          dnVec%d3(i,i,kd,jd,id) = - &
+               dot_product(dnVec%d1(:,i,kd),dnVec%d2(:,i,jd,id)) - &
+               dot_product(dnVec%d1(:,i,jd),dnVec%d2(:,i,id,kd)) - &
+               dot_product(dnVec%d1(:,i,id),dnVec%d2(:,i,kd,jd))
+
+          ! d1Vec: projection on <j|
+          DO j=1,nsurf
+            IF (j == i) CYCLE ! already done
+            IF (abs(Eig(i)-Eig(j)) < epsi) CYCLE ! for degenerated eigenvalues
+
+            dnVec%d3(j,i,kd,jd,id) = Mtemp(j,i)/(Eig(i)-Eig(j))
+
+          END DO
+
+        END DO
+
+      END DO
+      END DO
+      END DO
+    END IF
+
+
+    IF (present(dnVecProj)) dnVecProj = dnVec ! since here dnVec are the projected vectors
+
+    ! unproject the dnVec: correct yes (check with transpose(Vec).dnMat.Vec )
+    dnVec%d0(:,:) = Vec
+    IF (nderiv > 0) THEN
+      DO id=1,nVar
+        dnVec%d1(:,:,id) = matmul(Vec,dnVec%d1(:,:,id))
+      END DO
+    END IF
+    IF (nderiv > 1) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        dnVec%d2(:,:,jd,id) = matmul(Vec,dnVec%d2(:,:,jd,id))
+      END DO
+      END DO
+    END IF
+    IF (nderiv > 2) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        dnVec%d3(:,:,kd,jd,id) = matmul(Vec,dnVec%d3(:,:,kd,jd,id))
+      END DO
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(Eig))   deallocate(Eig)
+    IF (allocated(Vec))   deallocate(Vec)
+    IF (allocated(tVec))  deallocate(tVec)
+    IF (allocated(Mtemp)) deallocate(Mtemp)
+
+    CALL dealloc_dnMat(dnMat_OnVec)
+
+    IF (debug) THEN
+      IF (present(dnVecProj)) CALL Write_dnMat(dnVecProj,info='dnVecProj')
+      CALL Write_dnMat(dnVec,info='dnVec')
+      CALL Write_dnMat(dnMatDiag,info='dnMatDiag')
+      write(out_unit,*) ' END ',name_sub
+      flush(out_unit)
+    END IF
+
+  END SUBROUTINE AD_DIAG_dnCMat_Hermitian
 END MODULE ADdnSVM_dnMat_m

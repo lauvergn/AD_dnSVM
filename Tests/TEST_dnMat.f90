@@ -35,8 +35,9 @@ PROGRAM TEST_dnMat
 
     TYPE (dnMat_t)                   :: dnM1,dnM2
     TYPE (dnMat_t)                   :: dnV,dnM,dnDiag
+    TYPE (dnCMat_t)                  :: dnCV,dnCM,dnCDiag
 
-    TYPE (dnS_t), allocatable        :: Vec_dnS(:),Mat_dnS(:,:)
+    TYPE (dnS_t), allocatable        :: Vec_dnS(:),Mat_dnS(:,:),RMat_dnS(:,:),IMat_dnS(:,:)
     TYPE (dnS_t)                     :: dnS,dnS_ana
 
     TYPE (test_t)                    :: test_var
@@ -170,7 +171,7 @@ PROGRAM TEST_dnMat
   CALL Flush_Test(test_var)
 
 
-  ! test diago
+  ! tests diago
   deallocate(Mat_dnS)
   allocate(Mat_dnS(2,2))
   DO j=1,size(Mat_dnS,dim=2)
@@ -188,7 +189,41 @@ PROGRAM TEST_dnMat
   CALL Write_dnMat(dnM2, info='Vt.M.V - Diag')
   
   res_test = Check_dnMat_IS_ZERO(dnM2,epsi=ZeroTresh)
-  CALL Logical_Test(test_var,test1=res_test,info='Diago')
+  CALL Logical_Test(test_var,test1=res_test,info='RDiago')
+
+ ! complex diago
+  Vec_dnS = Variable([ZERO,ZERO,ZERO],nderiv=2)
+  allocate(RMat_dnS(2,2))
+  allocate(IMat_dnS(2,2))
+  RMat_dnS(1,1) = dot_product(Vec_dnS,Vec_dnS) * HALF**2
+  RMat_dnS(2,2) = RMat_dnS(1,1) - HALF
+  RMat_dnS(1,2) = THREE*Vec_dnS(1)
+  RMat_dnS(2,1) = RMat_dnS(1,2)
+  dnM1 = RMat_dnS
+
+  IMat_dnS(1,1) =  ZERO + ZERO*Vec_dnS(1)
+  IMat_dnS(2,2) =  ZERO + ZERO*Vec_dnS(1)
+  IMat_dnS(1,2) =  HALF + ZERO*Vec_dnS(1)
+  IMat_dnS(2,1) = -HALF + ZERO*Vec_dnS(1)
+  dnM2 = IMat_dnS
+
+  CALL set_dnMat(dnCM,dnRMat=dnM1,dnIMat=dnM2)
+
+  CALL Write_dnMat(dnCM, info='CM')
+  CALL DIAG_dnMat(dnMat=dnCM,dnMatDiag=dnCDiag,dnVec=dnCV)
+  CALL Write_dnMat(dnCDiag, info='CDiag')
+  CALL Write_dnMat(dnCV, info='CV')
+  dnCM = matmul(dnCM,dnCV)
+  dnCM = matmul(conjg(transpose(dnCV)),dnCM) - dnCDiag
+  CALL Write_dnMat(dnCM, info='Vt.M.V - Diag')
+  
+  res_test = Check_dnMat_IS_ZERO(dnCM,epsi=ZeroTresh)
+  CALL Logical_Test(test_var,test1=res_test,info='CDiago: diagonal')
+
+  dnM = aimag(dnCDiag)
+  res_test = Check_dnMat_IS_ZERO(dnM,epsi=ZeroTresh)
+  CALL Logical_Test(test_var,test1=res_test,info='CDiago: real EigVal')
+
 
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
   CALL Append_Test(test_var,'------------------------------------------------------',Print_res=.FALSE.)
