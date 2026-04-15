@@ -284,11 +284,15 @@ This module contains public subroutines to read and write real and complex (kind
 
 This module contains public functions and subroutines to perform some lienar algebra operations with the default real kind (kind=Rkind). It can use some LAPACK subroutines:
 
+- subroutine to re-normalize a vector:              **ReNorm_Vec**
 - Function to compute the inverse of a matrix:      **inv_OF_Mat_TO**
 - Function to solve a linear system of equation:    **LinearSys_Solve**
 - Function to compute the determinant of a matrix:  **Det_OF**
-- Function to initialyze a real identity matrix:    **Identity_Mat**
-- Gram-Schmidt Orthonormaization (real or complex): **Ortho_GramSchmidt**
+- Function to initialyze a real identity matrix:    **Identity_Mat** or **Identity_RMat**
+- Function to initialyze a complex identity matrix: **Identity_CMat**
+- Function to initialyze diagonal matrix:           **Diagonal_Mat**
+- Function to get Gram-Schmidt Orthonormalization:  **Ortho_GramSchmidt** or **ortho**
+- Function to get subspace complement:              **Ortho_Complement**
 
 ### Diagonalization
 

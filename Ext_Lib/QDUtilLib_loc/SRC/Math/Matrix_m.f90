@@ -27,9 +27,12 @@
 !===============================================================================
 !===============================================================================
 MODULE QDUtil_Matrix_m
+  USE QDUtil_NumParameters_m
   IMPLICIT NONE
 
   PRIVATE
+
+  real (kind=Rkind), parameter :: epsi_Matrix_default = ONETENTH**10
 
   PUBLIC inv_OF_Mat_TO,inv_OF_Mat
   INTERFACE inv_OF_Mat
@@ -61,7 +64,20 @@ MODULE QDUtil_Matrix_m
 
   PUBLIC Identity_Mat
   INTERFACE Identity_Mat
-    MODULE PROCEDURE QDUtil_Identity_RMat
+    MODULE PROCEDURE QDUtil_Set_Identity_RMat
+  END INTERFACE
+  PUBLIC Identity_RMat
+  INTERFACE Identity_RMat
+    MODULE PROCEDURE QDUtil_Set_Identity_RMat
+  END INTERFACE
+  PUBLIC Identity_CMat
+  INTERFACE Identity_CMat
+    MODULE PROCEDURE QDUtil_Set_Identity_CMat
+  END INTERFACE
+  PUBLIC Diagonal_Mat
+  INTERFACE Diagonal_Mat
+    MODULE PROCEDURE QDUtil_Set_Diagonal_RMat
+    MODULE PROCEDURE QDUtil_Set_Diagonal_CMat
   END INTERFACE
 
   PUBLIC LU_solve
@@ -74,12 +90,34 @@ MODULE QDUtil_Matrix_m
     MODULE PROCEDURE QDUtil_Driver_LU_decomp_cplx
   END INTERFACE
 
+  PUBLIC Ortho
+  INTERFACE Ortho
+    MODULE PROCEDURE QDUtil_Ortho_RMat
+    MODULE PROCEDURE QDUtil_Ortho_CMat
+  END INTERFACE
+
   PUBLIC Ortho_GramSchmidt
   INTERFACE Ortho_GramSchmidt
     MODULE PROCEDURE QDUtil_Ortho_GramSchmidt_RMat
     MODULE PROCEDURE QDUtil_Ortho_GramSchmidt_CMat
   END INTERFACE
-  
+
+  PUBLIC Ortho_Complement
+  INTERFACE Ortho_Complement
+    MODULE PROCEDURE QDUtil_Ortho_Complement_RMat
+    MODULE PROCEDURE QDUtil_Ortho_Complement_CMat
+  END INTERFACE
+
+  PUBLIC ReNorm_Vec
+  INTERFACE ReNorm_Vec
+    MODULE PROCEDURE QDUtil_ReNorm_RVec
+    MODULE PROCEDURE QDUtil_ReNorm_CVec
+  END INTERFACE
+ PUBLIC Vec_IsZero
+  INTERFACE Vec_IsZero
+    MODULE PROCEDURE QDUtil_RVec_IsZero
+    MODULE PROCEDURE QDUtil_CVec_IsZero
+  END INTERFACE
 CONTAINS
   !================================================================
   !   Inversion of a real matrix Rmat : RMat_inv = Rmat^-1
@@ -125,7 +163,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
     n = size(Rmat,dim=1)
@@ -199,7 +237,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
 
@@ -251,7 +289,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
     n = size(Cmat,dim=1)
@@ -323,7 +361,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
     CMat_inv = inv_OF_Mat_TO(Cmat,inv_type_loc,epsi_loc)
@@ -466,7 +504,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
     n = size(Rmat,dim=1)
@@ -563,7 +601,7 @@ CONTAINS
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
     n = size(Cmat,dim=1)
@@ -690,7 +728,7 @@ CONTAINS
       DO j=1,n
         IF (abs(a(i,j)) > aamax) aamax=abs(a(i,j))
       END DO
-      IF (aamax < tiny) STOP "matrice singuliere"
+      IF (aamax < tiny) STOP "singular matrix"
       vv(i)=ONE/aamax
     END DO
 
@@ -1184,7 +1222,7 @@ CONTAINS
         DO 11 j=1,n
           IF (abs(a(i,j)) .GT. abs(aamax)) aamax=cmplx(abs(a(i,j)),kind=Rkind)
  11     CONTINUE
-        IF (abs(aamax) < tiny) STOP "matrice singuliere"
+        IF (abs(aamax) < tiny) STOP "Singular matrix"
         vv(i)=CONE/aamax
  12    CONTINUE
 
@@ -1246,37 +1284,218 @@ CONTAINS
   !      A : square matrix
   !
   !=====================================================================
-  FUNCTION QDUtil_Identity_RMat(n) RESULT(RMat)
+  FUNCTION QDUtil_Set_Identity_RMat(n) RESULT(Mat)
     USE QDUtil_NumParameters_m, ONLY : Rkind,ZERO,ONE
     IMPLICIT NONE
 
     integer,          intent(in)  :: n
-    real(kind=Rkind)              :: RMat(n,n)
+    real(kind=Rkind)              :: Mat(n,n)
 
     integer           :: i
 
-    RMat(:,:) = ZERO
+    Mat(:,:) = ZERO
     DO i=1,n
-     RMat(i,i) = ONE
+     Mat(i,i) = ONE
     END DO
 
-  END FUNCTION QDUtil_Identity_RMat
-  FUNCTION QDUtil_Identity_CMat(n) RESULT(CMat)
+  END FUNCTION QDUtil_Set_Identity_RMat
+  FUNCTION QDUtil_Set_Identity_CMat(n) RESULT(Mat)
     USE QDUtil_NumParameters_m, ONLY : Rkind,CZERO,CONE
     IMPLICIT NONE
 
     integer,          intent(in)  :: n
-    complex(kind=Rkind)           :: CMat(n,n)
+    complex(kind=Rkind)           :: Mat(n,n)
 
     integer           :: i
 
-    CMat(:,:) = CZERO
+    Mat(:,:) = CZERO
     DO i=1,n
-      CMat(i,i) = CONE
+      Mat(i,i) = CONE
     END DO
 
-  END FUNCTION QDUtil_Identity_CMat
+  END FUNCTION QDUtil_Set_Identity_CMat
+  FUNCTION QDUtil_Set_Diagonal_RMat(diagonal) RESULT(Mat)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,ZERO
+    IMPLICIT NONE
 
+    real(kind=Rkind),             intent(in) :: diagonal(:)
+    real(kind=Rkind), allocatable            :: Mat(:,:)
+
+    integer           :: i,n
+
+    n = size(diagonal)
+    allocate(Mat(n,n))
+
+    IF (n == 0) RETURN
+
+    Mat(:,:) = ZERO
+    DO i=1,n
+      Mat(i,i) = diagonal(i)
+    END DO
+
+  END FUNCTION QDUtil_Set_Diagonal_RMat
+  FUNCTION QDUtil_Set_Diagonal_CMat(diagonal) RESULT(Mat)
+    USE QDUtil_NumParameters_m, ONLY : Rkind,CZERO,CONE
+    IMPLICIT NONE
+
+    complex(kind=Rkind),             intent(in) :: diagonal(:)
+    complex(kind=Rkind), allocatable            :: Mat(:,:)
+
+    integer           :: i,n
+
+    n = size(diagonal)
+    allocate(Mat(n,n))
+
+    IF (n == 0) RETURN
+
+    Mat(:,:) = CZERO
+    DO i=1,n
+      Mat(i,i) = diagonal(i)
+    END DO
+
+  END FUNCTION QDUtil_Set_Diagonal_CMat
+
+  FUNCTION QDUtil_Ortho_RMat(V,ortho_type,rm0Vec,epsi) RESULT(Vortho)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    real(kind=Rkind), allocatable         :: Vortho(:,:)
+
+    real(kind=Rkind),              intent(in)             :: V(:,:)
+    integer,                       intent(in), optional   :: ortho_type
+    logical,                       intent(in), optional   :: rm0Vec
+    real(kind=Rkind),              intent(in), optional   :: epsi
+
+    integer              :: i,j,n,k,iInde,nInde
+    real(kind=Rkind)     :: epsi_loc
+    integer              :: ortho_type_loc
+    logical              :: rm0Vec_loc
+    real(kind=Rkind), allocatable          :: Vtemp(:,:)
+
+    logical, allocatable :: IsZero(:)
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
+
+    IF (present(rm0Vec)) THEN
+      rm0Vec_loc = rm0Vec
+    ELSE
+      rm0Vec_loc = .FALSE.
+    END IF
+    IF (present(ortho_type)) THEN
+      ortho_type_loc = ortho_type
+    ELSE
+      ortho_type_loc = 1 ! Gram Schmidt
+    END IF
+
+    SELECT CASE (ortho_type_loc)
+    CASE (1)
+      Vtemp = Ortho_GramSchmidt(V, epsi=epsi_loc)
+    CASE Default ! no default
+      write(out_unit,*) ' ERROR in QDUtil_Ortho_RMat'
+      write(out_unit,*) ' Incompatible ortho_type value',ortho_type_loc
+      write(out_unit,*) ' The possible values are: 1 (Gram-Schmidt)'
+      STOP 'ERROR in QDUtil_Ortho_RMat: Incompatible ortho_type value'
+    END SELECT
+
+    k = size(Vtemp,dim=2)
+    n = size(Vtemp,dim=1)
+    IF (rm0Vec_loc) THEN
+      allocate(IsZero(k))
+      DO i=1,k
+        IsZero(i) =  Vec_IsZero(Vtemp(:,i),epsi_loc)
+      END DO
+      nInde = count(.NOT. IsZero)
+
+      allocate(Vortho(n,nInde))
+      iInde = 0
+      DO i=1,k
+        IF (IsZero(i)) CYCLE
+        iInde = iInde + 1
+        Vortho(:,iInde) = Vtemp(:,i)
+      END DO
+    ELSE
+      Vortho = Vtemp
+    END IF
+
+    IF (allocated(Vtemp))  deallocate(Vtemp)
+    IF (allocated(IsZero)) deallocate(IsZero)
+
+  END FUNCTION QDUtil_Ortho_RMat
+
+  FUNCTION QDUtil_Ortho_CMat(V,ortho_type,rm0Vec,epsi) RESULT(Vortho)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    complex(kind=Rkind), allocatable         :: Vortho(:,:)
+
+    complex(kind=Rkind),           intent(in)             :: V(:,:)
+    integer,                       intent(in), optional   :: ortho_type
+    logical,                       intent(in), optional   :: rm0Vec
+    real(kind=Rkind),              intent(in), optional   :: epsi
+
+    integer              :: i,j,n,k,iInde,nInde
+    real(kind=Rkind)     :: epsi_loc
+    integer              :: ortho_type_loc
+    logical              :: rm0Vec_loc
+    complex(kind=Rkind), allocatable          :: Vtemp(:,:)
+
+    logical, allocatable :: IsZero(:)
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
+
+    IF (present(rm0Vec)) THEN
+      rm0Vec_loc = rm0Vec
+    ELSE
+      rm0Vec_loc = .FALSE.
+    END IF
+    IF (present(ortho_type)) THEN
+      ortho_type_loc = ortho_type
+    ELSE
+      ortho_type_loc = 1 ! Gram Schmidt
+    END IF
+
+    SELECT CASE (ortho_type_loc)
+    CASE (1)
+      Vtemp = Ortho_GramSchmidt(V, epsi=epsi_loc)
+    CASE Default ! no default
+      write(out_unit,*) ' ERROR in QDUtil_Ortho_CMat'
+      write(out_unit,*) ' Incompatible ortho_type value',ortho_type_loc
+      write(out_unit,*) ' The possible values are: 1 (Gram-Schmidt)'
+      STOP 'ERROR in QDUtil_Ortho_CMat: Incompatible ortho_type value'
+    END SELECT
+
+    k = size(Vtemp,dim=2)
+    n = size(Vtemp,dim=1)
+    IF (rm0Vec_loc) THEN
+      allocate(IsZero(k))
+      DO i=1,k
+        IsZero(i) =  Vec_IsZero(Vtemp(:,i),epsi_loc)
+      END DO
+      nInde = count(.NOT. IsZero)
+
+      allocate(Vortho(n,nInde))
+      iInde = 0
+      DO i=1,k
+        IF (IsZero(i)) CYCLE
+        iInde = iInde + 1
+        Vortho(:,iInde) = Vtemp(:,i)
+      END DO
+    ELSE
+      Vortho = Vtemp
+    END IF
+
+    IF (allocated(Vtemp))  deallocate(Vtemp)
+    IF (allocated(IsZero)) deallocate(IsZero)
+
+  END FUNCTION QDUtil_Ortho_CMat
   FUNCTION QDUtil_Ortho_GramSchmidt_RMat(V,epsi) RESULT(Vortho)
     USE QDUtil_NumParameters_m
     IMPLICIT NONE
@@ -1284,37 +1503,32 @@ CONTAINS
     real(kind=Rkind),             intent(in)             :: V(:,:)
     real(kind=Rkind),             intent(in), optional   :: epsi
 
-    integer          :: i,j,n,k
-    real(kind=Rkind) :: Norm
-
-    real(kind=Rkind)   :: epsi_loc
+    integer              :: i,j,n,k
+    real(kind=Rkind)     :: epsi_loc
+    logical, allocatable :: IsZero(:)
 
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
-    n = size(V,dim=1)
     k = size(V,dim=2)
 
-    allocate(Vortho(n,k))
-    Vortho = ZERO
+    allocate(IsZero(k))
+    IsZero(:) = .FALSE.
 
-    Norm   = sqrt(dot_product(V(:,1),V(:,1)))
-    Vortho(:,1) = V(:,1)/Norm
+    Vortho = V
+    CALL ReNorm_Vec(Vortho(:,1), IsZero(1), epsi=epsi_loc)
 
     DO i=2,k
-      Vortho(:,i) = V(:,i)
+
       DO j=1,i-1
-        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i))*Vortho(:,j)
+        IF (IsZero(j)) CYCLE
+        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i)) * Vortho(:,j)
       END DO
-      Norm   = sqrt(dot_product(Vortho(:,i),Vortho(:,i)))
-      IF (Norm > epsi_loc) THEN 
-        Vortho(:,i) = Vortho(:,i) / Norm
-      ELSE
-        Vortho(:,i) = ZERO
-      END IF
+      CALL ReNorm_Vec(Vortho(:,i), IsZero(i), epsi=epsi_loc)
+
     END DO
 
   END FUNCTION QDUtil_Ortho_GramSchmidt_RMat
@@ -1325,44 +1539,282 @@ CONTAINS
     complex(kind=Rkind),             intent(in)             :: V(:,:)
     real(kind=Rkind),                intent(in), optional   :: epsi
 
-    integer          :: i,j,n,k
-    real(kind=Rkind) :: Norm
+    integer              :: i,j,k
+    real(kind=Rkind)     :: epsi_loc
+    logical, allocatable :: IsZero(:)
 
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
+
+    k = size(V,dim=2)
+    allocate(IsZero(k))
+    IsZero(:) = .FALSE.
+
+    Vortho = V
+    CALL ReNorm_Vec(Vortho(:,1), IsZero(1), epsi=epsi_loc)
+
+    DO i=2,k
+
+      DO j=1,i-1
+        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i))*Vortho(:,j)
+      END DO
+      CALL ReNorm_Vec(Vortho(:,i), IsZero(i), epsi=epsi_loc)
+
+    END DO
+
+  END FUNCTION QDUtil_Ortho_GramSchmidt_CMat
+
+  FUNCTION QDUtil_RVec_IsZero(V,epsi) RESULT(IsZero)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    logical           :: IsZero
+
+    real(kind=Rkind),             intent(inout)          :: V(:)
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+    IF (present(epsi)) THEN
+      IsZero = all(abs(V) < epsi)
+    ELSE
+      IsZero = all(abs(V) < epsi_Matrix_default)
+    END IF
+
+  END FUNCTION QDUtil_RVec_IsZero
+  FUNCTION QDUtil_CVec_IsZero(V,epsi) RESULT(IsZero)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+
+    logical           :: IsZero
+
+    complex(kind=Rkind),          intent(inout)          :: V(:)
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+    IF (present(epsi)) THEN
+      IsZero = all(abs(V) < epsi)
+    ELSE
+      IsZero = all(abs(V) < epsi_Matrix_default)
+    END IF
+
+  END FUNCTION QDUtil_CVec_IsZero
+  SUBROUTINE QDUtil_ReNorm_RVec(V,IsZero,epsi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    real(kind=Rkind),             intent(inout)          :: V(:)
+    logical,                      intent(inout)          :: IsZero
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+
+    real(kind=Rkind)   :: Norm
     real(kind=Rkind)   :: epsi_loc
 
     IF (present(epsi)) THEN
       epsi_loc = epsi
     ELSE
-      epsi_loc = ONETENTH**10
+      epsi_loc = epsi_Matrix_default
     END IF
 
-    n = size(V,dim=1)
-    k = size(V,dim=2)
+ 
+    Norm = sqrt(dot_product(V,V))
+    IsZero = (Norm < epsi_loc)
+    IF (IsZERO) THEN
+      V = ZERO
+    ELSE
+      V = V / Norm
+    END IF
 
-    allocate(Vortho(n,k))
-    Vortho = CZERO
+  END SUBROUTINE QDUtil_ReNorm_RVec
+  SUBROUTINE QDUtil_ReNorm_CVec(V,IsZero,epsi)
+    USE QDUtil_NumParameters_m
+    IMPLICIT NONE
+    complex(kind=Rkind),          intent(inout)          :: V(:)
+    logical,                      intent(inout)          :: IsZero
+    real(kind=Rkind),             intent(in), optional   :: epsi
 
-    Norm   = sqrt(real(dot_product(V(:,1),V(:,1)),kind=Rkind))
-    Vortho(:,1) = V(:,1)/Norm
 
-    DO i=2,k
+    real(kind=Rkind)   :: Norm
+    real(kind=Rkind)   :: epsi_loc
 
-      Vortho(:,i) = V(:,i)
-      DO j=1,i-1
-        Vortho(:,i) = Vortho(:,i) - dot_product(Vortho(:,j),Vortho(:,i))*Vortho(:,j)
-      END DO
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
 
-      Norm   = sqrt(real(dot_product(Vortho(:,i),Vortho(:,i)),kind=Rkind))
+ 
+    Norm = sqrt(dot_product(V,V))
+    IsZero = (Norm < epsi_loc)
+    IF (IsZERO) THEN
+      V = ZERO
+    ELSE
+      V = V / Norm
+    END IF
 
-      IF (Norm > epsi_loc) THEN 
-        Vortho(:,i) = Vortho(:,i) / Norm
-      ELSE
-        Vortho(:,i) = ZERO
-      END IF
+  END SUBROUTINE QDUtil_ReNorm_CVec
+  FUNCTION QDUtil_Ortho_Complement_RMat(V,VSubSpace,epsi) RESULT(Vcomplement)
+    USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
+    real(kind=Rkind), allocatable                        :: VComplement(:,:)
+    real(kind=Rkind),             intent(in)             :: V(:,:)
+    real(kind=Rkind),             intent(in)             :: VSubSpace(:,:)
 
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+
+    real(kind=Rkind), allocatable          :: Vtemp(:,:)
+    logical,          allocatable          :: IsZero(:)
+
+    integer          :: iSS,i,iComp,nComp
+    real(kind=Rkind) :: Norm2SS,S
+
+    real(kind=Rkind)   :: epsi_loc
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='QDUtil_Ortho_Complement_RMat'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+      CALL Write_Mat(VSubSpace,nio=out_unit,nbcol=5,info='VSubSpace')
+      CALL Write_Mat(V,nio=out_unit,nbcol=5,info='V')
+    END IF
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
+    IF (size(VSubSpace,dim=1) /= size(V,dim=1)) THEN
+      write(out_unit,*) ' ERROR in QDUtil_Ortho_Complement_RMat'
+      write(out_unit,*) ' Imcompatible matrix sizes (the dim=1 values differ)'
+      write(out_unit,*) ' shape(V)',shape(V)
+      write(out_unit,*) ' shape(VSubSpace)',shape(VSubSpace)
+      STOP 'ERROR in QDUtil_Ortho_Complement_RMat: Imcompatible matrix sizes (the dim=1 values differ)'
+    END IF
+
+    Vtemp = V
+
+    allocate(IsZERO(size(Vtemp,dim=2)))
+    DO i=1,size(Vtemp,dim=2)
+      CALL ReNorm_Vec(Vtemp(:,i),IsZero(i),epsi_loc)
+      IF (debug) write(out_unit,*) 'V',i,' IsZero:',IsZero(i)
+      IF (debug) write(out_unit,*) 'Renorm V',i,Vtemp(:,i)
     END DO
 
-  END FUNCTION QDUtil_Ortho_GramSchmidt_CMat
+    DO iSS=1,size(VSubSpace,dim=2)
+      Norm2SS = dot_product(VSubSpace(:,iSS),VSubSpace(:,iSS))
+      IF (debug) write(out_unit,*) 'VSubSpace',iSS,' Norm2:',Norm2SS
+      IF (sqrt(Norm2SS) < epsi_loc) CYCLE
+
+      DO i=1,size(Vtemp,dim=2)
+        IF (IsZERO(i)) CYCLE
+
+        S = dot_product(VSubSpace(:,iSS),Vtemp(:,i))
+        IF (debug) write(out_unit,*) 'S',iSS,i,' S:',S
+
+        IF (abs(S) < epsi_loc) CYCLE
+        Vtemp(:,i) = Vtemp(:,i) - S/Norm2SS * VSubSpace(:,iSS)
+
+        CALL ReNorm_Vec(Vtemp(:,i),IsZero(i),epsi_loc)
+      END DO
+    END DO
+
+    VComplement = Ortho(Vtemp,rm0Vec=.TRUE.,epsi=epsi_loc)
+ 
+    IF (allocated(IsZero)) deallocate(IsZero)
+    IF (allocated(Vtemp))  deallocate(Vtemp)
+
+    IF (debug) THEN
+      CALL Write_Mat(VComplement,nio=out_unit,nbcol=5,info='VComplement')
+      write(out_unit,*) 'END ',name_sub
+    END IF
+
+  END FUNCTION QDUtil_Ortho_Complement_RMat
+  FUNCTION QDUtil_Ortho_Complement_CMat(V,VSubSpace,epsi) RESULT(Vcomplement)
+    USE QDUtil_NumParameters_m
+    USE QDUtil_RW_MatVec_m
+    IMPLICIT NONE
+    complex(kind=Rkind), allocatable                        :: VComplement(:,:)
+    complex(kind=Rkind),             intent(in)             :: V(:,:)
+    complex(kind=Rkind),             intent(in)             :: VSubSpace(:,:)
+
+    real(kind=Rkind),             intent(in), optional   :: epsi
+
+
+    complex(kind=Rkind), allocatable       :: Vtemp(:,:)
+    logical,             allocatable       :: IsZero(:)
+
+    integer             :: iSS,i,iComp,nComp
+    real(kind=Rkind)    :: Norm2SS
+    complex(kind=Rkind) :: S
+    real(kind=Rkind)    :: epsi_loc
+
+    !----- for debuging --------------------------------------------------
+    character (len=*), parameter :: name_sub='QDUtil_Ortho_Complement_CMat'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+      CALL Write_Mat(VSubSpace,nio=out_unit,nbcol=5,info='VSubSpace')
+      CALL Write_Mat(V,nio=out_unit,nbcol=5,info='V')
+    END IF
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = epsi_Matrix_default
+    END IF
+    IF (size(VSubSpace,dim=1) /= size(V,dim=1)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Imcompatible matrix sizes (the dim=1 values differ)'
+      write(out_unit,*) ' shape(V)',shape(V)
+      write(out_unit,*) ' shape(VSubSpace)',shape(VSubSpace)
+      STOP 'ERROR in QDUtil_Ortho_Complement_CMat: Imcompatible matrix sizes (the dim=1 values differ)'
+    END IF
+
+    Vtemp = V
+
+    allocate(IsZERO(size(Vtemp,dim=2)))
+    DO i=1,size(Vtemp,dim=2)
+      CALL ReNorm_Vec(Vtemp(:,i),IsZero(i),epsi_loc)
+      IF (debug) write(out_unit,*) 'V',i,' IsZero:',IsZero(i)
+      IF (debug) write(out_unit,*) 'Renorm V',i,Vtemp(:,i)
+    END DO
+
+    DO iSS=1,size(VSubSpace,dim=2)
+      Norm2SS = dot_product(VSubSpace(:,iSS),VSubSpace(:,iSS))
+      IF (debug) write(out_unit,*) 'VSubSpace',iSS,' Norm2:',Norm2SS
+      IF (sqrt(Norm2SS) < epsi_loc) CYCLE
+
+      DO i=1,size(Vtemp,dim=2)
+        IF (IsZERO(i)) CYCLE
+
+        S = dot_product(VSubSpace(:,iSS),Vtemp(:,i))
+        IF (debug) write(out_unit,*) 'S',iSS,i,' S:',S
+
+        IF (abs(S) < epsi_loc) CYCLE
+        Vtemp(:,i) = Vtemp(:,i) - S/Norm2SS * VSubSpace(:,iSS)
+
+        CALL ReNorm_Vec(Vtemp(:,i),IsZero(i),epsi_loc)
+      END DO
+    END DO
+
+    VComplement = Ortho(Vtemp,rm0Vec=.TRUE.,epsi=epsi_loc)
+ 
+    IF (allocated(IsZero)) deallocate(IsZero)
+    IF (allocated(Vtemp))  deallocate(Vtemp)
+
+    IF (debug) THEN
+      CALL Write_Mat(VComplement,nio=out_unit,nbcol=5,info='VComplement')
+      write(out_unit,*) 'END ',name_sub
+    END IF
+
+  END FUNCTION QDUtil_Ortho_Complement_CMat
 END MODULE QDUtil_Matrix_m
 
 SUBROUTINE Test_QDUtil_Matrix()
@@ -1386,7 +1838,7 @@ SUBROUTINE Test_QDUtil_Matrix()
     complex(kind=Rkind), allocatable :: C3Mat(:,:),C3Vec(:)
 
     !====================================================================
-    ! Tests for the identity matrix
+    ! Tests for the identity and diagonal matrices
     !
     ! define the matrices
     R1Mat = reshape([ONE,ZERO,ZERO,                              &
@@ -1408,6 +1860,22 @@ SUBROUTINE Test_QDUtil_Matrix()
 
     res_test = all(abs(C1Mat-C2Mat) < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='Identity_CMat')
+
+    R1Vec = [ONE,-ONE,TWO]
+    R1Mat = reshape([R1Vec(1),ZERO,ZERO,                              &
+                     ZERO,R1Vec(2),ZERO,                              &
+                     ZERO,ZERO,R1Vec(3)],shape=[3,3])
+    R2Mat = Diagonal_Mat(R1Vec)
+    res_test = all(abs(R1Mat-R2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Diagonal_RMat')
+
+    C1Vec = [CONE,-CONE,EYE]
+    C1Mat = reshape([C1Vec(1),CZERO,CZERO,                              &
+                     CZERO,C1Vec(2),CZERO,                              &
+                     CZERO,CZERO,C1Vec(3)],shape=[3,3])
+    C2Mat = Diagonal_Mat(C1Vec)
+    res_test = all(abs(C1Mat-C2Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Diagonal_CMat')
 
     CALL Flush_Test(test_var)
     !====================================================================
@@ -1644,7 +2112,7 @@ SUBROUTINE Test_QDUtil_Matrix()
                     sqrt(ONE/14._Rkind),-sqrt(TWO/SEVEN),THREE/sqrt(14._Rkind)],shape=[3,3])
     !{{2/Sqrt[5], 1/Sqrt[5], 0}, {-(3/Sqrt[70]), 3 Sqrt[2/35], Sqrt[5/14]}, {1/Sqrt[14], -Sqrt[(2/7)], 3/Sqrt[14]}}
     !atomic_add
-    R3Mat = Ortho_GramSchmidt(R1Mat)
+    R3Mat = Ortho(R1Mat)
     res_test = all(abs(R2Mat-R3Mat) < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='GramSmidt ortho of R1Mat')
     !CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
@@ -1655,6 +2123,43 @@ SUBROUTINE Test_QDUtil_Matrix()
     END IF
     CALL Flush_Test(test_var)
 
+    !====================================================================
+    ! testing orthogonal complement
+    !
+    ! define the matrices
+    
+    R1Mat = reshape([ ONE,ZERO,ZERO,ZERO,ZERO,              &
+                     ZERO, ONE,ZERO,ZERO,ZERO,              &
+                     ZERO,ZERO, ONE,ZERO,ZERO],shape=[5,3])
+    R2Mat = reshape([ ONE, ONE,ZERO,ZERO,ZERO,              &
+                     ZERO,ZERO, ONE,ZERO,ZERO],shape=[5,2])
+
+    R3Mat = Ortho_Complement(R1Mat,R2Mat)
+    R2Mat = reshape([sqrt(HALF),-sqrt(HALF),ZERO,ZERO,ZERO],shape=[5,1])
+    res_test = all(abs(R2Mat-R3Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Ortho_Complement')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(R2Mat,out_unit,5,info='R2Mat')
+      CALL Write_Mat(R3Mat,out_unit,5,info='R3Mat')
+    END IF
+    CALL Flush_Test(test_var)
+
+    C1Mat = reshape([ CONE,CZERO,CZERO,CZERO,CZERO,              &
+                     CZERO, CONE,CZERO,CZERO,CZERO,              &
+                     CZERO,CZERO, CONE,CZERO,CZERO],shape=[5,3])
+    C2Mat = reshape([ EYE, CONE,CZERO,CZERO,CZERO,              &
+                     CZERO,CZERO, CONE,CZERO,CZERO],shape=[5,2])
+
+    C3Mat = Ortho_Complement(C1Mat,C2Mat)
+    C2Mat = reshape([CONE*sqrt(HALF),EYE*sqrt(HALF),CZERO,CZERO,CZERO],shape=[5,1])
+    res_test = all(abs(C2Mat-C3Mat) < ZeroTresh)
+    CALL Logical_Test(test_var,test1=res_test,info='Ortho_Complement')
+    IF (.NOT. res_test) THEN
+      CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
+      CALL Write_Mat(C3Mat,out_unit,5,info='C3Mat')
+    END IF
+    CALL Flush_Test(test_var)
+    !====================================================================
     ! define the matrices
     C1Mat = reshape([CONE,CHALF,CZERO,                             &
                      CHALF,CONE,CHALF,                             &
@@ -1669,7 +2174,8 @@ SUBROUTINE Test_QDUtil_Matrix()
     !atomic_add
     !CALL Write_Mat(C1Mat,out_unit,5,info='C1Mat')
 
-    C3Mat = Ortho_GramSchmidt(C1Mat)
+
+    C3Mat = Ortho(C1Mat)
     res_test = all(abs(C2Mat-C3Mat) < ZeroTresh)
     CALL Logical_Test(test_var,test1=res_test,info='GramSmidt ortho of C1Mat')
     !CALL Write_Mat(C2Mat,out_unit,5,info='C2Mat')
