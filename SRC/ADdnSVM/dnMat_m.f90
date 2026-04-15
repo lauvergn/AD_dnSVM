@@ -86,11 +86,10 @@ MODULE ADdnSVM_dnMat_m
 
   CONTAINS
     !PROCEDURE, PRIVATE :: AD_sub_dnCMat2_TO_dnCMat1
-    PROCEDURE, PRIVATE :: AD_set_dnMat_TO_C
+    PROCEDURE, PRIVATE :: AD_set_dnCMat_TO_C
     !PROCEDURE, PRIVATE :: AD_set_dnMat_FROM_MatOFdnS
     !PROCEDURE, PRIVATE :: AD_set_dnCMat_FROM_CMat
-    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnMat_TO_C!,                  &
-    !                                       AD_set_dnCMat_FROM_CMat
+    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnCMat_TO_C
   END TYPE dnCMat_t
 
   PUBLIC :: dnMat_t,alloc_dnMat,dealloc_dnMat,set_dnMat,Write_dnMat,Check_NotAlloc_dnMat
@@ -103,7 +102,7 @@ MODULE ADdnSVM_dnMat_m
   PUBLIC :: get_nderiv,get_nVar,get_nsurf
   PUBLIC :: get_d0,get_d1,get_d2,get_d3,get_Flatten
 
-  PUBLIC :: dnCMat_t
+  PUBLIC :: dnCMat_t,set_dnCMat
 
   INTERFACE transpose
     MODULE PROCEDURE AD_TRANSPOSE_dnMat,AD_TRANSPOSE_dnCMat
@@ -149,6 +148,8 @@ MODULE ADdnSVM_dnMat_m
 
   INTERFACE set_dnMat
     MODULE PROCEDURE AD_set_dnMat,AD_set_dnMat_FROM_Vec
+  END INTERFACE
+  INTERFACE set_dnCMat
     MODULE PROCEDURE AD_set_dnCMat,AD_set_dnCMat_FROM_dnMat
   END INTERFACE
 
@@ -2050,8 +2051,7 @@ CONTAINS
 !! @param Mat                TYPE (dnMat_t):      derived type which deals with the derivatives of a matrix.
 !! @param nio                integer (optional):  when present unit to print S, otherwise it is the default unit:out_unit
   SUBROUTINE AD_Write_dnMat(Mat,nio,info)
-    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, &
-                         out_unit, RMatIO_format
+    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, out_unit, RMatIO_format
     IMPLICIT NONE
 
     TYPE (dnMat_t),   intent(in)           :: Mat
@@ -3223,8 +3223,7 @@ CONTAINS
 
   END FUNCTION AD_get_nVar_FROM_dnCMat
   SUBROUTINE AD_Write_dnCMat(Mat,nio,info)
-    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, &
-                         out_unit, RMatIO_format
+    USE QDUtil_m, ONLY : Rkind, Write_Vec, Write_Mat, out_unit, CMatIO_format
     IMPLICIT NONE
 
     TYPE (dnCMat_t),  intent(in)           :: Mat
@@ -3245,7 +3244,7 @@ CONTAINS
 
     IF (sizeL == 1 .AND. sizeC == 1 .AND. nVar_loc > 1) THEN
       IF (allocated(Mat%d0)) THEN
-        write(nio_loc,'(a,' // RMatIO_format // ')') ' no derivative',Mat%d0
+        write(nio_loc,'(a,' // CMatIO_format // ')') ' no derivative',Mat%d0
       END IF
 
       IF (allocated(Mat%d1)) THEN
@@ -3262,7 +3261,7 @@ CONTAINS
         DO i=1,ubound(Mat%d3,dim=5)
         DO j=1,ubound(Mat%d3,dim=4)
         DO k=1,ubound(Mat%d3,dim=3)
-          write(nio_loc,'(3(1x,i0)," : ",' // RMatIO_format // ')') k,j,i,Mat%d3(1,1,k,j,i)
+          write(nio_loc,'(3(1x,i0)," : ",' // CMatIO_format // ')') k,j,i,Mat%d3(1,1,k,j,i)
         END DO
         END DO
         END DO
@@ -3614,33 +3613,54 @@ CONTAINS
     TYPE (dnMat_t),      intent(in)            :: dnRMat
     TYPE (dnMat_t),      intent(in), optional  :: dnIMat
 
+    !-----------------------------------------------------------
     integer :: err_dim
     character (len=*), parameter :: name_sub='AD_set_dnCMat_FROM_dnMat'
-
-    IF (get_nderiv(dnRMat) /= get_nderiv(dnIMat)) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' nderiv from dnRMat and dnIMat are different'
-      write(out_unit,*) ' dnRMat%nderiv',get_nderiv(dnRMat)
-      write(out_unit,*) ' dnIMat%nderiv',get_nderiv(dnIMat)
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+    !-----------------------------------------------------------
+    IF (debug) THEN
+      write(out_unit,*) 'BEGINNING ',name_sub
+      CALL Write_dnMat(dnRMat, nio=out_unit, info='dnRMat')
+      IF (present(dnIMat)) CALL Write_dnMat(dnIMat, nio=out_unit, info='dnIMat')
       flush(out_unit)
-      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nderiv from dnRMat and dnIMat are different'
+    END IF
+ 
+    IF (present(dnIMat)) THEN
+      IF (get_nderiv(dnRMat) /= get_nderiv(dnIMat)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' nderiv from dnRMat and dnIMat are different'
+        write(out_unit,*) ' dnRMat%nderiv',get_nderiv(dnRMat)
+        write(out_unit,*) ' dnIMat%nderiv',get_nderiv(dnIMat)
+        flush(out_unit)
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nderiv from dnRMat and dnIMat are different'
+      ELSE
+        dnMat%nderiv = get_nderiv(dnRMat)
+      END IF
+      IF (get_nVar(dnRMat) /= get_nVar(dnIMat)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' nVar from dnRMat and dnIMat are different'
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nVar from dnRMat and dnIMat are different'
+      END IF
+      IF (get_sizeC(dnRMat) /= get_sizeC(dnIMat)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' get_sizeC from dnRMat and dnIMat are different'
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeC from dnRMat and dnIMat are different'
+      END IF
+      IF (get_sizeL(dnRMat) /= get_sizeL(dnIMat)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' get_sizeL from dnRMat and dnIMat are different'
+        STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeL from dnRMat and dnIMat are different'
+      END IF
     ELSE
       dnMat%nderiv = get_nderiv(dnRMat)
     END IF
-    IF (get_nVar(dnRMat) /= get_nVar(dnIMat)) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' nVar from dnRMat and dnIMat are different'
-      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: nVar from dnRMat and dnIMat are different'
-    END IF
-    IF (get_sizeC(dnRMat) /= get_sizeC(dnIMat)) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' get_sizeC from dnRMat and dnIMat are different'
-      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeC from dnRMat and dnIMat are different'
-    END IF
-    IF (get_sizeL(dnRMat) /= get_sizeL(dnIMat)) THEN
-      write(out_unit,*) ' ERROR in ',name_sub
-      write(out_unit,*) ' get_sizeL from dnRMat and dnIMat are different'
-      STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: get_sizeL from dnRMat and dnIMat are different'
+
+    IF (debug) THEN
+      write(out_unit,*) '  nderiv',dnMat%nderiv
+      write(out_unit,*) '  nVar',get_nVar(dnRMat)
+      write(out_unit,*) '  SizeL,SizeC',get_sizeL(dnRMat),get_sizeC(dnRMat)
+      flush(out_unit)
     END IF
 
     IF (present(dnIMat)) THEN
@@ -3690,9 +3710,14 @@ CONTAINS
       write(out_unit,*) ' inconsistent dimensions of dnM'
       STOP 'ERROR in AD_set_dnCMat_FROM_dnMat: inconsistent dimensions'
     END IF
-  
+
+    IF (debug) THEN
+      CALL Write_dnMat(dnMat, nio=out_unit, info='dnMat (cplx)')
+      write(out_unit,*) 'END ',name_sub
+    END IF
+
   END SUBROUTINE AD_set_dnCMat_FROM_dnMat
-  SUBROUTINE AD_set_dnMat_TO_C(dnMat,C)
+  SUBROUTINE AD_set_dnCMat_TO_C(dnMat,C)
     USE QDUtil_m
     IMPLICIT NONE
 
@@ -3701,7 +3726,7 @@ CONTAINS
 
     integer :: nderiv_loc
     integer :: err_dnMat_loc
-    character (len=*), parameter :: name_sub='AD_set_dnMat_TO_C'
+    character (len=*), parameter :: name_sub='AD_set_dnCMat_TO_C'
 
     nderiv_loc = get_nderiv(dnMat)
 
@@ -3728,7 +3753,7 @@ CONTAINS
       write(out_unit,*) 'It should never append! Check the source'
       STOP
     END IF
-  END SUBROUTINE AD_set_dnMat_TO_C
+  END SUBROUTINE AD_set_dnCMat_TO_C
  FUNCTION AD_dnCMat2_MINUS_dnCMat1(dnMat1,dnMat2) RESULT (dnMat2_MINUS_dnMat1)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE

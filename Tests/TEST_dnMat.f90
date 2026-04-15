@@ -207,7 +207,7 @@ PROGRAM TEST_dnMat
   IMat_dnS(2,1) = -HALF + ZERO*Vec_dnS(1)
   dnM2 = IMat_dnS
 
-  CALL set_dnMat(dnCM,dnRMat=dnM1,dnIMat=dnM2)
+  CALL set_dnCMat(dnCM,dnRMat=dnM1,dnIMat=dnM2)
 
   CALL Write_dnMat(dnCM, info='CM')
   CALL DIAG_dnMat(dnMat=dnCM,dnMatDiag=dnCDiag,dnVec=dnCV)
