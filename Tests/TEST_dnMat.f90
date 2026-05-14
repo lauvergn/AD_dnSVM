@@ -172,6 +172,7 @@ PROGRAM TEST_dnMat
 
 
   ! tests diago
+  Vec_dnS = Variable([x,y],nderiv=2)
   deallocate(Mat_dnS)
   allocate(Mat_dnS(2,2))
   DO j=1,size(Mat_dnS,dim=2)
@@ -187,7 +188,9 @@ PROGRAM TEST_dnMat
   dnM1 = matmul(dnM,dnV)
   dnM2 = matmul(transpose(dnV),dnM1) - dnDiag
   CALL Write_dnMat(dnM2, info='Vt.M.V - Diag')
-  
+  dnM1 = matmul(transpose(dnV%d0),dnV)
+  CALL Write_dnMat(dnM1, info='NAC')
+
   res_test = Check_dnMat_IS_ZERO(dnM2,epsi=ZeroTresh)
   CALL Logical_Test(test_var,test1=res_test,info='RDiago')
 
