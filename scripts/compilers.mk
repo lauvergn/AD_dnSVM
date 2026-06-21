@@ -90,7 +90,7 @@ ifeq ($(FC),nvfortran)
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -LAPACK -lblas
+      FLIB = -llapack -lblas
     endif
   endif
 
