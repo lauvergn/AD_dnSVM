@@ -6,6 +6,10 @@ PROGRAM App_QDLib
   IMPLICIT NONE
 
   integer                          :: i,n
+  logical                          :: lo
+  real(kind=Rkind)                 :: R
+  complex(kind=Rkind)              :: C
+
   real(kind=Rkind),    allocatable :: RMat(:,:),REigVal(:),REigVec(:,:),RVec(:)
   real(kind=Rkind),    allocatable :: RVec2(:)
 
@@ -24,11 +28,12 @@ PROGRAM App_QDLib
   write(*,*) int(time),' seconds => d,h,m,s: ',conv_seconds(time)
 
  !====================================================================
-  ! Tests string
-  write(*,*) 'TO_string, integer: ',TO_string(-123)
-  write(*,*) 'TO_string, integer: ',TO_string(+123)
-  write(*,*) 'TO_string, integer: ',TO_string(HUGE(1))
-  write(*,*) 'TO_string, integer: ',TO_string(-HUGE(1_Ik8))
+  ! Tests TO_data (logical, integer, real, comlex)
+  write(*,*) 'TO_data, logical: ',TO_data('.true.',data_type=lo)
+  write(*,*) 'TO_data, integer: ',TO_data('1',data_type=i)
+  write(*,*) 'TO_data, real:    ',TO_data([character(len=10)::'1.d0','0.','-134.'],data_type=R)
+  write(*,*) 'TO_data, complex: ',TO_data('(1.,-5.)',data_type=c)
+
 
 
   write(*,*) 'TO_string, integer: ',TO_string([0,1,2,3,4,5,6,7,8],max_col=5)
@@ -46,6 +51,7 @@ PROGRAM App_QDLib
 #if __WITHRK16 == 1
   write(*,*) 'TO_string, complex Rk16: ',TO_string([complex(kind=Rk16) :: 0,1,2,3,4,5,6,7,8],max_col=5)
 #endif
+
   !====================================================================
   ! Tests on fractions
   Frac1 = '1/-2' ! use the conversion from string to Frac_t

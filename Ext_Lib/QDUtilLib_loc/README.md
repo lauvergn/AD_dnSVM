@@ -1,5 +1,7 @@
 # QDUtilLib
 
+Version: 2.4.0
+
 List of Fortran modules which contain utilities for codes.
 All modules contain a testing unit.
 
@@ -200,8 +202,11 @@ This module contains functions and subroutines to manipulate character string (c
 - Functions to change to upper to lowercase or the reverse: **TO_lowercase**, **TO_uppercase**
 - Functions to convert numbers (integer, real, complex, Frac, logical) in string: **TO_string**
   All kinds defined in NumParameters module and logical type are possible
-  For real and comlex convertions, an optional format (Rformat) can be given.
+  For real and comlex conversions, an optional format (Rformat) can be given.
   It can work with table of dimension 1.
+- Functions to convert string to data type (integer, real, complex, logical): **TO_data**
+  All kinds defined in NumParameters module and logical type are possible.
+  The functions are elemental, so a table (dim>=1) of string can be used.
 - Function to read a line from a file define with its unit: **Read_line**
 - Function to check is a string is empty: **string_IS_empty**
 - Concatenation (//) between string and integer, real, complex, and logical (and the reverse)
@@ -219,6 +224,12 @@ str = 'coucou' // 1.      ! => "coucou1."
 
 str = TO_lowercase("AbC") ! => "abc"
 str = TO_uppercase("aBc") ! => "ABC"
+
+lo=TO_data('.true.',data_type=lo)
+int=TO_data('1',data_type=int)
+R=TO_data('1.123d-3',data_type=R)
+cplx=TO_data('(1.,-5.)',data_type=cplx)
+Rtable=TO_data([character(len=10)::'1.d0','0.','-134.'],data_type=R) ! R is a real 
 ```
 
 ### Frac

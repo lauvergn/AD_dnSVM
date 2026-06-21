@@ -41,7 +41,7 @@ ifeq ($(FC),$(filter $(FC),gfortran gfortran-11 gfortran-12 gfortran-13 gfortran
       FLIB = -framework Accelerate
     else                   # Linux
       # linux libs
-      FLIB = -LAPACK -lblas
+      FLIB = -llapack -lblas
     endif
   endif
 
