@@ -2633,14 +2633,20 @@ END FUNCTION AD_Grad_OF_dnS
       d0f = ONE/S%d0
       IF (S%nderiv >= 1) d1f = -d0f*d0f
       IF (S%nderiv >= 2) d2f = -TWO*d0f*d1f
-      IF (S%nderiv >= 3) d3f =  -THREE*d0f*d2f
+      IF (S%nderiv >= 3) d3f = -THREE*d0f*d2f
       Sres = AD_get_F_dnS(S,d0f,d1f,d2f,d3f)
     ELSE IF (I == 1) THEN
       Sres = S
     ELSE IF (I == 2) THEN
       Sres = S*S
     ELSE
-      Sres = S**real(I,kind=Rkind)
+                         d0f = S%d0**I
+      IF (S%nderiv >= 1) d1f = S%d0**(I-1) * I
+      IF (S%nderiv >= 2) d2f = S%d0**(I-2) * I*(I-1)
+      IF (S%nderiv >= 3) d3f = S%d0**(I-3) * I*(I-1)*(I-2)
+      Sres = AD_get_F_dnS(S,d0f,d1f,d2f,d3f)
+
+      !Sres = S**real(I,kind=Rkind)
     END IF
 
   END FUNCTION AD_dnS_EXP_I

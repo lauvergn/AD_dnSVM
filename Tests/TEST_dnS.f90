@@ -37,6 +37,7 @@ PROGRAM TEST_dnS
     TYPE (dnS_t)                     :: dnA,dnB,dnC,dnDiff
     TYPE (dnS_t)                     :: dnMX,dnMXana
     TYPE (dnS_t)                     :: dnF,dnFX,dnFY
+    TYPE (dnS_t)                     :: dnZERO
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
     TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
@@ -78,6 +79,7 @@ PROGRAM TEST_dnS
   x       = 0.5_Rkind
   dnX     = variable(x  ,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
   dn2X    = variable(x+x,nVar=1,nderiv=nderiv,iVar=1) ! to set up the derivatives
+  dnZERO  = variable(ZERO,nVar=1,nderiv=nderiv,iVar=1)
 
   IF (print_level > 0) THEN
     CALL Write_dnS(dnX,  string=test_var%test_log,info='dnX')
@@ -255,6 +257,11 @@ PROGRAM TEST_dnS
   res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
   CALL Logical_Test(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX        ==0?')
   IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**3 - dnX*dnX*dnX')
+
+  Sana = dnZERO**3 - dnZERO*dnZERO*dnZERO
+  res_test = AD_Check_dnS_IS_ZERO(Sana,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='dnX**3-dnX*dnX*dnX (x=0.) ==0?')
+  IF (print_level > 0) CALL Write_dnS(Sana,string=test_var%test_log,info='dnX**3 - dnX*dnX*dnX (x=0.)')
 
   CALL Flush_Test(test_var)
 
