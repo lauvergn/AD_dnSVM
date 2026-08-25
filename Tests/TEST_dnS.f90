@@ -39,11 +39,12 @@ PROGRAM TEST_dnS
     TYPE (dnS_t)                     :: dnF,dnFX,dnFY
     TYPE (dnS_t)                     :: dnZERO
 
-    TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:)
+    TYPE (dnS_t), allocatable        :: Vec_dnS(:),Vres_dnS(:),Vana_dnS(:),VdnDiff(:)
     TYPE (dnS_t), allocatable        :: Mat_dnS(:,:),MatA_dnS(:,:),MatB_dnS(:,:),Mana_dnS(:,:)
 
     TYPE (test_t)                    :: test_var
     logical                          :: val_test,res_test
+    logical, allocatable             :: tab_test(:)
 
     real (kind=Rkind)                :: x,y,z,r,th,err,maxdiff,maxdnS
     real (kind=Rkind), allocatable   :: JacNewOld(:,:),JacNewOld_ana(:,:)
@@ -489,6 +490,39 @@ PROGRAM TEST_dnS
     CALL Write_dnS(dnZ,string=test_var%test_log,info='dnZ')
     CALL Write_dnS(Sana,string=test_var%test_log,info='dnX*dnZ (3D)')
   END IF
+
+  Vec_dnS  = Variable([x,x*x,-x],nderiv=nderiv)
+  Vres_dnS = Vec_dnS*[z,z*z,-z]
+  VdnDiff  = [Vres_dnS(1) - Variable(x,  nVar=3,iVar=1,nderiv=nderiv)*z,   &
+              Vres_dnS(2) - Variable(x*x,nVar=3,iVar=2,nderiv=nderiv)*z*z, &
+              Vres_dnS(3) - Variable(-x, nVar=3,iVar=3,nderiv=nderiv)*(-z)]
+
+  tab_test = AD_Check_dnS_IS_ZERO(VdnDiff,dnSerr_test)
+  res_test = all(tab_test)
+  CALL Logical_Test(test_var,test1=res_test,info='Vec_dnS*[z,z*z,-z]-Vana==0?')
+  IF (print_level > 0 .OR. .NOT. res_test) THEN
+    CALL Append_Test(test_var,('Tests: ' // TO_string(tab_test)))
+    CALL Write_dnS(Vec_dnS, string=test_var%test_log,info='Vec_dnS')
+    CALL Write_dnS(Vres_dnS,string=test_var%test_log,info='Vec_dnS*[z,z*z,-z]')
+    CALL Write_dnS(VdnDiff, string=test_var%test_log,info='VdnDiff')
+  END IF
+
+  Vec_dnS  = Variable([x,x*x,-x],nderiv=nderiv)
+  Vres_dnS = [z,z*z,-z]*Vec_dnS
+  VdnDiff  = [Vres_dnS(1) - Variable(x,  nVar=3,iVar=1,nderiv=nderiv)*z,   &
+              Vres_dnS(2) - Variable(x*x,nVar=3,iVar=2,nderiv=nderiv)*z*z, &
+              Vres_dnS(3) - Variable(-x, nVar=3,iVar=3,nderiv=nderiv)*(-z)]
+
+  tab_test = AD_Check_dnS_IS_ZERO(VdnDiff,dnSerr_test)
+  res_test = all(tab_test)
+  CALL Logical_Test(test_var,test1=res_test,info='[z,z*z,-z]*Vec_dnS-Vana==0?')
+  IF (print_level > 0 .OR. .NOT. res_test) THEN
+    CALL Append_Test(test_var,('Tests: ' // TO_string(tab_test)))
+    CALL Write_dnS(Vec_dnS, string=test_var%test_log,info='Vec_dnS')
+    CALL Write_dnS(Vres_dnS,string=test_var%test_log,info='[z,z*z,-z]*Vec_dnS')
+    CALL Write_dnS(VdnDiff, string=test_var%test_log,info='VdnDiff')
+  END IF
+
   CALL Flush_Test(test_var)
 
   CALL Append_Test(test_var,'============================================')

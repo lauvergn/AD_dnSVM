@@ -33,7 +33,7 @@ PROGRAM TEST_dnS
   USE ADdnSVM_m
   IMPLICIT NONE
 
-    TYPE (dnVec_t)                   :: dnV1,dnV2
+    TYPE (dnVec_t)                   :: dnV1,dnV2,dnV3
 
     TYPE (dnS_t), allocatable        :: Vec_dnS(:)
     TYPE (dnS_t)                     :: dnS,dnS_ana
@@ -70,9 +70,9 @@ PROGRAM TEST_dnS
   z = 2.0_Rkind
   Vec_dnS = Variable([x,ZERO,z],nderiv=nderiv)
 
-  dnV1 = Vec_dnS
+  dnV1    = Vec_dnS
   Vec_dnS = dnV1
-  dnV1 = Vec_dnS
+  dnV1    = Vec_dnS
 
   CALL set_dnVec(dnV2,d0=[x,ZERO,z],                           &
                       d1=reshape([ONE ,ZERO,ZERO,              &
@@ -90,6 +90,33 @@ PROGRAM TEST_dnS
     CALL Write_dnVec(dnV2,info='dnV2')
   END IF
   CALL Flush_Test(test_var)
+
+  x = 0.5_Rkind
+  z = 2.0_Rkind
+  dnV1     = Variable_dnVec([x,x*x,-x],nderiv=nderiv)
+  dnV2     = dnV1 * [z,z*z,-z]
+  Vec_dnS  = Variable([x,x*x,-x],nderiv=nderiv) * [z,z*z,-z]
+  dnV3     = Vec_dnS
+
+  res_test = Check_dnVec_IS_ZERO(dnV3-dnV2,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='dnV1*[z,z*z,-z]-Vana==0?')
+  IF (print_level > 0 .OR. .NOT. res_test) THEN
+    CALL Write_dnVec(dnV1,info='dnV1')
+    CALL Write_dnVec(dnV2,info='dnV1*[z,z*z,-z]')
+    CALL Write_dnVec(dnV3,info='dnV3')
+  END IF
+
+  x = 0.5_Rkind
+  z = 2.0_Rkind
+  dnV1     = Variable_dnVec([x,x*x,-x],nderiv=nderiv)
+  dnV2     = dnV1*[z,z*z,-z] - [z,z*z,-z]*dnV1
+
+  res_test = Check_dnVec_IS_ZERO(dnV2,dnSerr_test)
+  CALL Logical_Test(test_var,test1=res_test,info='dnV1*[z,z*z,-z] - [z,z*z,-z]*dnV1==0?')
+  IF (print_level > 0 .OR. .NOT. res_test) THEN
+    CALL Write_dnVec(dnV1,info='dnV1')
+    CALL Write_dnVec(dnV2,info='dnV1*[z,z*z,-z] - [z,z*z,-z]*dnV1')
+  END IF
 
   x = 0.5_Rkind
   z = 2.0_Rkind
@@ -121,6 +148,7 @@ PROGRAM TEST_dnS
   END IF
   CALL Flush_Test(test_var)
 
+  Vec_dnS = Variable([x,ZERO,z],nderiv=nderiv)
   dnV1    = Vec_dnS
   dnS     = dot_product(dnV1,dnV1)
   dnS_ana = dot_product(Vec_dnS,Vec_dnS) 

@@ -218,7 +218,8 @@ MODULE ADdnSVM_dnS_m
     MODULE PROCEDURE AD_Grad_OF_dnS
   END INTERFACE
   INTERFACE Write_dnS
-     MODULE PROCEDURE AD_Write_dnS_file,AD_Write_dnS_string
+     MODULE PROCEDURE AD_Write_dnS_file, AD_Write_dnS_string, & 
+                      AD_Write_VecOFdnS_file, AD_Write_VecOFdnS_string
   END INTERFACE
   INTERFACE get_nderiv
      MODULE PROCEDURE AD_get_nderiv_FROM_dnS
@@ -1341,6 +1342,55 @@ END FUNCTION AD_Grad_OF_dnS
     END IF
 
   END SUBROUTINE AD_Write_dnS_file
+  SUBROUTINE AD_Write_VecOFdnS_file(V,nio,info,all_type,FOR_test,Rfmt,nderiv)
+    USE QDUtil_m, ONLY : Rkind, out_unit, operator(//)
+    IMPLICIT NONE
+
+    TYPE (dnS_t),     intent(in)           :: V(:)
+    integer,          intent(in), optional :: nio
+    character(len=*), intent(in), optional :: info
+    logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
+
+
+    integer :: i,j,k,nio_loc,nderiv_loc,nVar
+    logical :: all_type_loc,FOR_test_loc
+    character (len=:), allocatable :: fformat,Rfmt_loc,info_loc
+
+    IF (present(nio)) THEN
+      nio_loc = nio
+    ELSE
+      nio_loc = out_unit
+    END IF
+
+    all_type_loc = .FALSE.
+    IF (present(all_type)) all_type_loc = all_type
+    FOR_test_loc = .FALSE.
+    IF (present(FOR_test)) FOR_test_loc = FOR_test
+
+    IF (present(Rfmt)) THEN
+      Rfmt_loc = Rfmt
+    ELSE
+      Rfmt_loc = 'e12.3'
+    END IF
+
+    DO i=lbound(V,dim=1),ubound(V,dim=1)
+      IF (present(info)) THEN
+        info_loc = info // '_V(' // i // ')'
+      ELSE
+        info_loc = 'V(' // i // ')'
+      END IF
+
+      IF (present(nderiv)) THEN
+        CALL AD_Write_dnS_file(V(i),nio_loc,info_loc,all_type_loc,FOR_test_loc,Rfmt_loc,nderiv)
+      ELSE
+        CALL AD_Write_dnS_file(V(i),nio_loc,info_loc,all_type_loc,FOR_test_loc,Rfmt_loc)
+      END IF
+    END DO
+
+  END SUBROUTINE AD_Write_VecOFdnS_file
+
   SUBROUTINE AD_Write_dnS_string(S,string,info,all_type,FOR_test,Rfmt,nderiv)
     USE QDUtil_m, ONLY : Rkind, TO_string, out_unit
     IMPLICIT NONE
@@ -1451,6 +1501,48 @@ END FUNCTION AD_Grad_OF_dnS
     END IF
 
   END SUBROUTINE AD_Write_dnS_string
+  SUBROUTINE AD_Write_VecOFdnS_string(V,string,info,all_type,FOR_test,Rfmt,nderiv)
+    USE QDUtil_m, ONLY : Rkind, out_unit, operator(//)
+    IMPLICIT NONE
+
+    TYPE (dnS_t),     intent(in)           :: V(:)
+    character (len=:), allocatable         :: string
+    character(len=*), intent(in), optional :: info
+    logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
+
+
+    integer :: i,j,k,nderiv_loc,nVar
+    logical :: all_type_loc,FOR_test_loc
+    character (len=:), allocatable :: fformat,Rfmt_loc,info_loc
+
+    all_type_loc = .FALSE.
+    IF (present(all_type)) all_type_loc = all_type
+    FOR_test_loc = .FALSE.
+    IF (present(FOR_test)) FOR_test_loc = FOR_test
+
+    IF (present(Rfmt)) THEN
+      Rfmt_loc = Rfmt
+    ELSE
+      Rfmt_loc = 'e12.3'
+    END IF
+
+    DO i=lbound(V,dim=1),ubound(V,dim=1)
+      IF (present(info)) THEN
+        info_loc = info // '_V(' // i // ')'
+      ELSE
+        info_loc = 'V(' // i // ')'
+      END IF
+
+      IF (present(nderiv)) THEN
+        CALL AD_Write_dnS_string(V(i),string,info_loc,all_type_loc,FOR_test_loc,Rfmt_loc,nderiv)
+      ELSE
+        CALL AD_Write_dnS_string(V(i),string,info_loc,all_type_loc,FOR_test_loc,Rfmt_loc)
+      END IF
+    END DO
+
+  END SUBROUTINE AD_Write_VecOFdnS_string
 !> @brief Public function to get nderiv from a derived type dnS.
 !!
 !> @author David Lauvergnat

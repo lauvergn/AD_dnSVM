@@ -88,6 +88,7 @@ MODULE ADdnSVM_dnVec_m
 
   INTERFACE operator (*)
     MODULE PROCEDURE AD_dnVec_TIME_R,AD_R_TIME_dnVec
+    MODULE PROCEDURE AD_dnVec_TIME_V,AD_V_TIME_dnVec
     MODULE PROCEDURE AD_dnVec_TIME_dnS,AD_dnS_TIME_dnVec
   END INTERFACE
   INTERFACE operator (/)
@@ -1211,12 +1212,12 @@ MODULE ADdnSVM_dnVec_m
 !!
 !! @param vec                TYPE (dnVec_t):           derived type which deals with the derivatives of a vector.
 !! @param R                  real:                     some real number
-!! @param sub_dnVec_TIME_R TYPE (dnVec_t) (result):  dnVec derived type
-  FUNCTION AD_dnVec_TIME_R(dnVec,R) RESULT (sub_dnVec_TIME_R)
+!! @param dnVecRes TYPE (dnVec_t) (result):  dnVec derived type
+  FUNCTION AD_dnVec_TIME_R(dnVec,R) RESULT (dnVecRes)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
-    TYPE (dnVec_t)                 :: sub_dnVec_TIME_R
+    TYPE (dnVec_t)                 :: dnVecRes
     TYPE (dnVec_t),    intent(in)  :: dnVec
     real (kind=Rkind), intent(in)  :: R
 
@@ -1230,28 +1231,28 @@ MODULE ADdnSVM_dnVec_m
 
     !write(out_unit,*) 'nVar,SizeVec,nderiv',nVar_loc,SizeVec_loc,nderiv_loc
 
-    CALL AD_alloc_dnVec(sub_dnVec_TIME_R,SizeVec_loc,nVar_loc,nderiv_loc,&
-                         name_var='sub_dnVec_TIME_R',name_sub=name_sub)
+    CALL AD_alloc_dnVec(dnVecRes,SizeVec_loc,nVar_loc,nderiv_loc,&
+                         name_var='dnVecRes',name_sub=name_sub)
 
     !write(out_unit,*) 'nderiv',nderiv_loc
 
 
     IF (nderiv_loc == 0) THEN
-       sub_dnVec_TIME_R%d0 = dnVec%d0 * R
+       dnVecRes%d0 = dnVec%d0 * R
 
     ELSE IF (nderiv_loc == 1) THEN
-       sub_dnVec_TIME_R%d0 = dnVec%d0 * R
-       sub_dnVec_TIME_R%d1 = dnVec%d1 * R
+       dnVecRes%d0 = dnVec%d0 * R
+       dnVecRes%d1 = dnVec%d1 * R
 
     ELSE IF (nderiv_loc == 2) THEN
-       sub_dnVec_TIME_R%d0 = dnVec%d0 * R
-       sub_dnVec_TIME_R%d1 = dnVec%d1 * R
-       sub_dnVec_TIME_R%d2 = dnVec%d2 * R
+       dnVecRes%d0 = dnVec%d0 * R
+       dnVecRes%d1 = dnVec%d1 * R
+       dnVecRes%d2 = dnVec%d2 * R
     ELSE IF (nderiv_loc == 3) THEN
-       sub_dnVec_TIME_R%d0 = dnVec%d0 * R
-       sub_dnVec_TIME_R%d1 = dnVec%d1 * R
-       sub_dnVec_TIME_R%d2 = dnVec%d2 * R
-       sub_dnVec_TIME_R%d3 = dnVec%d3 * R
+       dnVecRes%d0 = dnVec%d0 * R
+       dnVecRes%d1 = dnVec%d1 * R
+       dnVecRes%d2 = dnVec%d2 * R
+       dnVecRes%d3 = dnVec%d3 * R
     ELSE
       write(out_unit,*) ' ERROR in ',name_sub
       write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
@@ -1272,7 +1273,7 @@ MODULE ADdnSVM_dnVec_m
     IMPLICIT NONE
 
     TYPE (dnVec_t)                :: sub_R_TIME_dnVec
-    TYPE (dnVec_t),   intent(in)  :: dnVec
+    TYPE (dnVec_t),    intent(in)  :: dnVec
     real (kind=Rkind), intent(in)  :: R
 
     integer :: nderiv_loc,SizeVec_loc,nVar_loc
@@ -1314,6 +1315,92 @@ MODULE ADdnSVM_dnVec_m
       STOP
     END IF
   END FUNCTION AD_R_TIME_dnVec
+  FUNCTION AD_dnVec_TIME_V(dnVec,V) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: V(:)
+
+    integer :: nderiv_loc,SizeVec_loc,nVar_loc,SizeV
+    integer :: i1,i2,i3
+    integer :: err_dnVec_loc
+    character (len=*), parameter :: name_sub='AD_dnVec_TIME_V'
+
+    nderiv_loc  = AD_get_nderiv_FROM_dnVec(dnVec)
+    SizeVec_loc = AD_get_Size_FROM_dnVec(dnVec)
+    nVar_loc    = AD_get_nVar_FROM_dnVec(dnVec)
+    SizeV       = size(V)
+
+    !write(out_unit,*) 'nVar,SizeVec,nderiv',nVar_loc,SizeVec_loc,nderiv_loc
+
+    CALL AD_alloc_dnVec(dnVecRes,SizeVec_loc,nVar_loc,nderiv_loc, &
+                         name_var='AD_dnVec_TIME_V',name_sub=name_sub)
+
+    !write(out_unit,*) 'nderiv',nderiv_loc
+
+    IF (SizeV /= SizeVec_loc) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(V) is different from size(dnVec%d0)',size(V),SizeVec_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP 'ERROR in AD_dnVec_TIME_V: size(V) is different from size(dnVec%d0)'
+    END IF
+
+    IF (nderiv_loc == 0) THEN
+       dnVecRes%d0 = dnVec%d0 * V
+
+    ELSE IF (nderiv_loc == 1) THEN
+       dnVecRes%d0 = dnVec%d0 * V
+       DO i1=1,nVar_loc
+         dnVecRes%d1(:,i1) = dnVec%d1(:,i1) * V
+       END DO
+
+    ELSE IF (nderiv_loc == 2) THEN
+       dnVecRes%d0 = dnVec%d0 * V
+       DO i1=1,nVar_loc
+         dnVecRes%d1(:,i1) = dnVec%d1(:,i1) * V
+       END DO
+       DO i1=1,nVar_loc
+       DO i2=1,nVar_loc
+        dnVecRes%d2(:,i2,i1) = dnVec%d2(:,i2,i1) * V
+       END DO
+       END DO
+    ELSE IF (nderiv_loc == 3) THEN
+       dnVecRes%d0 = dnVec%d0 * V
+      DO i1=1,nVar_loc
+         dnVecRes%d1(:,i1) = dnVec%d1(:,i1) * V
+       END DO
+       DO i1=1,nVar_loc
+       DO i2=1,nVar_loc
+        dnVecRes%d2(:,i2,i1) = dnVec%d2(:,i2,i1) * V
+       END DO
+       END DO
+       DO i1=1,nVar_loc
+       DO i2=1,nVar_loc
+       DO i3=1,nVar_loc
+        dnVecRes%d3(:,i3,i2,i1) = dnVec%d3(:,i3,i2,i1) * V
+       END DO
+       END DO
+       END DO
+    ELSE
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nderiv > 3 is NOT possible',nderiv_loc
+      write(out_unit,*) 'It should never append! Check the source'
+      STOP
+    END IF
+  END FUNCTION AD_dnVec_TIME_V
+  FUNCTION AD_V_TIME_dnVec(V,dnVec) RESULT (dnVecRes)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnVec_t)                 :: dnVecRes
+    TYPE (dnVec_t),    intent(in)  :: dnVec
+    real (kind=Rkind), intent(in)  :: V(:)
+
+    dnVecRes = AD_dnVec_TIME_V(dnVec,V)
+
+  END FUNCTION AD_V_TIME_dnVec
   FUNCTION AD_dnVec_TIME_dnS(dnVec,dnS) RESULT (dnVecRes)
     USE QDUtil_m, ONLY : Rkind, out_unit
     USE ADdnSVM_dnS_m

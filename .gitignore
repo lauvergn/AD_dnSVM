@@ -9,3 +9,4 @@ dnSca.txt
 *.a
 *.log
 res
+Tests/TEST_dnCS.f90-old
