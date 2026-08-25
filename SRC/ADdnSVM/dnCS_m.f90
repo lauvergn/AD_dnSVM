@@ -1,0 +1,3135 @@
+!===============================================================================
+!===============================================================================
+!This file is part of AD_dnCSVM.
+!
+!===============================================================================
+! MIT License
+!
+! Copyright (c) 2022 David Lauvergnat
+!
+! Permission is hereby granted, free of charge, to any person obtaining a copy
+! of this software and associated documentation files (the "Software"), to deal
+! in the Software without restriction, including without limitation the rights
+! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+! copies of the Software, and to permit persons to whom the Software is
+! furnished to do so, subject to the following conditions:
+!
+! The above copyright notice and this permission notice shall be included in all
+! copies or substantial portions of the Software.
+!
+! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+! AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+! LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+! SOFTWARE.
+!===============================================================================
+!===============================================================================
+!> @brief Module which deals with derivatives of a scalar functions.
+!!
+!! This module deals with operations or functions of a scalar function and its derivatives, dnCS (complex).
+!!
+!! There is a mapping between the saclar function S, its derivatives and the dnCS derived type components:
+!!
+!! @li S                 => S%d0
+!! @li dS/dQ_i           => S%d1(i)
+!! @li d^2S/dQ_idQ_j     => S%d2(i,j)
+!! @li d^3S/dQ_idQ_jdQ_k => S%d3(i,j,k)
+!!
+!! with S defined as:
+!!  TYPE (dnCS_t) :: S
+!!
+!!
+!! All standard fortran operators (= + - * / **) are overloaded:
+!!
+!! For instance the sum (+) of two dnCS variables, S1 and S2 corresponds to:
+!! @li (S1+S2)                 => S1%d0    + S2%d0
+!! @li d(S1+S2)/dQ_i           => S1%d1(i) + S2%d1(i)
+!! @li ....
+!!
+!! The product (*) of two dnCS variables, S1 and S2 correspond to:
+!! @li (S1*S2)                 => S1%d0 * S1%d0
+!! @li d(S1*S2)/dQ_i           => S1%d0 * S2%d1(i) + S1%d1(i) * S2%d0    (derivative of a product)
+!! @li ....
+!!
+!! All standard fortran functions (exp, sqrt, log ... sin ... sinh) are overloaded
+!!
+!! For instance the function, f, of dnCS variables, S, corresponds to:
+!! @li f(S)                    =>           f(S%d0)
+!! @li d(f(S))/dQ_i            => S%d1(i) * f'(S%d0)
+!! @li ....
+!!
+!! All fortran comparison operators (== /= > >= < <=) and (.EQ. .LT. ....) are overloaded, as well.
+!! The comparison are done on the zero-order component:
+!! S1 == S2                   =>   S1%d0 == S2%d0
+!! S1 > S2                    =>   S1%d0  > S2%d0
+!!
+!!
+!! @author David Lauvergnat
+!! @date 09/08/2017
+!!
+MODULE ADdnSVM_dnCS_m
+  USE QDUtil_m, ONLY : Rkind, out_unit, ONETENTH
+  IMPLICIT NONE
+  PRIVATE
+
+!> @brief Derived type which deals with the derivatives of a scalar functions. It is a semi-private type.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param nderiv                  integer: it enables to chose the derivative order (from 0 to 3)
+!! @param d0                      complex:    0 order derivative (no derivative)
+!! @param d1                      complex:    1st order derivative (gradient: table of nVar derivatives)
+!! @param d2                      complex:    2d  order derivative (hessian: matrix of nVar*nVar derivatives)
+!! @param d3                      complex:    3d  order derivative (nVar*nVar*nVar derivatives)
+
+  integer              :: AD_dnCS_test = 0
+  complex (kind=Rkind) :: step_dnCS = ONETENTH**4
+
+  TYPE, PUBLIC :: dnCS_t
+    PRIVATE
+    integer                           :: nderiv = -1
+
+    complex (kind=Rkind)              :: d0
+    complex (kind=Rkind), allocatable :: d1(:)
+    complex (kind=Rkind), allocatable :: d2(:,:)
+    complex (kind=Rkind), allocatable :: d3(:,:,:)
+  CONTAINS
+    PROCEDURE, PRIVATE, PASS(S2) :: AD_sub_dnCS2_TO_dnS1
+    PROCEDURE, PRIVATE :: AD_sub_dnS2_TO_dnCS1
+    PROCEDURE, PRIVATE :: AD_set_dnCS_TO_I
+    PROCEDURE, PRIVATE :: AD_set_dnCS_TO_R
+    PROCEDURE, PRIVATE :: AD_set_dnCS_TO_C
+    GENERIC,   PUBLIC  :: assignment(=) => AD_set_dnCS_TO_R, AD_set_dnCS_TO_I, AD_set_dnCS_TO_C, &
+                                           AD_sub_dnCS2_TO_dnS1, AD_sub_dnS2_TO_dnCS1
+
+    PROCEDURE, PRIVATE :: AD_dnCS_EXP_R
+    PROCEDURE, PRIVATE :: AD_dnCS_EXP_I
+    GENERIC,   PUBLIC  :: operator (**) => AD_dnCS_EXP_R,AD_dnCS_EXP_I
+
+    PROCEDURE, PRIVATE :: AD_dnCS2_PLUS_dnCS1
+    PROCEDURE, PRIVATE, PASS(S1) :: AD_dnS2_PLUS_dnCS1
+    PROCEDURE, PRIVATE, PASS(S2) :: AD_dnCS2_PLUS_dnS1
+    PROCEDURE, PRIVATE :: AD_PLUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_PLUS_C
+    PROCEDURE, PRIVATE, PASS(S) :: AD_C_PLUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_PLUS_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_PLUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_PLUS_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_PLUS_dnCS
+    GENERIC,   PUBLIC  :: operator (+) => AD_dnCS2_PLUS_dnCS1, AD_PLUS_dnCS,      &
+                                          AD_dnS2_PLUS_dnCS1, AD_dnCS2_PLUS_dnS1, &
+                                          AD_dnCS_PLUS_R, AD_R_PLUS_dnCS,         &
+                                          AD_dnCS_PLUS_I, AD_I_PLUS_dnCS,         &
+                                          AD_C_PLUS_dnCS, AD_dnCS_PLUS_C
+
+    PROCEDURE, PRIVATE :: AD_dnCS2_MINUS_dnCS1
+    PROCEDURE, PRIVATE :: AD_MINUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_MINUS_C
+    PROCEDURE, PRIVATE, PASS(S) :: AD_C_MINUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_MINUS_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_MINUS_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_MINUS_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_MINUS_dnCS
+    GENERIC,   PUBLIC  :: operator (-) => AD_dnCS2_MINUS_dnCS1, AD_MINUS_dnCS,   &
+                                          AD_dnCS_MINUS_R, AD_R_MINUS_dnCS,      &
+                                          AD_dnCS_MINUS_I, AD_I_MINUS_dnCS,      &
+                                          AD_dnCS_MINUS_C, AD_C_MINUS_dnCS
+
+    PROCEDURE, PRIVATE :: AD_dnCS2_TIME_dnCS1
+    PROCEDURE, PRIVATE :: AD_dnCS_TIME_C
+    PROCEDURE, PRIVATE, PASS(S) :: AD_C_TIME_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_TIME_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_TIME_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_TIME_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_TIME_dnCS
+    GENERIC,   PUBLIC  :: operator (*) => AD_dnCS2_TIME_dnCS1,            &
+                                          AD_dnCS_TIME_C, AD_C_TIME_dnCS, &
+                                          AD_dnCS_TIME_I, AD_I_TIME_dnCS, &
+                                          AD_dnCS_TIME_R, AD_R_TIME_dnCS
+
+    PROCEDURE, PRIVATE :: AD_dnCS2_OVER_dnCS1
+    PROCEDURE, PRIVATE :: AD_dnCS_OVER_C
+    PROCEDURE, PRIVATE, PASS(S) :: AD_C_OVER_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_OVER_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_OVER_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_OVER_I
+    PROCEDURE, PRIVATE, PASS(S) :: AD_I_OVER_dnCS
+    GENERIC,   PUBLIC  :: operator (/) => AD_dnCS2_OVER_dnCS1,             &
+                                          AD_dnCS_OVER_R, AD_R_OVER_dnCS,  &
+                                          AD_dnCS_OVER_I, AD_I_OVER_dnCS,  &
+                                          AD_dnCS_OVER_C, AD_C_OVER_dnCS
+
+    PROCEDURE, PRIVATE :: AD_dnCS_EQ_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_EQ_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_EQ_dnCS
+    GENERIC,   PUBLIC  :: operator (==) => AD_dnCS_EQ_dnCS,AD_dnCS_EQ_R,AD_R_EQ_dnCS
+
+    PROCEDURE, PRIVATE :: AD_dnCS_NEQ_dnCS
+    PROCEDURE, PRIVATE :: AD_dnCS_NEQ_R
+    PROCEDURE, PRIVATE, PASS(S) :: AD_R_NEQ_dnCS
+    GENERIC,   PUBLIC  :: operator (/=) => AD_dnCS_NEQ_dnCS,AD_dnCS_NEQ_R,AD_R_NEQ_dnCS
+  END TYPE dnCS_t
+
+  PUBLIC :: Set_step_dnCS
+  INTERFACE Set_step_dnCS
+    MODULE PROCEDURE AD_Set_step_dnCS
+  END INTERFACE
+
+  ! overloded operators, functions
+  PUBLIC :: real,aimag,conjg,cmplx
+  PUBLIC :: sqrt
+  PUBLIC :: exp,abs,log,log10
+  PUBLIC :: cos,sin,tan,acos,asin,atan,cosh,sinh,tanh,acosh,asinh,atanh
+
+  PUBLIC :: Variable,alloc_dnCS,dealloc_dnCS,set_dnCS,set_d0CS,Write_dnCS
+  PUBLIC :: deriv,grad
+
+  PUBLIC :: get_nderiv,get_nVar
+  PUBLIC :: sub_get_dn,get_d0,get_d1,get_d2,get_d3,get_Jacobian
+  PUBLIC :: get_Flatten
+  PUBLIC :: ReduceDerivatives_dnCS2_TO_dnCS1,FROM_dnCSReducedDer,TO_dnCSReducedDer
+  PUBLIC :: dnf_OF_dnCS
+
+
+  PUBLIC :: AD_get_Num_dnCS_FROM_f_x,AD_Check_dnCS_IS_ZERO,AD_d0S_TIME_R
+  PUBLIC :: operator (*)
+
+  INTERFACE operator (*)
+    MODULE PROCEDURE AD_dnS_TIME_C,AD_C_TIME_dnS
+  END INTERFACE
+
+  INTERFACE Variable_dnCS
+    MODULE PROCEDURE AD_init_dnCS, AD_init_Tab_OF_dnCS
+  END INTERFACE
+  INTERFACE Variable
+     MODULE PROCEDURE AD_init_dnCS, AD_init_Tab_OF_dnCS
+  END INTERFACE
+  INTERFACE alloc_dnCS
+     MODULE PROCEDURE AD_alloc_dnCS
+  END INTERFACE
+  INTERFACE dealloc_dnCS
+     MODULE PROCEDURE AD_dealloc_dnCS
+  END INTERFACE
+  INTERFACE set_dnCS
+     MODULE PROCEDURE AD_set_dnCS,AD_set_dnCS_with_ider
+  END INTERFACE
+  INTERFACE set_d0CS
+    MODULE PROCEDURE AD_set_d0CS
+  END INTERFACE
+  INTERFACE deriv
+    MODULE PROCEDURE AD_Deriv_OF_dnCS
+  END INTERFACE
+  INTERFACE grad
+    MODULE PROCEDURE AD_Grad_OF_dnCS
+  END INTERFACE
+  INTERFACE Write_dnCS
+     MODULE PROCEDURE AD_Write_dnCS_file,AD_Write_dnCS_string
+  END INTERFACE
+  INTERFACE get_nderiv
+     MODULE PROCEDURE AD_get_nderiv_FROM_dnCS
+  END INTERFACE
+  INTERFACE get_nVar
+     MODULE PROCEDURE AD_get_nVar_FROM_dnCS
+  END INTERFACE
+  INTERFACE sub_get_dn
+     MODULE PROCEDURE AD_get_dn_FROM_dnCS
+  END INTERFACE
+  INTERFACE get_d0
+     MODULE PROCEDURE AD_get_d0_FROM_dnCS
+  END INTERFACE
+  INTERFACE get_d1
+     MODULE PROCEDURE AD_get_d1_FROM_dnCS
+  END INTERFACE
+
+  INTERFACE get_Jacobian
+     MODULE PROCEDURE AD_get_Jacobian_FROM_Vec_OF_dnCS
+  END INTERFACE
+
+  INTERFACE get_d2
+     MODULE PROCEDURE AD_get_d2_FROM_dnCS
+  END INTERFACE
+  INTERFACE get_d3
+     MODULE PROCEDURE AD_get_d3_FROM_dnCS
+  END INTERFACE
+  INTERFACE   get_Flatten
+     MODULE PROCEDURE   AD_get_Flatten_dnCS
+  END INTERFACE
+
+  INTERFACE ReduceDerivatives_dnCS2_TO_dnCS1
+     MODULE PROCEDURE AD_ReduceDerivatives_dnCS2_TO_dnCS1
+  END INTERFACE
+  INTERFACE TO_dnCSReducedDer
+     MODULE PROCEDURE AD_TO_dnCSReducedDer
+  END INTERFACE
+  INTERFACE FROM_dnCSReducedDer
+     MODULE PROCEDURE AD_FROM_dnCSReducedDer
+  END INTERFACE
+
+  INTERFACE dnf_OF_dnCS
+    MODULE PROCEDURE AD_dnF_OF_dnCS,AD_dnF_OF_TabOfdnCS
+  END INTERFACE
+
+  INTERFACE sqrt
+     MODULE PROCEDURE AD_get_SQRT_dnCS
+  END INTERFACE
+  INTERFACE abs
+     MODULE PROCEDURE AD_get_ABS_dnCS
+  END INTERFACE
+  INTERFACE conjg
+     MODULE PROCEDURE AD_get_CONJG_dnCS
+  END INTERFACE
+  INTERFACE cmplx
+     MODULE PROCEDURE AD_get_CMPLX_dnRS_dnIS
+  END INTERFACE
+  INTERFACE real
+     MODULE PROCEDURE AD_get_REAL_dnCS
+  END INTERFACE
+  INTERFACE aimag
+     MODULE PROCEDURE AD_get_AIMAG_dnCS
+  END INTERFACE
+  INTERFACE exp
+     MODULE PROCEDURE AD_get_EXP_dnCS
+  END INTERFACE
+  INTERFACE log
+     MODULE PROCEDURE AD_get_LOG_dnCS
+  END INTERFACE
+  INTERFACE log10
+     MODULE PROCEDURE AD_get_LOG10_dnCS
+  END INTERFACE
+  INTERFACE cos
+     MODULE PROCEDURE AD_get_COS_dnCS
+  END INTERFACE
+  INTERFACE acos
+     MODULE PROCEDURE AD_get_ACOS_dnCS
+  END INTERFACE
+  INTERFACE sin
+     MODULE PROCEDURE AD_get_SIN_dnCS
+  END INTERFACE
+  INTERFACE asin
+     MODULE PROCEDURE AD_get_ASIN_dnCS
+  END INTERFACE
+  INTERFACE tan
+     MODULE PROCEDURE AD_get_TAN_dnCS
+  END INTERFACE
+  INTERFACE atan
+     MODULE PROCEDURE AD_get_ATAN_dnCS
+  END INTERFACE
+  INTERFACE cosh
+     MODULE PROCEDURE AD_get_COSH_dnCS
+  END INTERFACE
+  INTERFACE acosh
+     MODULE PROCEDURE AD_get_ACOSH_dnCS
+  END INTERFACE
+  INTERFACE sinh
+     MODULE PROCEDURE AD_get_SINH_dnCS
+  END INTERFACE
+  INTERFACE asinh
+     MODULE PROCEDURE AD_get_ASINH_dnCS
+  END INTERFACE
+  INTERFACE tanh
+     MODULE PROCEDURE AD_get_TANH_dnCS
+  END INTERFACE
+  INTERFACE atanh
+     MODULE PROCEDURE AD_get_ATANH_dnCS
+  END INTERFACE
+
+CONTAINS
+
+  SUBROUTINE AD_Set_step_dnCS(step)
+    USE QDUtil_m, ONLY : Rkind
+    IMPLICIT NONE
+
+    real (kind=Rkind), intent(in) :: step ! Value of the step for the finit difference
+
+    step_dnCS = step
+
+  END SUBROUTINE AD_Set_step_dnCS
+!> @brief Public subroutine which allocates a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+!! @param nVar               integer (optional):    number of variables (coordiantes) for the derivatives.
+!! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
+!! @param err_dnCS            integer (optional):  to handle the errors errors (0: no error).
+  SUBROUTINE AD_alloc_dnCS(S,nVar,nderiv,err_dnCS)
+    USE QDUtil_m, ONLY : out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t), intent(inout)          :: S         !< derived type, which contains, matrix potential, its derivatives
+    integer,      intent(in),  optional  :: nVar      !< number of variables (coordiantes)
+    integer,      intent(in),  optional  :: nderiv    !< order of the derivatives [0,1,3]
+    integer,      intent(out), optional  :: err_dnCS !< to handle the errors
+
+    ! local variables
+    integer :: nVar_loc,err_dnCS_loc,nderiv_loc
+    character (len=*), parameter :: name_sub='AD_alloc_dnCS'
+
+    err_dnCS_loc = 0 ! no error
+    IF (present(err_dnCS)) err_dnCS = 0
+
+    CALL AD_dealloc_dnCS(S)
+
+    ! test nVar
+    IF (present(nVar)) THEN
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = 1
+    END IF
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+      nderiv_loc = min(3,nderiv_loc)
+    ELSE
+      nderiv_loc = 0
+    END IF
+    S%nderiv = nderiv_loc
+
+    !write(out_unit,*) 'S%nderiv in alloc_dnCS',S%nderiv
+
+
+    IF (nderiv_loc >= 1) THEN
+      allocate(S%d1(nVar_loc),stat=err_dnCS_loc)
+      IF (err_dnCS_loc /= 0 .OR. nVar_loc < 1) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d1'
+        write(out_unit,*) '  nVar > 0?',nVar_loc
+        IF (present(err_dnCS)) THEN
+          err_dnCS = err_dnCS_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCS'
+        END IF
+      END IF
+    END IF
+
+    IF (nderiv_loc >= 2) THEN
+      allocate(S%d2(nVar_loc,nVar_loc),stat=err_dnCS_loc)
+      IF (err_dnCS_loc /= 0 .OR. nVar_loc < 1) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d2'
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(err_dnCS)) THEN
+          err_dnCS = err_dnCS_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCS'
+        END IF
+      END IF
+    END IF
+
+    IF (nderiv_loc >= 3) THEN
+      allocate(S%d3(nVar_loc,nVar_loc,nVar_loc),stat=err_dnCS_loc)
+      IF (err_dnCS_loc /= 0 .OR. nVar_loc < 1) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  Problem with allocate of S%d3'
+        write(out_unit,*) '  nVar > 0',nVar_loc
+        IF (present(err_dnCS)) THEN
+          err_dnCS = err_dnCS_loc
+          RETURN
+        ELSE
+          STOP 'Problem with allocate in AD_alloc_dnCS'
+        END IF
+      END IF
+    END IF
+
+    !write(out_unit,*) 'err_dnCS_loc',err_dnCS_loc
+    !IF (present(err_dnCS)) write(out_unit,*) 'err_dnCS',err_dnCS
+
+  END SUBROUTINE AD_alloc_dnCS
+
+!> @brief Public subroutine which deallocates a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):             derived type which deals with the derivatives of a scalar functions.
+  ELEMENTAL SUBROUTINE AD_dealloc_dnCS(S)
+    IMPLICIT NONE
+
+    TYPE (dnCS_t), intent(inout)       :: S !< derived type, which contains, matrix potential, its derivatives
+
+    IF (allocated(S%d1)) deallocate(S%d1)
+    IF (allocated(S%d2)) deallocate(S%d2)
+    IF (allocated(S%d3)) deallocate(S%d3)
+
+    S%nderiv = -1
+
+  END SUBROUTINE AD_dealloc_dnCS
+!> @brief Public subroutine which checks if the derived type dnCS is (correctly) allocated.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):  derived type which deals with the derivatives of a scalar functions.
+!! @param nderiv             integer:    the derivative order.
+  ELEMENTAL FUNCTION AD_Check_NotAlloc_dnCS(S,nderiv) RESULT (NotAlloc)
+    IMPLICIT NONE
+
+    logical                     :: NotAlloc
+    TYPE (dnCS_t), intent(in)    :: S
+    integer,      intent(in)    :: nderiv
+
+    NotAlloc = (nderiv < 0)
+    NotAlloc = NotAlloc .OR. (nderiv >= 1 .AND. .NOT. allocated(S%d1))
+    NotAlloc = NotAlloc .OR. (nderiv >= 2 .AND. .NOT. allocated(S%d2))
+    NotAlloc = NotAlloc .OR. (nderiv >= 3 .AND. .NOT. allocated(S%d3))
+
+  END FUNCTION AD_Check_NotAlloc_dnCS
+!> @brief Public function which initializes a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param Sres               TYPE (dnCS_t) (result):    derived type which deals with the derivatives of a scalar functions.
+!! @param Val                complex:               Value of Sres%d0.
+!! @param nVar               integer (optional):    number of variables (coordiantes) for the derivatives.
+!! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
+!! @param iVar               integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
+  FUNCTION AD_init_dnCS(Val,nVar,nderiv,iVar) RESULT(Sres)
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t)                    :: Sres
+    complex (kind=Rkind), intent(in) :: Val
+    integer, optional, intent(in)    :: nderiv,nVar,iVar
+
+    integer :: err_dnCS_loc,nderiv_loc,nVar_loc,iVar_loc
+    character (len=*), parameter :: name_sub='AD_init_dnCS'
+
+    ! test nVar
+    IF (present(nVar)) THEN
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = 1
+    END IF
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+      nderiv_loc = min(3,nderiv_loc)
+    ELSE
+      nderiv_loc = 0
+    END IF
+
+    ! test iVar
+    IF (present(iVar)) THEN
+      iVar_loc = iVar
+    ELSE
+      iVar_loc = 1
+    END IF
+
+    IF (iVar_loc < 0 .OR. iVar_loc > nVar_loc) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' the iVar value (',iVar_loc,') is out of range: [1:',nVar_loc,']'
+      STOP 'Problem with the iVar value in init_dnCS'
+    END IF
+
+    !write(out_unit,*) 'iVar_loc',iVar_loc ; flush(out_unit)
+    !write(out_unit,*) 'nVar_loc,nderiv_loc',nVar_loc,nderiv_loc ; flush(out_unit)
+
+    CALL AD_alloc_dnCS(Sres,nVar_loc,nderiv_loc,err_dnCS_loc)
+    IF (err_dnCS_loc /= 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Problem in alloc_dnCS CALL'
+      STOP 'Problem Problem in AD_alloc_dnCS CALL in AD_init_dnCS'
+    END IF
+
+    Sres = ZERO
+
+    Sres%d0 = Val
+    IF (nderiv_loc > 0) Sres%d1(iVar_loc) = ONE
+
+  END FUNCTION AD_init_dnCS
+  !> @brief Public function which initializes a derived type dnCS.
+  !!
+  !> @author David Lauvergnat
+  !! @date 03/08/2017
+  !!
+  !! @param Sres               TYPE (dnCS_t) (result):    derived type which deals with the derivatives of a scalar functions.
+  !! @param Val                complex:               Value of Sres%d0.
+  !! @param nVar               integer (optional):    number of variables (coordiantes) for the derivatives.
+  !! @param nderiv             integer (optional):    it enables to chose the derivative order (from 0 to 3).
+  !! @param iVar               integer (optional):    when nVar > 1, dSres/dQ_iVar = Sres%d1(iVar)= 1, the other derivatives are zero
+  FUNCTION AD_init_Tab_OF_dnCS(TabVal,nVar,nderiv,iVar) RESULT(TabdnCS)
+      USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+      IMPLICIT NONE
+
+      TYPE (dnCS_t), ALLOCATABLE          :: TabdnCS(:)
+      complex (kind=Rkind), intent(in)    :: TabVal(:)
+      integer, optional,    intent(in)    :: nderiv,nVar
+      integer, optional,    intent(in)    :: iVar(:)
+
+      integer :: err_dnCS_loc
+      character (len=*), parameter :: name_sub='AD_init_Tab_OF_dnCS'
+
+    integer :: nVar_loc,nderiv_loc,iV,nVec
+
+    nVec = size(TabVal)
+
+    IF (present(nVar)) THEN
+      IF (nVar < nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' nVar is present and < size(TabVal)'
+        write(out_unit,*) ' nVar        ',nVar
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_Tab_OF_dnCS: nVar is present and < size(TabVal) '
+      END IF
+      nVar_loc = nVar
+    ELSE
+      nVar_loc = nVec
+    END IF
+    IF (nVar_loc < 1) RETURN
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+    ELSE
+      nderiv_loc = 0
+    END IF
+
+    IF (present(iVar)) THEN
+      IF (size(iVar) /= nVec) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' iVar(:) is present and sizes of TabVal and ivar are different'
+        write(out_unit,*) ' size(iVar)  ',size(iVar)
+        write(out_unit,*) ' size(TabVal)',nVec
+        write(out_unit,*) ' Check your Fortran or your data'
+        STOP 'ERROR in AD_init_Tab_OF_dnCS: size(iVar) /= size(TabVal) '
+      END IF
+    END IF
+
+    allocate(TabdnCS(nVec))
+
+    IF (present(iVar)) THEN
+      DO iV=1,nVec
+        TabdnCS(iV) = Variable(TabVal(iV),nVar=nVar_loc,nderiv=nderiv_loc,iVar=iVar(iV))
+      END DO
+    ELSE
+      DO iV=1,nVec
+        TabdnCS(iV) = Variable(TabVal(iV),nVar=nVar_loc,nderiv=nderiv_loc,iVar=iV)
+      END DO
+    END IF
+
+  END FUNCTION AD_init_Tab_OF_dnCS
+!> @brief Public subroutine which initializes a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):        derived type which deals with the derivatives of a scalar functions.
+!! @param d0,d1,d2,d3        complex  (optional):    complex value (d0) or table to initialize S.
+  SUBROUTINE AD_set_dnCS(S,d0,d1,d2,d3)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind), optional,   intent(in)     :: d0
+    complex (kind=Rkind), optional,   intent(in)     :: d1(:)
+    complex (kind=Rkind), optional,   intent(in)     :: d2(:,:)
+    complex (kind=Rkind), optional,   intent(in)     :: d3(:,:,:)
+
+    TYPE (dnCS_t),                    intent(inout)  :: S
+
+
+    character (len=*), parameter :: name_sub='AD_set_dnCS'
+
+    IF (present(d0)) THEN
+      S%d0 = d0
+      S%nderiv = 0
+    END IF
+
+    IF (present(d1)) THEN
+      S%d1     = d1
+      S%nderiv = 1
+      IF (.NOT. present(d0)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d1 is present but not d0'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCS'
+      END IF
+    END IF
+
+    IF (present(d2)) THEN
+      S%d2     = d2
+      S%nderiv = 2
+      IF (.NOT. present(d1)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d2 is present but not d1'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCS'
+      END IF
+    END IF
+
+    IF (present(d3)) THEN
+      S%d3     = d3
+      S%nderiv = 3
+      IF (.NOT. present(d2)) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) ' d3 is present but not d2'
+        write(out_unit,*) ' CHECK the fortran!!'
+        STOP 'ERROR in AD_set_dnCS'
+      END IF
+    END IF
+
+  END SUBROUTINE AD_set_dnCS
+  SUBROUTINE AD_set_d0CS(S,d0)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind), intent(in)     :: d0
+    TYPE (dnCS_t),        intent(inout)  :: S
+
+
+    character (len=*), parameter :: name_sub='AD_set_d0S'
+
+    S%d0 = d0
+
+  END SUBROUTINE AD_set_d0CS
+  SUBROUTINE AD_set_dnCS_with_ider(S,val,ider)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind), intent(in)     :: val
+    integer,              intent(in)     :: ider(:)
+
+    TYPE (dnCS_t),        intent(inout)  :: S
+
+    integer :: nderiv,i1,i2,i3
+
+    character (len=*), parameter :: name_sub='AD_set_dnCS_with_ider'
+    logical, parameter :: debug = .FALSE.
+    !logical, parameter :: debug = .TRUE.
+
+    IF (debug) THEN
+      write(out_unit,*) ' BEGINNNING ',name_sub
+      write(out_unit,*) ' val ',val
+      write(out_unit,*) ' ider ',ider
+      flush(out_unit)
+   END IF
+
+    nderiv = count(ider > 0)
+    IF (debug) write(out_unit,*) ' nderiv ',nderiv
+
+    IF (size(ider) /= nderiv .AND. nderiv > 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' incompatible ider(:) values. ider(:)',ider
+      write(out_unit,*) ' no zero or negative values are possible'
+      write(out_unit,*) ' Except ider = [0] for nderiv=0'
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_set_dnCS_with_ider: incompatible ider(:) values'
+    END IF
+
+    SELECT CASE (nderiv)
+    CASE (0)
+      S%d0                          = val
+    CASE (1)
+      S%d1(ider(1))                 = val
+    CASE (2)
+      S%d2(ider(1),ider(2))         = val
+    CASE (3)
+      S%d3(ider(1),ider(2),ider(3)) = val
+    CASE Default
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' incompatible ider(:) values. ider(:)',ider
+      write(out_unit,*) ' more than 3 values (nderiv >3)'
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_set_dnCS_with_ider: incompatible ider(:) values'
+    END SELECT
+
+    IF (debug) write(out_unit,*) ' END ',name_sub 
+
+  END SUBROUTINE AD_set_dnCS_with_ider
+  SUBROUTINE AD_ReduceDerivatives_dnCS2_TO_dnCS1(S1,S2,list_act) ! this is kept for compatibilty with the old version
+    USE QDUtil_m, ONLY : out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t), intent(inout) :: S1
+    TYPE (dnCS_t), intent(in)    :: S2
+    integer,       intent(in)    :: list_act(:)
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_ReduceDerivatives_dnCS2_TO_dnCS1'
+
+    S1 = TO_dnCSReducedDer(S2,list_act)
+
+  END SUBROUTINE AD_ReduceDerivatives_dnCS2_TO_dnCS1
+  FUNCTION AD_TO_dnCSReducedDer(S,list) RESULT(Sres)
+    USE QDUtil_m, ONLY : out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t) :: Sres
+
+
+    CLASS (dnCS_t), intent(in)    :: S
+    integer,      intent(in)     :: list(:)
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_TO_dnCSReducedDer'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    IF (allocated(S%d1)) THEN
+    IF (size(list) > size(S%d1) ) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(list) > size(S%d1)'
+      write(out_unit,*) ' size(list)  ',size(list)
+      write(out_unit,*) ' size(S%d1)  ',size(S%d1)
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_TO_dnCSReducedDer'
+    END IF
+    END IF
+
+    Sres%nderiv = S%nderiv
+
+    Sres%d0 = S%d0
+    IF (allocated(S%d1)) Sres%d1 = S%d1(list)
+    IF (allocated(S%d2)) Sres%d2 = S%d2(list,list)
+    IF (allocated(S%d3)) Sres%d3 = S%d3(list,list,list)
+
+  END FUNCTION AD_TO_dnCSReducedDer
+
+  FUNCTION AD_FROM_dnCSReducedDer(nVar,list,S)  RESULT(Sres)
+    USE QDUtil_m, ONLY : out_unit, ZERO
+    IMPLICIT NONE
+
+    TYPE (dnCS_t) :: Sres
+
+    integer,       intent(in)    :: nVar
+    CLASS (dnCS_t),  intent(in)    :: S
+    integer,       intent(in)    :: list(:)
+
+    integer :: err_dnCS_loc
+    integer :: i,j,k,nderiv
+
+    character (len=*), parameter :: name_sub='AD_FROM_dnCSReducedDer'
+
+    nderiv = get_nderiv(S)
+
+    CALL AD_alloc_dnCS(Sres,nVar,nderiv)
+
+
+    IF (allocated(S%d1)) THEN
+    IF (size(list) > size(S%d1) ) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' size(list) > size(S%d1)'
+      write(out_unit,*) ' size(list) ',size(list)
+      write(out_unit,*) ' size(S%d1)  ',size(S%d1)
+      write(out_unit,*) ' CHECK the fortran!!'
+      STOP 'ERROR in AD_FROM_dnCSReducedDer: size(list) > size(S%d1)'
+    END IF
+    END IF
+
+    IF (count(list > nVar) > 0) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' Some indexes of list are larger than  nVar'
+      write(out_unit,*) ' list  ',list
+      write(out_unit,*) ' nVar  ',nVar
+      STOP 'ERROR in AD_FROM_dnCSReducedDer: Some indexes of list are larger than  nVar'
+    END IF
+
+
+    Sres%d0 = S%d0
+
+    IF (allocated(S%d1)) THEN
+      Sres%d1 = ZERO
+      DO i=1,size(list)
+        Sres%d1(list(i)) = S%d1(i)
+      END DO
+    END IF
+    
+    IF (allocated(S%d2)) THEN
+      Sres%d2 = ZERO
+      DO i=1,size(list)
+      DO j=1,size(list)
+        Sres%d2(list(j),list(i)) = S%d2(j,i)
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(S%d3)) THEN
+      Sres%d3 = ZERO
+      DO i=1,size(list)
+      DO j=1,size(list)
+      DO k=1,size(list)
+        Sres%d3(list(k),list(j),list(i)) = S%d3(k,j,i)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_FROM_dnCSReducedDer
+
+  FUNCTION AD_Deriv_OF_dnCS(S,ider) RESULT(dS)
+    USE QDUtil_m, ONLY : Rkind, out_unit, CZERO, TO_string
+    IMPLICIT NONE
+
+    TYPE (dnCS_t)                               :: dS
+    TYPE (dnCS_t),                  intent(in)  :: S
+    integer,                        intent(in)  :: ider
+
+    integer :: nderiv,nVar
+    complex (kind=Rkind), allocatable :: d1(:),d2(:,:),d3(:,:,:)
+    character (len=*), parameter :: name_sub='AD_Deriv_OF_dnCS'
+
+    nderiv = get_nderiv(S)
+    nVar   = get_nVar(S)
+
+    IF (ider > nVar .OR. ider < 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' ider is not in the [1:',TO_string(nVar),'] range.'
+      write(out_unit,*) ' ider',ider
+      STOP 'ERROR in AD_Deriv_OF_dnCS: wrong ider'
+    END IF
+
+    SELECT CASE (nderiv)
+    CASE (1)
+      d1 = get_d1(S)
+      CALL set_dnCS(dS,d0=d1(ider))
+    CASE (2)
+      d1 = get_d1(S)
+      d2 = get_d2(S)
+      CALL set_dnCS(dS,d0=d1(ider),d1=d2(:,ider))
+    CASE (3)
+      d1 = get_d1(S)
+      d2 = get_d2(S)
+      d3 = get_d3(S)
+      CALL set_dnCS(dS,d0=d1(ider),d1=d2(:,ider),d2=d3(:,:,ider))
+    CASE default ! nderiv = 0 or <0
+      CALL set_dnCS(dS,d0=CZERO)
+    END SELECT
+
+  END FUNCTION AD_Deriv_OF_dnCS
+  FUNCTION AD_Grad_OF_dnCS(S) RESULT(TabdS)
+    USE QDUtil_m, ONLY : Rkind, ZERO, ONE, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t), ALLOCATABLE   :: TabdS(:)
+    TYPE (dnCS_t), intent(in)    :: S
+
+    character (len=*), parameter :: name_sub='AD_Grad_OF_dnCS'
+
+  integer :: iV,nVar
+
+  nVar = get_nVar(S)
+  allocate(TabdS(nVar))
+  DO iV=1,nVar
+    TabdS(iV) = Deriv(S,iV)
+  END DO
+
+END FUNCTION AD_Grad_OF_dnCS
+  !> @brief Public function to get d0 from a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+!! @param d0                 complex  (result):      d0=S%d0
+  ELEMENTAL FUNCTION AD_get_d0_FROM_dnCS(S) RESULT(d0)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind)              :: d0
+    TYPE (dnCS_t),        intent(in)  :: S
+
+    character (len=*), parameter :: name_sub='AD_get_d0_FROM_dnCS'
+
+    d0 = S%d0
+
+  END FUNCTION AD_get_d0_FROM_dnCS
+!> @brief Public function to get d1 from a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+!! @param d1                 complex  (result):        d1=S%d1, d1 is allocatable
+  PURE FUNCTION AD_get_d1_FROM_dnCS(S) RESULT(d1)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind), allocatable   :: d1(:)
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    character (len=*), parameter :: name_sub='AD_get_d1_FROM_dnCS'
+
+    IF (allocated(S%d1)) d1 = S%d1
+
+  END FUNCTION AD_get_d1_FROM_dnCS
+  FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnCS(Vec) RESULT(Jac)
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
+    IMPLICIT NONE
+
+    complex (kind=Rkind), allocatable   :: Jac(:,:)
+    TYPE (dnCS_t),        intent(in)    :: Vec(:)
+
+    integer :: iVar,nVarNew,NvarOld
+    character (len=*), parameter :: name_sub='AD_get_Jacobian_FROM_Vec_OF_dnCS'
+
+    nVarNew = size(Vec)
+    IF (nVarNew < 1 .OR. get_nderiv(Vec(1)) < 1) RETURN
+
+    nVarOld = 0
+
+    DO iVar=1,nVarNew
+      IF (get_nderiv(Vec(iVar)) < 1) CYCLE
+      IF (nVarOld == 0) nVarOld = get_nVar(Vec(iVar))
+
+      IF (nVarOld /= get_nVar(Vec(iVar))) THEN
+        write(out_unit,*) ' ERROR in ',name_sub
+        write(out_unit,*) '  The nVarOld from Vec(:) are different'
+        write(out_unit,*) '  iVar',iVar
+        write(out_unit,*) '  nVar from Vec_OF_dnCS(iVar)',get_nVar(Vec(iVar))
+        write(out_unit,*) '  nVarOld',nVarOld
+        STOP 'ERROR in AD_get_Jacobian_FROM_Vec_OF_dnCS: incomptiple nVar from Vec(:)'
+      END IF
+
+    END DO
+    IF (nVarOld > 0) THEN
+      allocate(Jac(nVarNew,nVarOld))
+      Jac(:,:) = ZERO
+      DO iVar=1,nVarNew
+
+        IF (get_nderiv(Vec(iVar)) < 1) CYCLE
+
+        Jac(iVar,:) = get_d1(Vec(iVar))
+      END DO
+    END IF
+
+  END FUNCTION AD_get_Jacobian_FROM_Vec_OF_dnCS
+  !> @brief Public function to get d2 from a derived type dnCS.
+  !!
+  !> @author David Lauvergnat
+  !! @date 03/08/2017
+  !!
+  !! @param S                  TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+  !! @param d2                 complex  (result):        d2=S%d2, d2 is allocatable
+  PURE FUNCTION AD_get_d2_FROM_dnCS(S) RESULT(d2)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+      complex (kind=Rkind),   allocatable :: d2(:,:)
+      TYPE (dnCS_t),        intent(in)    :: S
+
+      character (len=*), parameter :: name_sub='AD_get_d2_FROM_dnCS'
+
+      IF (allocated(S%d2)) d2 = S%d2
+
+    END FUNCTION AD_get_d2_FROM_dnCS
+  !> @brief Public function to get d3 from a derived type dnCS.
+  !!
+  !> @author David Lauvergnat
+  !! @date 03/08/2017
+  !!
+  !! @param S                  TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+  !! @param d3                 complex  (result):        d3=S%d3, d3 is allocatable
+  PURE FUNCTION AD_get_d3_FROM_dnCS(S) RESULT(d3)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+      complex (kind=Rkind), allocatable   :: d3(:,:,:)
+      TYPE (dnCS_t),        intent(in)    :: S
+
+      character (len=*), parameter :: name_sub='AD_get_d3_FROM_dnCS'
+
+      IF (allocated(S%d3)) d3 = S%d3
+
+  END FUNCTION AD_get_d3_FROM_dnCS
+!> @brief Public function to get FlatdnCS(:) from a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 09/01/2023
+!!
+!! @param S            TYPE (dnCS_t):      derived type which deals with the derivatives of a scalar functions.
+!! @param FlatdnCS      complex  (result):
+  FUNCTION AD_get_Flatten_dnCS(S,all_der,i_der) RESULT(FlatdnCS)
+      USE QDUtil_m, ONLY : Rkind, out_unit
+      IMPLICIT NONE
+
+      complex (kind=Rkind), allocatable          :: FlatdnCS(:)
+
+      TYPE (dnCS_t),        intent(in)           :: S
+      logical,              intent(in), optional :: all_der
+      integer,              intent(in), optional :: i_der
+
+      logical :: tab_der(0:3)
+      integer :: nderiv,FlatdnCS_size,i,f
+
+      nderiv = get_nderiv(S)
+      IF (nderiv < 0) THEN
+        allocate(FlatdnCS(0))
+        RETURN ! S%d... are not allocated
+      END IF
+
+      tab_der(:) = .FALSE.
+
+      IF (present(all_der)) THEN
+        IF (all_der) THEN
+          tab_der(0:nderiv) = .TRUE.
+          IF (present(i_der)) THEN
+             write(out_unit,*) ' ERROR in AD_get_Flatten_dnCS'
+             write(out_unit,*) ' all_der and i_der are present and incompatible'
+             write(out_unit,*) '   all_der,i_der',all_der,i_der
+             STOP 'ERROR in AD_get_Flatten_dnCS: all_der and i_der are present and incompatible'
+          END IF
+        END IF
+      END IF
+
+      IF (present(i_der)) THEN
+        IF (i_der < 0 .OR. i_der > nderiv) THEN
+          write(out_unit,*) ' ERROR in AD_get_Flatten_dnCS'
+          write(out_unit,*) ' i_der MUST be >= 0 and <= nderiv'
+          write(out_unit,*) '   i_der,nderiv',i_der,nderiv
+          STOP 'ERROR in AD_get_Flatten_dnCS: i_der MUST be >= 0 and <= nderiv'
+        END IF
+        tab_der(0:nderiv) = .FALSE.
+        tab_der(i_der)    = .TRUE.
+      ELSE
+        tab_der(0:nderiv) = .TRUE.
+      END IF
+      ! size of FlatdnCS
+      FlatdnCS_size = 0
+      IF (tab_der(0)) FlatdnCS_size = FlatdnCS_size + 1
+      IF (tab_der(1)) FlatdnCS_size = FlatdnCS_size + size(S%d1)
+      IF (tab_der(2)) FlatdnCS_size = FlatdnCS_size + size(S%d2)
+      IF (tab_der(3)) FlatdnCS_size = FlatdnCS_size + size(S%d3)
+      !write(out_unit,*) 'tab_der,FlatdnCS_size',tab_der,FlatdnCS_size
+
+      allocate(FlatdnCS(FlatdnCS_size))
+
+      i = 0
+      IF (tab_der(0)) THEN
+        f = i + 1
+        FlatdnCS(i+1:f) = S%d0
+        i = f
+      END IF
+      IF (tab_der(1)) THEN
+        f = i + size(S%d1)
+        FlatdnCS(i+1:f) = S%d1
+        i = f
+      END IF
+      IF (tab_der(2)) THEN
+        f = i + size(S%d2)
+        FlatdnCS(i+1:f) = reshape(S%d2,shape=[size(S%d2)])
+        i = f
+      END IF
+      IF (tab_der(3)) THEN
+        f = i + size(S%d3)
+        FlatdnCS(i+1:f) = reshape(S%d3,shape=[size(S%d3)])
+        i = f
+      END IF
+
+  END FUNCTION AD_get_Flatten_dnCS
+  !> @brief Public subroutine to get d0,d1,d2,d3 from a derived type dnCS.
+  !!
+  !> @author David Lauvergnat
+  !! @date 25/05/2018
+  !!
+  !! @param S                  TYPE (dnCS_t):          derived type which deals with the derivatives of a scalar functions.
+  !! @param d0,d1,d2,d3                 complex:         NOT allocatable
+  SUBROUTINE AD_get_dn_FROM_dnCS(S,d0,d1,d2,d3)
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
+    IMPLICIT NONE
+
+      TYPE (dnCS_t),        intent(in)              :: S
+      complex (kind=Rkind), intent(inout), optional :: d0,d1(:),d2(:,:),d3(:,:,:)
+
+      character (len=*), parameter :: name_sub='AD_get_dn_FROM_dnCS'
+
+      IF (present(d0)) THEN
+        d0 = S%d0
+      END IF
+      IF (present(d1)) THEN
+        IF (allocated(S%d1)) THEN
+           d1(:) = S%d1
+        ELSE
+           d1(:) = ZERO
+        END IF
+      END IF
+      IF (present(d2)) THEN
+        IF (allocated(S%d2)) THEN
+           d2(:,:) = S%d2
+        ELSE
+           d2(:,:) = ZERO
+        END IF
+      END IF
+      IF (present(d3)) THEN
+        IF (allocated(S%d3)) THEN
+           d3(:,:,:) = S%d3
+        ELSE
+           d3(:,:,:) = ZERO
+        END IF
+      END IF
+
+  END SUBROUTINE AD_get_dn_FROM_dnCS
+!> @brief Public subroutine which prints a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                  TYPE (dnCS_t):         derived type which deals with the derivatives of a scalar functions.
+!! @param nio                integer (optional):   when present unit to print S, otherwise it is the default unit:out_unit
+!! @param info               character (optional): when present, write info
+!! @param all_type           character (optional): when present and true, write all the type variable (old WriteAll_dnCS)
+!! @param FOR_test           character (optional): when present and true, write for the test (old Write_dnCS_FOR_test)
+  SUBROUTINE AD_Write_dnCS_file(S,nio,info,all_type,FOR_test,Rfmt,nderiv)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t),    intent(in)           :: S
+    integer,          intent(in), optional :: nio
+    character(len=*), intent(in), optional :: info
+    logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
+
+    integer :: i,j,k,nio_loc,nderiv_loc,nVar
+    logical :: all_type_loc,FOR_test_loc
+    character (len=:), allocatable :: fformat,Rfmt_loc
+
+    IF (present(nio)) THEN
+      nio_loc = nio
+    ELSE
+      nio_loc = out_unit
+    END IF
+
+    all_type_loc = .FALSE.
+    IF (present(all_type)) all_type_loc = all_type
+    FOR_test_loc = .FALSE.
+    IF (present(FOR_test)) FOR_test_loc = FOR_test
+
+    nderiv_loc = S%nderiv
+    IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
+
+    IF (all_type_loc) THEN ! write all variables
+      IF (present(info)) write(nio_loc,*) info
+      write(nio_loc,*) '-------------------------------------------'
+      write(nio_loc,*) 'Write_dnCS (all)'
+      write(nio_loc,*) 'nderiv',S%nderiv
+      write(nio_loc,*) 'S%d0',S%d0
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
+        write(nio_loc,*) 'S%d1:',S%d1
+      ELSE
+        write(nio_loc,*) 'S%d1: not allocated or not printed'
+      END IF
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
+        write(nio_loc,*) 'S%d2:',S%d2
+      ELSE
+        write(nio_loc,*) 'S%d2: not allocated or not printed'
+      END IF
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
+        write(nio_loc,*) 'S%d3:',S%d3
+      ELSE
+        write(nio_loc,*) 'S%d3: not allocated or not printed'
+      END IF
+      write(nio_loc,*) 'END Write_dnCS (all)'
+      write(nio_loc,*) '-------------------------------------------'
+    ELSE IF (FOR_test_loc) THEN ! for Test
+      AD_dnCS_test = AD_dnCS_test + 1
+      IF (present(info)) THEN
+        write(nio_loc,'(a,i0,1x,i0,a,a)') 'TEST #',AD_dnCS_test,S%nderiv,' dnCSca: ',trim(adjustl(info))
+      ELSE
+        write(nio_loc,'(a,i0,1x,i0,a)') 'TEST #',AD_dnCS_test,S%nderiv,' dnCSca'
+      END IF
+      write(nio_loc,*) 'S%d0'
+      write(nio_loc,*) 1
+      write(nio_loc,*) S%d0
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
+        write(nio_loc,*) 'S%d1'
+        write(nio_loc,*) size(S%d1)
+        write(nio_loc,*) S%d1
+      END IF
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
+        write(nio_loc,*) 'S%d2'
+        write(nio_loc,*) size(S%d2)
+        write(nio_loc,*) S%d2
+      END IF
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
+        write(nio_loc,*) 'S%d3'
+        write(nio_loc,*) size(S%d3)
+        write(nio_loc,*) S%d3
+      END IF
+
+      write(nio_loc,'(a,i0,a)') 'END_TEST #',AD_dnCS_test,' dnCSca'
+    ELSE ! normal writing
+      IF (present(Rfmt)) THEN
+        Rfmt_loc = Rfmt
+      ELSE
+        Rfmt_loc = '"(",e12.3,",",e12.3,")"'
+      END IF
+      IF (present(info)) write(nio_loc,*) info
+
+      nVar = 0
+      IF (allocated(S%d1)) nVar = size(S%d1)
+
+      fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
+      write(nio_loc,fformat) ' 0   derivative',S%d0
+
+      IF (allocated(S%d1) .AND. nderiv_loc > 0) THEN
+        IF (nVar > 99) THEN
+          fformat = '(a,(1x,i0),1x,sp,' // Rfmt_loc // ')'
+        ELSE
+          fformat = '(a,(1x,i2),2(3x),1x,sp,' // Rfmt_loc // ')'
+        END IF
+
+        DO i=1,ubound(S%d1,dim=1)
+          write(nio_loc,fformat) ' 1st derivative',i,S%d1(i)
+        END DO
+      END IF
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
+        IF (nVar > 99) THEN
+          fformat = '(a,2(1x,i0),1x,sp,' // Rfmt_loc // ')'
+        ELSE
+          fformat = '(a,2(1x,i2),1(3x),1x,sp,' // Rfmt_loc // ')'
+        END IF
+        DO i=1,ubound(S%d2,dim=2)
+        DO j=1,ubound(S%d2,dim=1)
+          write(nio_loc,fformat) ' 2d  derivative',j,i,S%d2(j,i)
+        END DO
+        END DO
+      END IF
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
+        IF (nVar > 99) THEN
+          fformat = '(a,3(1x,i0),1x,sp,' // Rfmt_loc // ')'
+        ELSE
+          fformat = '(a,3(1x,i2),1x,sp,' // Rfmt_loc // ')'
+        END IF
+        DO i=1,ubound(S%d3,dim=3)
+        DO j=1,ubound(S%d3,dim=2)
+        DO k=1,ubound(S%d3,dim=1)
+          write(nio_loc,fformat) ' 3d  derivative',k,j,i,S%d3(k,j,i)
+        END DO
+        END DO
+        END DO
+      END IF
+    END IF
+
+  END SUBROUTINE AD_Write_dnCS_file
+  SUBROUTINE AD_Write_dnCS_string(S,string,info,all_type,FOR_test,Rfmt,nderiv)
+    USE QDUtil_m, ONLY : Rkind, TO_string, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t),    intent(in)           :: S
+    character (len=:), allocatable         :: string
+    character(len=*), intent(in), optional :: info
+    logical,          intent(in), optional :: all_type,FOR_test
+    character(len=*), intent(in), optional :: Rfmt
+    integer,          intent(in), optional :: nderiv
+
+    integer :: i,j,k,nderiv_loc
+    logical :: all_type_loc,FOR_test_loc
+    character (len=:), allocatable :: fformat,Rfmt_loc
+
+    IF (.NOT. allocated(string)) string = ''
+
+    all_type_loc = .FALSE.
+    IF (present(all_type)) all_type_loc = all_type
+    FOR_test_loc = .FALSE.
+    IF (present(FOR_test)) FOR_test_loc = FOR_test
+
+    nderiv_loc = S%nderiv
+    IF (present(nderiv)) nderiv_loc = min(nderiv_loc,nderiv)
+
+    IF (all_type_loc) THEN ! write all variables
+      IF (present(info)) string = string // info // new_line('a')
+      string = string // '-------------------------------------------' // new_line('a') // &
+         'Write_dnCS (all)' // new_line('a') //                                  &
+         'nderiv' // TO_string(S%nderiv) // new_line('a') //                  &
+         'S%d0' // TO_string(S%d0) // new_line('a')
+      IF (allocated(S%d1) .AND. nderiv_loc > 0 ) THEN
+        string = string // 'S%d1:'
+        DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
+          string = string // ' ' // TO_string(S%d1(i))
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d1: not allocated or not printed' // new_line('a')
+      END IF
+      IF (allocated(S%d2) .AND. nderiv_loc > 1) THEN
+        string = string // 'S%d2:'
+        DO j=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
+        DO i=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
+          string = string // ' ' // TO_string(S%d2(i,j))
+        END DO
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d2: not allocated or not printed' // new_line('a')
+      END IF
+      IF (allocated(S%d3) .AND. nderiv_loc > 2) THEN
+        string = string // 'S%d3:'
+        DO k=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
+        DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
+        DO i=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
+          string = string // ' ' // TO_string(S%d3(i,j,k))
+        END DO
+        END DO
+        END DO
+        string = string // new_line('a')
+      ELSE
+        string = string // 'S%d3: not allocated or not printed' // new_line('a')
+      END IF
+      string = string // 'END Write_dnCS (all)' // new_line('a') //              &
+            '-------------------------------------------' // new_line('a')
+    ELSE ! normal writing
+      IF (present(Rfmt)) THEN
+        Rfmt_loc = Rfmt
+      ELSE
+        Rfmt_loc = 'e12.3'
+      END IF
+      IF (present(info)) string = string // info // new_line('a')
+
+
+      fformat = '(a,3(3x),1x,sp,' // Rfmt_loc // ')'
+
+      string = string // ' 0   derivative       ' //                            &
+          TO_string(S%d0,Rformat=Rfmt_loc) // new_line('a')
+
+
+      IF (allocated(S%d1)) THEN
+        DO i=lbound(S%d1,dim=1),ubound(S%d1,dim=1)
+          string = string // ' 1st derivative     ' // TO_string(i) // ' ' // &
+                        TO_string(S%d1(i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+      END IF
+      IF (allocated(S%d2)) THEN
+        DO i=lbound(S%d2,dim=2),ubound(S%d2,dim=2)
+        DO j=lbound(S%d2,dim=1),ubound(S%d2,dim=1)
+          string = string // ' 2d  derivative   ' // TO_string(j) // ' ' //   &
+                        TO_string(i) // ' ' //                                &
+                        TO_string(S%d2(j,i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+        END DO
+      END IF
+      IF (allocated(S%d3)) THEN
+        DO i=lbound(S%d3,dim=3),ubound(S%d3,dim=3)
+        DO j=lbound(S%d3,dim=2),ubound(S%d3,dim=2)
+        DO k=lbound(S%d3,dim=1),ubound(S%d3,dim=1)
+          string = string // ' 3d  derivative ' // TO_string(k) // ' ' //     &
+                         TO_string(j) // ' ' // TO_string(i) // ' ' //      &
+                        TO_string(S%d3(k,j,i),Rformat=Rfmt_loc)  // new_line('a')
+        END DO
+        END DO
+        END DO
+      END IF
+    END IF
+
+  END SUBROUTINE AD_Write_dnCS_string
+!> @brief Public function to get nderiv from a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                     TYPE (dnCS_t):        derived type which deals with the derivatives of a scalar functions.
+!! @param get_nderiv_FROM_dnCS   integer  (result):   nderiv value, check against S%nederiv and the allocated d1,d2 or d3
+  ELEMENTAL FUNCTION AD_get_nderiv_FROM_dnCS(S) RESULT(nderiv)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    integer                     :: nderiv
+    TYPE (dnCS_t), intent(in)    :: S
+
+    nderiv = S%nderiv
+    IF (S%nderiv == -1) THEN
+      nderiv = -1
+    ELSE IF (.NOT. allocated(S%d1)) THEN
+      nderiv = 0
+    ELSE IF (.NOT. allocated(S%d2)) THEN
+      nderiv = 1
+    ELSE IF (.NOT. allocated(S%d3)) THEN
+      nderiv = 2
+    ELSE
+      nderiv = 3
+    END IF
+
+    END FUNCTION AD_get_nderiv_FROM_dnCS
+!> @brief Public function to get nVar from a derived type dnCS.
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param S                     TYPE (dnCS_t):        derived type which deals with the derivatives of a scalar functions.
+!! @param nVar                  integer  (result):   nVar value from the size of S%d1.
+  ELEMENTAL FUNCTION AD_get_nVar_FROM_dnCS(S) RESULT(nVar)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    integer                     :: nVar
+    TYPE (dnCS_t), intent(in)    :: S
+
+    IF (.NOT. allocated(S%d1)) THEN
+      nVar = 0
+    ELSE
+      nVar = size(S%d1(:))
+    END IF
+
+  END FUNCTION AD_get_nVar_FROM_dnCS
+!> @brief Public function which ckecks a derived type dnCS is zero (all components).
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param Check_dnCS_IS_ZERO   logical  (result):   result of the comparison
+!! @param S                     TYPE (dnCS_t):           derived type which deals with the derivatives of a scalar functions.
+!! @param epsi                  real (optional):     when present zero limit, otherwise 10^-10
+  ELEMENTAL FUNCTION AD_Check_dnCS_IS_ZERO(S,epsi) RESULT(Check_dnCS_IS_ZERO)
+    USE QDUtil_m, ONLY : Rkind, ONETENTH, out_unit
+    IMPLICIT NONE
+
+    logical                                  :: Check_dnCS_IS_ZERO
+    TYPE (dnCS_t),       intent(in)           :: S
+    real(kind=Rkind),   intent(in), optional :: epsi
+
+    real(kind=Rkind) :: epsi_loc
+
+
+    IF (present(epsi)) THEN
+      epsi_loc = epsi
+    ELSE
+      epsi_loc = ONETENTH**10
+    END IF
+
+
+    Check_dnCS_IS_ZERO = (AD_get_maxval_OF_dnCS(S) <= epsi_loc)
+
+  END FUNCTION AD_Check_dnCS_IS_ZERO
+!> @brief Public function which gets the largest value of a derived type dnCS (all components).
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+!! @param get_maxval_OF_dnCS     real  (result):      largest value
+!! @param S                      TYPE (dnCS_t):        derived type which deals with the derivatives of a scalar functions.
+  ELEMENTAL FUNCTION AD_get_maxval_OF_dnCS(S) RESULT(maxval_OF_dnCS)
+    USE QDUtil_m, ONLY : Rkind, ZERO, out_unit
+    IMPLICIT NONE
+
+    real(kind=Rkind)             :: maxval_OF_dnCS
+    TYPE (dnCS_t), intent(in)    :: S
+
+    real(kind=Rkind) :: e0,e1,e2,e3
+
+    e1 = ZERO
+    e2 = ZERO
+    e3 = ZERO
+    e0 = abs(S%d0)
+    IF (allocated(S%d1)) e1 = maxval(abs(S%d1))
+    IF (allocated(S%d2)) e2 = maxval(abs(S%d2))
+    IF (allocated(S%d3)) e3 = maxval(abs(S%d3))
+
+    maxval_OF_dnCS = max(e0,e1,e2,e3)
+
+  END FUNCTION AD_get_maxval_OF_dnCS
+!> @brief Public function which calculates numerical derivative of a function
+!!
+!> @author David Lauvergnat
+!! @date 03/08/2017
+!!
+
+!! @param Snum                     TYPE (dnCS_t):   function value, f(x), and derivatives f' f" f'".
+!! @param f                        complex:         function (intrinsic or external)
+!! @param x                        complex:         abciss
+!! @param nderiv                   integer:         order of the derivative
+  FUNCTION AD_get_Num_dnCS_FROM_f_x(x,f,nderiv) RESULT(Snum)
+    USE QDUtil_m, ONLY : Rkind, ZERO,ONE,TWO,THREE,FOUR,EIGHT,TWELVE, ONETENTH, out_unit
+    IMPLICIT NONE
+
+    TYPE (dnCS_t)                                :: Snum
+    complex (kind=Rkind), external               :: f ! an intrinsic function: sin exp ....
+    complex (kind=Rkind),        intent(in)      :: x
+    integer,           optional, intent(in)      :: nderiv
+
+    !local variables:
+    TYPE (dnCS_t)         :: Sloc
+    complex (kind=Rkind)  :: xloc
+    integer               :: nderiv_loc,i,j,k
+    complex (kind=Rkind)  :: f0,fp,fm,fpp,fmm,fppp,fmmm
+
+
+    character (len=*), parameter :: name_sub='AD_get_Num_dnCS_FROM_f_x'
+
+    ! test nderiv
+    IF (present(nderiv)) THEN
+      nderiv_loc = max(0,nderiv)
+      nderiv_loc = min(3,nderiv_loc)
+    ELSE
+      nderiv_loc = 0
+    END IF
+
+    CALL AD_alloc_dnCS(Snum,nVar=1,nderiv=nderiv_loc)
+    Snum = ZERO
+
+    SELECT CASE (nderiv_loc)
+    CASE(0)
+      Snum%d0 = f(x)
+    CASE(1)
+      f0  = f(x)
+      fp  = f(x+step_dnCS)
+      fm  = f(x-step_dnCS)
+
+      Snum%d0 = f0
+      Snum%d1 = (fp-fm)/(step_dnCS+step_dnCS)
+    CASE(2)
+      f0  = f(x)
+      fp  = f(x+step_dnCS)
+      fm  = f(x-step_dnCS)
+      fpp = f(x+step_dnCS+step_dnCS)
+      fmm = f(x-step_dnCS-step_dnCS)
+
+      Snum%d0 = f0
+      Snum%d1 = (fp-fm)/(step_dnCS+step_dnCS)
+      Snum%d2 = (fp+fm-TWO*f0)/step_dnCS**2
+    CASE(3)
+      f0   = f(x)
+      fp   = f(x+step_dnCS)
+      fm   = f(x-step_dnCS)
+      fpp  = f(x+step_dnCS+step_dnCS)
+      fmm  = f(x-step_dnCS-step_dnCS)
+      fppp = f(x+step_dnCS+step_dnCS+step_dnCS)
+      fmmm = f(x-step_dnCS-step_dnCS-step_dnCS)
+
+      Snum%d0 = f0
+      Snum%d1 = ( THREE/FOUR*(fp-fm) - &
+                 THREE/20._Rkind*(fpp-fmm) + &
+                 ONE/60._Rkind*(fppp-fmmm) )/step_dnCS
+
+      Snum%d2 = (-30._Rkind*f0+16._Rkind*(fp+fm)-(fpp+fmm))/(TWELVE*step_dnCS**2)
+
+      Snum%d3 = (-13._Rkind*(fp-fm)+EIGHT*(fpp-fmm)-(fppp-fmmm))/(EIGHT*step_dnCS**3)
+
+    END SELECT
+
+  END FUNCTION AD_get_Num_dnCS_FROM_f_x
+
+!=========================================================
+! operators ==,/=
+!=========================================================
+  ELEMENTAL FUNCTION AD_dnCS_EQ_dnCS(S1,S2) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    logical                    :: lres
+    CLASS(dnCS_t), intent(in)  :: S1
+    TYPE (dnCS_t), intent(in)  :: S2
+
+    character (len=*), parameter :: name_sub='AD_dnCS_EQ_dnCS'
+
+    lres = (S1%d0 == S2%d0)
+
+    IF (allocated(S1%d1) .AND. allocated(S2%d1)) lres = lres .AND. all(S1%d1 == S2%d1)
+    IF (allocated(S1%d2) .AND. allocated(S2%d2)) lres = lres .AND. all(S1%d2 == S2%d2)
+    IF (allocated(S1%d3) .AND. allocated(S2%d3)) lres = lres .AND. all(S1%d3 == S2%d3)
+
+  END FUNCTION AD_dnCS_EQ_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_EQ_R(S1,R) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    logical                            :: lres
+    CLASS (dnCS_t),      intent(in)    :: S1
+    real (kind=Rkind),   intent(in)    :: R
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_dnCS_EQ_R'
+
+    lres = (S1%d0 == R)
+
+  END FUNCTION AD_dnCS_EQ_R
+  ELEMENTAL FUNCTION AD_R_EQ_dnCS(R,S) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    logical                            :: lres
+    CLASS (dnCS_t),      intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_R_EQ_dnCS'
+
+    lres = (R == S%d0)
+
+  END FUNCTION AD_R_EQ_dnCS
+
+  ELEMENTAL FUNCTION AD_dnCS_NEQ_dnCS(S1,S2) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    logical                     :: lres
+    CLASS (dnCS_t), intent(in)   :: S1
+    TYPE (dnCS_t),  intent(in)   :: S2
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_dnCS_NEQ_dnCS'
+
+    lres = (S1%d0 /= S2%d0)
+
+    IF (allocated(S1%d1) .AND. allocated(S2%d1)) lres = lres .OR. all(S1%d1 /= S2%d1)
+    IF (allocated(S1%d2) .AND. allocated(S2%d2)) lres = lres .OR. all(S1%d2 /= S2%d2)
+    IF (allocated(S1%d3) .AND. allocated(S2%d3)) lres = lres .OR. all(S1%d3 /= S2%d3)
+
+  END FUNCTION AD_dnCS_NEQ_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_NEQ_R(S1,R) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    CLASS (dnCS_t),     intent(in)    :: S1
+    real (kind=Rkind), intent(in)    :: R
+
+    logical                   :: lres
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_dnCS_NEQ_R'
+
+    lres = (S1%d0 /= R)
+
+  END FUNCTION AD_dnCS_NEQ_R
+  ELEMENTAL FUNCTION AD_R_NEQ_dnCS(R,S) RESULT(lres)
+    USE QDUtil_m, ONLY : Rkind, out_unit
+    IMPLICIT NONE
+
+    CLASS (dnCS_t),     intent(in)    :: S
+    real (kind=Rkind), intent(in)    :: R
+    logical                   :: lres
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_R_NEQ_dnCS'
+
+    lres = (R /= S%d0)
+
+  END FUNCTION AD_R_NEQ_dnCS
+!=========================================================
+! operators =,+,-,*,/,**
+!=========================================================
+  ELEMENTAL SUBROUTINE AD_sub_dnCS2_TO_dnCS1(S1,S2) ! not used anymore
+    USE QDUtil_m
+    CLASS (dnCS_t), intent(inout) :: S1
+    TYPE (dnCS_t),  intent(in)    :: S2
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_sub_dnCS2_TO_dnCS1'
+
+    CALL AD_dealloc_dnCS(S1)
+
+    S1%nderiv = S2%nderiv
+
+    S1%d0 = S2%d0
+    IF (allocated(S2%d1)) S1%d1 = S2%d1
+    IF (allocated(S2%d2)) S1%d2 = S2%d2
+    IF (allocated(S2%d3)) S1%d3 = S2%d3
+
+  END SUBROUTINE AD_sub_dnCS2_TO_dnCS1
+  ELEMENTAL SUBROUTINE AD_sub_dnCS2_TO_dnS1(S1,S2)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnS_t),   intent(inout) :: S1
+    CLASS (dnCS_t), intent(in)    :: S2
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_sub_dnCS2_TO_dnS1'
+
+    S1 = real(S2)
+  
+  END SUBROUTINE AD_sub_dnCS2_TO_dnS1
+  ELEMENTAL SUBROUTINE AD_sub_dnS2_TO_dnCS1(S1,S2)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    CLASS (dnCS_t),   intent(inout) :: S1
+    TYPE (dnS_t),     intent(in)    :: S2
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_sub_dnS2_TO_dnCS1'
+
+    CALL AD_dealloc_dnCS(S1)
+
+    S1%nderiv = get_nderiv(S2)
+    S1%d0 = get_d0(S2)
+    IF (S1%nderiv >= 1) S1%d1 = get_d1(S2)
+    IF (S1%nderiv >= 2) S1%d2 = get_d2(S2)
+    IF (S1%nderiv >= 3) S1%d3 = get_d3(S2)
+  
+  END SUBROUTINE AD_sub_dnS2_TO_dnCS1
+  ELEMENTAL SUBROUTINE AD_set_dnCS_TO_C(S,C)
+    USE QDUtil_m
+
+    CLASS (dnCS_t),       intent(inout) :: S
+    complex (kind=Rkind), intent(in)    :: C
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_set_dnCS_TO_C'
+
+
+    !if nderiv of S is > -1, nderiv must be unchanged
+    !if nderiv = -1, nderiv must be undefined (-1). Therefore,nderiv must be unchanged
+
+    S%d0 = C
+
+    IF (allocated(S%d1)) S%d1 = ZERO
+    IF (allocated(S%d2)) S%d2 = ZERO
+    IF (allocated(S%d3)) S%d3 = ZERO
+
+  END SUBROUTINE AD_set_dnCS_TO_C
+  ELEMENTAL SUBROUTINE AD_set_dnCS_TO_R(S,R)
+    USE QDUtil_m
+
+    CLASS (dnCS_t),     intent(inout) :: S
+    real (kind=Rkind), intent(in)    :: R
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_set_dnCS_TO_R'
+
+
+    !if nderiv of S is > -1, nderiv must be unchanged
+    !if nderiv = -1, nderiv must be undefined (-1). Therefore,nderiv must be unchanged
+
+    S%d0 = R
+
+    IF (allocated(S%d1)) S%d1 = ZERO
+    IF (allocated(S%d2)) S%d2 = ZERO
+    IF (allocated(S%d3)) S%d3 = ZERO
+
+  END SUBROUTINE AD_set_dnCS_TO_R
+  ELEMENTAL SUBROUTINE AD_set_dnCS_TO_I(S,I)
+    USE QDUtil_m
+
+    CLASS (dnCS_t),     intent(inout) :: S
+    integer,           intent(in)    :: I
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_set_dnCS_TO_I'
+
+
+    !if nderiv of S is > -1, nderiv must be unchanged
+    !if nderiv = -1, nderiv must be undefined (-1). Therefore,nderiv must be unchanged
+
+    S%d0 = I
+
+    IF (allocated(S%d1)) S%d1 = ZERO
+    IF (allocated(S%d2)) S%d2 = ZERO
+    IF (allocated(S%d3)) S%d3 = ZERO
+
+  END SUBROUTINE AD_set_dnCS_TO_I
+!=========================================================
+
+
+  ELEMENTAL FUNCTION AD_dnCS2_PLUS_dnCS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                :: Sres
+    CLASS (dnCS_t), intent(in)   :: S1,S2
+
+    character (len=*), parameter :: name_sub='AD_dnCS2_PLUS_dnCS1'
+
+
+    !several cases:
+    !Rq: R1=S1%d0       R2=S2%d0
+    !   S1%nderiv       S2%nderiv   =>      Sres%nderiv
+    !       -1              -1                  -1          =>     R1+R2
+    !       -1              >= 0    =>      S2%nderiv       => eq: R1+S2
+    !      >= 0             -1      =>      S1%nderiv       => eq: S1+R2
+    !      >= 0             >= 0    =>    min(S1%nderiv,S2%nderiv) => all
+
+    !if nderiv of S is > -1, nderiv must be unchanged
+    !if nderiv = -1, nderiv must be undefined (-1). Therefore,nderiv must be unchanged
+
+    IF (S1%nderiv == -1 .AND. S2%nderiv == -1) THEN
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%d0 = S1%d0 + S2%d0
+       !Sres%nderiv = -1 (done in AD_dealloc_dnCS)
+    ELSE IF (S1%nderiv == -1 .AND. S2%nderiv > -1) THEN
+       Sres = S1%d0 + S2 ! R+dnCS
+       !Sres%nderiv = S2%nderiv (done in the equality)
+    ELSE IF (S1%nderiv > -1 .AND. S2%nderiv == -1) THEN
+       Sres = S1 + S2%d0 ! dnCS+R
+       !Sres%nderiv = S1%nderiv
+    ELSE
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%nderiv = min(S1%nderiv,S2%nderiv)
+                                                    Sres%d0 = S1%d0 + S2%d0
+       IF (allocated(S1%d1) .AND. allocated(S2%d1)) Sres%d1 = S1%d1 + S2%d1
+       IF (allocated(S1%d2) .AND. allocated(S2%d2)) Sres%d2 = S1%d2 + S2%d2
+       IF (allocated(S1%d3) .AND. allocated(S2%d3)) Sres%d3 = S1%d3 + S2%d3
+    END IF
+
+  END FUNCTION AD_dnCS2_PLUS_dnCS1
+  ELEMENTAL FUNCTION AD_dnS2_PLUS_dnCS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnCS_t)                :: Sres
+    CLASS (dnCS_t), intent(in)   :: S1
+    TYPE  (dnS_t),  intent(in)   :: S2
+
+    TYPE (dnCS_t) :: S2_loc
+
+    character (len=*), parameter :: name_sub='AD_dnS2_PLUS_dnCS1'
+    S2_loc = S2
+    Sres   = S1+S2_loc
+
+  END FUNCTION AD_dnS2_PLUS_dnCS1
+  ELEMENTAL FUNCTION AD_dnCS2_PLUS_dnS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnCS_t)                :: Sres
+    TYPE (dnS_t),    intent(in)  :: S1
+    CLASS (dnCS_t),  intent(in)  :: S2
+
+    TYPE (dnCS_t) :: S1_loc
+
+    character (len=*), parameter :: name_sub='AD_dnCS2_PLUS_dnS1'
+
+
+    S1_loc = S1
+    Sres   = S1_loc + S2
+
+  END FUNCTION AD_dnCS2_PLUS_dnS1
+  ELEMENTAL FUNCTION AD_dnCS_PLUS_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_PLUS_C'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + C
+
+  END FUNCTION AD_dnCS_PLUS_C
+  ELEMENTAL FUNCTION AD_C_PLUS_dnCS(C,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_C_PLUS_dnCS'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + C
+
+  END FUNCTION AD_C_PLUS_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_PLUS_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_PLUS_R'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + R
+
+  END FUNCTION AD_dnCS_PLUS_R
+  ELEMENTAL FUNCTION AD_R_PLUS_dnCS(R,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_R_PLUS_dnCS'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + R
+
+  END FUNCTION AD_R_PLUS_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_PLUS_I(S,I) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_PLUS_I'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + I
+
+  END FUNCTION AD_dnCS_PLUS_I
+  ELEMENTAL FUNCTION AD_I_PLUS_dnCS(I,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_I_PLUS_dnCS'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 + I
+
+  END FUNCTION AD_I_PLUS_dnCS
+  ELEMENTAL FUNCTION AD_PLUS_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+
+
+    character (len=*), parameter :: name_sub='AD_PLUS_dnCS'
+
+    Sres = S
+
+  END FUNCTION AD_PLUS_dnCS
+  ELEMENTAL FUNCTION AD_dnCS2_MINUS_dnCS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                :: Sres
+    CLASS (dnCS_t), intent(in)   :: S1
+    TYPE (dnCS_t),  intent(in)   :: S2
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_dnCS2_MINUS_dnCS1'
+
+    IF (S1%nderiv == -1 .AND. S2%nderiv == -1) THEN
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%d0 = S1%d0 - S2%d0
+       !Sres%nderiv = -1 (done in AD_dealloc_dnCS)
+    ELSE IF (S1%nderiv == -1 .AND. S2%nderiv > -1) THEN
+       Sres = S1%d0 - S2
+       !Sres%nderiv = S2%nderiv (done in the equality)
+    ELSE IF (S1%nderiv > -1 .AND. S2%nderiv == -1) THEN
+       Sres = S1 - S2%d0
+       !Sres%nderiv = S1%nderiv
+    ELSE
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%nderiv = min(S1%nderiv,S2%nderiv)
+                                                    Sres%d0 = S1%d0 - S2%d0
+       IF (allocated(S1%d1) .AND. allocated(S2%d1)) Sres%d1 = S1%d1 - S2%d1
+       IF (allocated(S1%d2) .AND. allocated(S2%d2)) Sres%d2 = S1%d2 - S2%d2
+       IF (allocated(S1%d3) .AND. allocated(S2%d3)) Sres%d3 = S1%d3 - S2%d3
+    END IF
+
+  END FUNCTION AD_dnCS2_MINUS_dnCS1
+  ELEMENTAL FUNCTION AD_dnCS_MINUS_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_MINUS_C'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 - C
+
+  END FUNCTION AD_dnCS_MINUS_C
+  ELEMENTAL FUNCTION AD_C_MINUS_dnCS(C,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_C_MINUS_dnCS'
+
+    !CALL AD_dealloc_dnCS(Sres) (done in Sres = -S)
+
+    Sres = -S
+
+    Sres%d0 = C -S%d0
+
+  END FUNCTION AD_C_MINUS_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_MINUS_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_mINUS_R'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 - R
+
+  END FUNCTION AD_dnCS_MINUS_R
+  ELEMENTAL FUNCTION AD_R_MINUS_dnCS(R,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_R_MINUS_dnCS'
+
+    !CALL AD_dealloc_dnCS(Sres) (done in Sres = -S)
+
+    Sres = -S
+
+    Sres%d0 = R -S%d0
+
+  END FUNCTION AD_R_MINUS_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_MINUS_I(S,I) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_mINUS_I'
+
+    Sres    = S
+    Sres%d0 = Sres%d0 - I
+
+  END FUNCTION AD_dnCS_MINUS_I
+  ELEMENTAL FUNCTION AD_I_MINUS_dnCS(I,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_I_MINUS_dnCS'
+
+    !CALL AD_dealloc_dnCS(Sres) (done in Sres = -S)
+
+    Sres = -S
+
+    Sres%d0 = I -S%d0
+
+  END FUNCTION AD_I_MINUS_dnCS
+  ELEMENTAL FUNCTION AD_MINUS_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+
+
+    character (len=*), parameter :: name_sub='AD_MINUS_dnCS'
+
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+                         Sres%d0 = -S%d0
+    IF (allocated(S%d1)) Sres%d1 = -S%d1
+    IF (allocated(S%d2)) Sres%d2 = -S%d2
+    IF (allocated(S%d3)) Sres%d3 = -S%d3
+
+  END FUNCTION AD_MINUS_dnCS
+
+  ELEMENTAL FUNCTION AD_dnCS2_TIME_dnCS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                :: Sres
+    CLASS (dnCS_t), intent(in)   :: S1
+    TYPE (dnCS_t),  intent(in)   :: S2
+
+    integer :: id,jd,kd
+    character (len=*), parameter :: name_sub='AD_dnCS2_TIME_dnCS1'
+
+    IF (S1%nderiv == -1 .AND. S2%nderiv == -1) THEN
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%d0 = S1%d0 * S2%d0
+       !Sres%nderiv = -1 (done in AD_dealloc_dnCS)
+    ELSE IF (S1%nderiv == -1 .AND. S2%nderiv > -1) THEN
+       Sres = S1%d0 * S2 ! R*dnCS
+       !Sres%nderiv = S2%nderiv (done in the equality)
+    ELSE IF (S1%nderiv > -1 .AND. S2%nderiv == -1) THEN
+       Sres = S1 * S2%d0 ! dnCS*R
+       !Sres%nderiv = S1%nderiv
+    ELSE
+       CALL AD_dealloc_dnCS(Sres)
+       Sres%nderiv = min(S1%nderiv,S2%nderiv)
+
+       Sres%d0 = S1%d0 * S2%d0
+
+       IF (allocated(S1%d1) .AND. allocated(S2%d1)) THEN
+         Sres%d1 = S1%d1 * S2%d0 + S1%d0 * S2%d1
+
+         IF (allocated(S1%d2) .AND. allocated(S2%d2)) THEN
+           Sres%d2 = S1%d2 * S2%d0 + S1%d0 * S2%d2
+           DO id=1,size(S1%d1)
+           DO jd=1,size(S1%d1)
+             Sres%d2(jd,id) = Sres%d2(jd,id) + S1%d1(id) * S2%d1(jd) + S1%d1(jd) * S2%d1(id)
+           END DO
+           END DO
+
+           IF (allocated(S1%d3) .AND. allocated(S2%d3)) THEN
+             Sres%d3 = S1%d3 * S2%d0 + S1%d0 * S2%d3
+             DO id=1,size(S1%d1)
+             DO jd=1,size(S1%d1)
+             DO kd=1,size(S1%d1)
+               Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + S1%d1(id) * S2%d2(kd,jd) + &
+                                                       S1%d1(jd) * S2%d2(kd,id) + &
+                                                       S1%d1(kd) * S2%d2(jd,id) + &
+                                                       S1%d2(kd,jd) * S2%d1(id) + &
+                                                       S1%d2(kd,id) * S2%d1(jd) + &
+                                                       S1%d2(jd,id) * S2%d1(kd)
+
+             END DO
+             END DO
+             END DO
+           END IF
+         END IF
+       END IF
+    END IF
+
+  END FUNCTION AD_dnCS2_TIME_dnCS1
+  ELEMENTAL FUNCTION AD_d0S_TIME_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                           :: Sres
+    TYPE (dnCS_t),            intent(in)    :: S
+    complex (kind=Rkind),     intent(in)    :: C
+
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_d0S_TIME_C'
+
+
+    Sres = S
+
+    Sres%d0 = C * S%d0
+
+  END FUNCTION AD_d0S_TIME_C
+  ELEMENTAL FUNCTION AD_dnCS_TIME_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_TIME_C'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+                         Sres%d0 = C*S%d0
+    IF (allocated(S%d1)) Sres%d1 = C*S%d1
+    IF (allocated(S%d2)) Sres%d2 = C*S%d2
+    IF (allocated(S%d3)) Sres%d3 = C*S%d3
+
+  END FUNCTION AD_dnCS_TIME_C
+  ELEMENTAL FUNCTION AD_C_TIME_dnCS(C,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_C_TIME_dnCS'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+                         Sres%d0 = C*S%d0
+    IF (allocated(S%d1)) Sres%d1 = C*S%d1
+    IF (allocated(S%d2)) Sres%d2 = C*S%d2
+    IF (allocated(S%d3)) Sres%d3 = C*S%d3
+
+  END FUNCTION AD_C_TIME_dnCS
+  ELEMENTAL FUNCTION AD_dnS_TIME_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnCS_t)                         :: Sres
+    TYPE (dnS_t),          intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_dnS_TIME_C'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres = S
+    Sres = Sres*C
+
+  END FUNCTION AD_dnS_TIME_C
+  ELEMENTAL FUNCTION AD_C_TIME_dnS(C,S) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnCS_t)                         :: Sres
+    TYPE (dnS_t),           intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_C_TIME_dnS'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres = S
+    Sres = Sres*C
+
+  END FUNCTION AD_C_TIME_dnS
+  ELEMENTAL FUNCTION AD_d0S_TIME_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    TYPE (dnCS_t),          intent(in)    :: S
+    real (kind=Rkind),     intent(in)    :: R
+
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_d0S_TIME_R'
+
+
+    Sres = S
+
+    Sres%d0 = R * S%d0
+
+  END FUNCTION AD_d0S_TIME_R
+  ELEMENTAL FUNCTION AD_dnCS_TIME_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_TIME_R'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+                         Sres%d0 = R*S%d0
+    IF (allocated(S%d1)) Sres%d1 = R*S%d1
+    IF (allocated(S%d2)) Sres%d2 = R*S%d2
+    IF (allocated(S%d3)) Sres%d3 = R*S%d3
+
+  END FUNCTION AD_dnCS_TIME_R
+  ELEMENTAL FUNCTION AD_R_TIME_dnCS(R,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_R_TIME_dnCS'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+                         Sres%d0 = R*S%d0
+    IF (allocated(S%d1)) Sres%d1 = R*S%d1
+    IF (allocated(S%d2)) Sres%d2 = R*S%d2
+    IF (allocated(S%d3)) Sres%d3 = R*S%d3
+
+  END FUNCTION AD_R_TIME_dnCS
+
+  ELEMENTAL FUNCTION AD_dnCS_TIME_I(S,I) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_TIME_I'
+
+    Sres = S * real(I,kind=Rkind)
+
+  END FUNCTION AD_dnCS_TIME_I
+
+   ELEMENTAL FUNCTION AD_I_TIME_dnCS(I,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    integer :: err_dnCS_loc
+    character (len=*), parameter :: name_sub='AD_I_TIME_dnCS'
+
+    Sres = S * real(I,kind=Rkind)
+
+  END FUNCTION AD_I_TIME_dnCS
+
+  ELEMENTAL FUNCTION AD_dnCS2_OVER_dnCS1(S1,S2) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                :: Sres
+    CLASS (dnCS_t), intent(in)   :: S1
+    TYPE (dnCS_t),  intent(in)   :: S2
+
+    character (len=*), parameter :: name_sub='AD_dnCS2_OVER_dnCS1'
+
+
+    Sres = S1 * S2**(-1)
+
+  END FUNCTION AD_dnCS2_OVER_dnCS1
+  ELEMENTAL FUNCTION AD_dnCS_OVER_C(S,C) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_OVER_C'
+
+
+    Sres = S * (ONE/C)
+
+  END FUNCTION AD_dnCS_OVER_C
+
+  ELEMENTAL FUNCTION AD_C_OVER_dnCS(C,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                         :: Sres
+    CLASS (dnCS_t),         intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: C
+
+
+    character (len=*), parameter :: name_sub='AD_C_OVER_dnCS'
+
+
+    Sres = C * S**(-1)
+
+
+  END FUNCTION AD_C_OVER_dnCS
+  ELEMENTAL FUNCTION AD_dnCS_OVER_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_OVER_R'
+
+
+    Sres = S * (ONE/R)
+
+  END FUNCTION AD_dnCS_OVER_R
+
+  ELEMENTAL FUNCTION AD_R_OVER_dnCS(R,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+
+    character (len=*), parameter :: name_sub='AD_R_OVER_dnCS'
+
+
+    Sres = R * S**(-1)
+
+
+  END FUNCTION AD_R_OVER_dnCS
+
+  ELEMENTAL FUNCTION AD_dnCS_OVER_I(S,I) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,              intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_dnCS_OVER_I'
+
+
+    Sres = S * (ONE/real(I,kind=Rkind))
+
+  END FUNCTION AD_dnCS_OVER_I
+
+  ELEMENTAL FUNCTION AD_I_OVER_dnCS(I,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    integer,             intent(in)    :: I
+
+
+    character (len=*), parameter :: name_sub='AD_I_OVER_dnCS'
+
+
+    Sres = real(I,kind=Rkind) * S**(-1)
+
+
+  END FUNCTION AD_I_OVER_dnCS
+
+
+!=========================================================
+! mathematical intrinsic functions: cos, sin exp, log, cosh ....
+!=========================================================
+
+  ELEMENTAL FUNCTION AD_get_F_dnCS(S,d0f,d1f,d2f,d3f) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+    complex (kind=Rkind),   intent(in)    :: d0f,d1f,d2f,d3f
+
+    integer :: id,jd,kd
+    character (len=*), parameter :: name_sub='AD_get_F_dnCS'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    Sres%nderiv = S%nderiv
+
+    Sres%d0 = d0f
+    IF (allocated(S%d1)) THEN
+      Sres%d1 =  d1f * S%d1
+
+      IF (allocated(S%d2)) THEN
+        Sres%d2 = d1f * S%d2
+        DO id=1,size(S%d1)
+        DO jd=1,size(S%d1)
+          Sres%d2(jd,id) = Sres%d2(jd,id) + d2f * S%d1(id)*S%d1(jd)
+        END DO
+        END DO
+
+        IF (allocated(S%d3)) THEN
+          Sres%d3 = d1f * S%d3
+          DO id=1,size(S%d1)
+          DO jd=1,size(S%d1)
+          DO kd=1,size(S%d1)
+            Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + &
+                                d2f * (S%d1(id)*S%d2(kd,jd) + S%d1(jd)*S%d2(kd,id) + S%d1(kd)*S%d2(jd,id)) + &
+                                d3f * S%d1(id)*S%d1(jd)*S%d1(kd)
+          END DO
+          END DO
+          END DO
+        END IF
+      END IF
+    END IF
+
+
+  END FUNCTION AD_get_F_dnCS
+
+  FUNCTION AD_dnF_OF_dnCS(f,S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S,f
+
+    integer :: nderiv,id,jd,kd
+    character (len=*), parameter :: name_sub='AD_dnF_OF_dnCS'
+
+    CALL AD_dealloc_dnCS(Sres)
+
+    nderiv = min(get_nderiv(f),get_nderiv(S))
+
+
+    IF (nderiv > 0 .AND. get_nVar(f) /= 1) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar of f is not 1'
+      write(out_unit,*) '  nVar',get_nVar(f)
+      STOP 'ERROR in AD_dnF_OF_dnCS: nVar of f is not 1'
+    END IF
+
+
+    CALL alloc_dnCS(Sres, nVar=get_nVar(S), nderiv=nderiv)
+
+    !Sres%nderiv = S%nderiv
+
+    Sres%d0 = f%d0 ! f%d0 = func(s%d0)
+
+    IF (allocated(Sres%d1)) THEN
+      Sres%d1 =  f%d1(1) * S%d1
+    END IF
+
+    IF (allocated(Sres%d2)) THEN
+      Sres%d2 = f%d1(1) * S%d2
+      DO id=1,size(S%d1)
+      DO jd=1,size(S%d1)
+        Sres%d2(jd,id) = Sres%d2(jd,id) + f%d2(1,1) * S%d1(id)*S%d1(jd)
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d3)) THEN
+      Sres%d3 = f%d1(1) * S%d3
+      DO id=1,size(S%d1)
+      DO jd=1,size(S%d1)
+      DO kd=1,size(S%d1)
+        Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + &
+                            f%d2(1,1) * (S%d1(id)*S%d2(kd,jd) + S%d1(jd)*S%d2(kd,id) + S%d1(kd)*S%d2(jd,id)) + &
+                            f%d3(1,1,1) * S%d1(id)*S%d1(jd)*S%d1(kd)
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dnF_OF_dnCS
+
+  FUNCTION AD_dnF_OF_TabOfdnCS(f,S) RESULT(Sres) ! chain rule with f(S(:))
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: f
+    TYPE (dnCS_t),        intent(in)    :: S(:)
+
+    integer :: nderiv,id,jd,kd,i,j,k,nVar
+    character (len=*), parameter :: name_sub='AD_dnF_OF_TabOfdnCS'
+    
+    CALL AD_dealloc_dnCS(Sres)
+
+    nderiv = min(get_nderiv(f),get_nderiv(S(1)))
+
+    IF (nderiv > 0 .AND. get_nVar(f) /= size(S)) THEN
+      write(out_unit,*) ' ERROR in ',name_sub
+      write(out_unit,*) ' nVar of f is not size(S)'
+      write(out_unit,*) '  nVar of f',get_nVar(f)
+      write(out_unit,*) '  size(S)  ',size(S)
+      STOP 'ERROR in AD_dnF_OF_TabOfdnCS: nVar of f is not size(S)'
+    END IF
+
+
+    nVar = get_nVar(S(1))
+
+    CALL alloc_dnCS(Sres, nVar=nVar, nderiv=nderiv)
+
+
+    Sres%d0 = f%d0 ! f%d0 = func(s%d0)
+
+    IF (allocated(Sres%d1)) THEN
+      DO id=1,nVar
+        Sres%d1(id) = ZERO
+        DO i=1,size(S)
+          Sres%d1(id) =  Sres%d1(id) + f%d1(i)*S(i)%d1(id)
+        END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d2)) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+        Sres%d2(jd,id) = ZERO
+
+        DO i=1,size(S)
+          Sres%d2(jd,id) = Sres%d2(jd,id) + f%d1(i)*S(i)%d2(jd,id)
+        END DO
+
+        DO i=1,size(S)
+        DO j=1,size(S)
+          Sres%d2(jd,id) = Sres%d2(jd,id) + f%d2(j,i) * S(i)%d1(id)*S(j)%d1(jd)
+        END DO
+        END DO
+
+      END DO
+      END DO
+    END IF
+
+    IF (allocated(Sres%d3)) THEN
+      DO id=1,nVar
+      DO jd=1,nVar
+      DO kd=1,nVar
+        Sres%d3(kd,jd,id) = ZERO
+
+        DO i=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + f%d1(i)*S(i)%d3(kd,jd,id)
+        END DO
+        
+        DO i=1,size(S)
+        DO j=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + ( &
+                       S(i)%d1(id)*S(j)%d2(kd,jd) + &
+                       S(i)%d1(jd)*S(j)%d2(kd,id) + &
+                       S(i)%d1(kd)*S(j)%d2(jd,id) )*f%d2(j,i)
+        END DO
+        END DO
+
+        DO i=1,size(S)
+        DO j=1,size(S)
+        DO k=1,size(S)
+          Sres%d3(kd,jd,id) = Sres%d3(kd,jd,id) + &
+              ( S(i)%d1(id)*S(j)%d1(jd)*S(k)%d1(kd) )*f%d3(k,j,i)
+        END DO
+        END DO
+        END DO
+ 
+      END DO
+      END DO
+      END DO
+    END IF
+
+  END FUNCTION AD_dnF_OF_TabOfdnCS
+
+  ELEMENTAL FUNCTION AD_dnCS_EXP_R(S,R) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+    real (kind=Rkind),   intent(in)    :: R
+
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_dnCS_EXP_R'
+
+    IF (R == ZERO) THEN
+      Sres = S ! to have the right initialization. it cannot deallocate and set to the constant R
+      Sres = ONE
+    ELSE IF (R == ONE) THEN
+      Sres = S
+    ELSE IF (R == TWO) THEN
+      Sres = S*S
+    ELSE
+      d0f = S%d0**R
+      IF (S%nderiv >= 1) d1f = S%d0**(R-ONE)   * R
+      IF (S%nderiv >= 2) d2f = S%d0**(R-TWO)   * R*(R-ONE)
+      IF (S%nderiv >= 3) d3f = S%d0**(R-THREE) * R*(R-ONE)*(R-TWO)
+      Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+    END IF
+
+
+  END FUNCTION AD_dnCS_EXP_R
+  ELEMENTAL FUNCTION AD_dnCS_EXP_I(S,I) RESULT(Sres)
+  USE QDUtil_m
+
+    TYPE (dnCS_t)                      :: Sres
+    CLASS (dnCS_t),      intent(in)    :: S
+    integer,             intent(in)    :: I
+
+    complex (kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_dnCS_EXP_I'
+
+    IF (I == 0) THEN
+      Sres = S ! to have the right initialization. it cannot deallocate and set to the constant R
+      Sres = CONE
+    ELSE IF (I == -1) THEN
+      d0f = CONE/S%d0
+      IF (S%nderiv >= 1) d1f = -d0f*d0f
+      IF (S%nderiv >= 2) d2f = -CTWO*d0f*d1f
+      IF (S%nderiv >= 3) d3f = -THREE*d0f*d2f
+      Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+    ELSE IF (I == 1) THEN
+      Sres = S
+    ELSE IF (I == 2) THEN
+      Sres = S*S
+    ELSE
+                         d0f = S%d0**I
+      IF (S%nderiv >= 1) d1f = S%d0**(I-1) * I
+      IF (S%nderiv >= 2) d2f = S%d0**(I-2) * I*(I-1)
+      IF (S%nderiv >= 3) d3f = S%d0**(I-3) * I*(I-1)*(I-2)
+      Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+      !Sres = S**real(I,kind=Rkind)
+    END IF
+
+  END FUNCTION AD_dnCS_EXP_I
+  ELEMENTAL FUNCTION AD_get_SQRT_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    CLASS (dnCS_t),       intent(in)    :: S
+
+
+    character (len=*), parameter :: name_sub='AD_get_SQRT_dnCS'
+
+    Sres = S**HALF
+
+  END FUNCTION AD_get_SQRT_dnCS
+
+  ELEMENTAL FUNCTION AD_get_ABS_dnCS(S) RESULT(Sres)  ! this definition is wrong !!
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnS_t)                        :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+
+    character (len=*), parameter :: name_sub='AD_get_ABS_dnCS'
+
+    Sres = (conjg(S)*S)**HALF
+
+  END FUNCTION AD_get_ABS_dnCS
+  ELEMENTAL FUNCTION AD_get_CONJG_dnCS(S) RESULT(Sres) ! this definition is wrong !!
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: nderiv
+    character (len=*), parameter :: name_sub='AD_get_CONJG_dnCS'
+
+    nderiv = get_nderiv(S)
+    Sres%nderiv = nderiv
+
+    Sres%d0 = conjg(S%d0)
+    IF (nderiv >= 1) Sres%d1 = conjg(S%d1)
+    IF (nderiv >= 2) Sres%d2 = conjg(S%d2)
+    IF (nderiv >= 3) Sres%d3 = conjg(S%d3)
+
+
+  END FUNCTION AD_get_CONJG_dnCS
+  ELEMENTAL FUNCTION AD_get_CMPLX_dnRS_dnIS(RS,IS) RESULT(Sres) ! this definition is wrong !!
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnS_t),         intent(in)    :: RS,IS
+
+    character (len=*), parameter :: name_sub='AD_get_CMPLX_dnRS_dnIS'
+
+
+    Sres  = RS + EYE*IS
+
+  END FUNCTION AD_get_CMPLX_dnRS_dnIS
+
+  ELEMENTAL FUNCTION AD_get_REAL_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnS_t)                               :: Sres
+    TYPE (dnCS_t),        intent(in)           :: S
+    !integer,              intent(in), optional :: kind
+
+    character (len=*), parameter :: name_sub='AD_get_REAL_dnCS'
+
+    SELECT CASE (get_nderiv(S))
+    CASE (0,-1)
+      CALL set_dnS(Sres,d0=real(S%d0,kind=Rkind))
+    CASE (1)
+      CALL set_dnS(Sres,d0=real(S%d0,kind=Rkind),d1=real(S%d1,kind=Rkind))
+    CASE(2)
+      CALL set_dnS(Sres,d0=real(S%d0,kind=Rkind),d1=real(S%d1,kind=Rkind),d2=real(S%d2,kind=Rkind))
+    CASE(3)
+      CALL set_dnS(Sres,d0=real(S%d0,kind=Rkind),d1=real(S%d1,kind=Rkind),d2=real(S%d2,kind=Rkind),d3=real(S%d3,kind=Rkind))
+    END SELECT
+
+  END FUNCTION AD_get_REAL_dnCS
+  ELEMENTAL FUNCTION AD_get_AIMAG_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+    USE ADdnSVM_dnS_m
+
+    TYPE (dnS_t)                        :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    real(kind=Rkind), allocatable :: d1(:),d2(:,:),d3(:,:,:)
+    real(kind=Rkind) :: d0
+
+    character (len=*), parameter :: name_sub='AD_get_AIMAG_dnCS'
+
+    SELECT CASE (get_nderiv(S))
+    CASE (0,-1)
+      d0 = aimag(get_d0(S))
+      CALL set_dnS(Sres,d0=d0)
+    CASE (1)
+      d0 = aimag(get_d0(S))
+      d1 = aimag(get_d1(S))
+      CALL set_dnS(Sres,d0=d0,d1=d1)
+    CASE(2)
+      d0 = aimag(get_d0(S))
+      d1 = aimag(get_d1(S))
+      d2 = aimag(get_d2(S))
+      CALL set_dnS(Sres,d0=d0,d1=d1,d2=d2)
+    CASE(3)
+      d0 = aimag(get_d0(S))
+      d1 = aimag(get_d1(S))
+      d2 = aimag(get_d2(S))
+      d3 = aimag(get_d3(S))
+      CALL set_dnS(Sres,d0=d0,d1=d1,d2=d2,d3=d3)
+    END SELECT
+
+  END FUNCTION AD_get_AIMAG_dnCS
+  ELEMENTAL FUNCTION AD_get_EXP_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+
+    character (len=*), parameter :: name_sub='AD_get_EXP_dnCS'
+
+    d0f =  exp(S%d0)
+    IF (S%nderiv >= 1) d1f =  exp(S%d0)
+    IF (S%nderiv >= 2) d2f =  exp(S%d0)
+    IF (S%nderiv >= 3) d3f =  exp(S%d0)
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_EXP_dnCS
+  ELEMENTAL FUNCTION AD_get_LOG_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+
+    character (len=*), parameter :: name_sub='AD_get_LOG_dnCS'
+
+
+    d0f =  log(S%d0)
+    IF (S%nderiv >= 1) d1f =  ONE/S%d0
+    IF (S%nderiv >= 2) d2f = -ONE/S%d0**2
+    IF (S%nderiv >= 3) d3f =  TWO/S%d0**3
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_LOG_dnCS
+  ELEMENTAL FUNCTION AD_get_LOG10_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+
+    character (len=*), parameter :: name_sub='AD_get_LOG10_dnCS'
+
+    Sres = log(S)/log(TEN)
+
+  END FUNCTION AD_get_LOG10_dnCS
+  ELEMENTAL FUNCTION AD_get_COS_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_COS_dnCS'
+
+
+
+    d0f =  cos(S%d0)
+    IF (S%nderiv >= 1) d1f = -sin(S%d0)
+    IF (S%nderiv >= 2) d2f = -cos(S%d0)
+    IF (S%nderiv >= 3) d3f =  sin(S%d0)
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_COS_dnCS
+  ELEMENTAL FUNCTION AD_get_ACOS_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ACOS_dnCS'
+
+
+
+    d0f =  acos(S%d0)
+    IF (S%nderiv >= 1) d1f = -ONE/sqrt(ONE-S%d0**2)
+    IF (S%nderiv >= 2) d2f = S%d0*d1f**3
+    IF (S%nderiv >= 3) d3f = (ONE+TWO*S%d0**2)*d1f**5
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ACOS_dnCS
+  ELEMENTAL FUNCTION AD_get_SIN_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_SIN_dnCS'
+
+
+
+     d0f =  sin(S%d0)
+    IF (S%nderiv >= 1) d1f =  cos(S%d0)
+    IF (S%nderiv >= 2) d2f = -sin(S%d0)
+    IF (S%nderiv >= 3) d3f = -cos(S%d0)
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_SIN_dnCS
+  ELEMENTAL FUNCTION AD_get_ASIN_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ASIN_dnCS'
+
+
+
+    d0f =  asin(S%d0)
+    IF (S%nderiv >= 1) d1f = ONE/sqrt(ONE-S%d0**2)
+    IF (S%nderiv >= 2) d2f = S%d0*d1f**3
+    IF (S%nderiv >= 3) d3f = (ONE+TWO*S%d0**2)*d1f**5
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ASIN_dnCS
+  ELEMENTAL FUNCTION AD_get_TAN_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_TAN_dnCS'
+
+    Sres = Sin(S)/cos(S)
+
+  END FUNCTION AD_get_TAN_dnCS
+
+  ELEMENTAL FUNCTION AD_get_ATAN_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ATAN_dnCS'
+
+
+    d0f =  atan(S%d0)
+    IF (S%nderiv >= 1) d1f = ONE/(ONE+S%d0**2)
+    IF (S%nderiv >= 2) d2f = -TWO*S%d0 * d1f**2
+    IF (S%nderiv >= 3) d3f = (-TWO+SIX*S%d0**2) * d1f**3
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ATAN_dnCS
+
+  ELEMENTAL FUNCTION AD_get_COSH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_COSH_dnCS'
+
+
+
+    d0f =  cosh(S%d0)
+    IF (S%nderiv >= 1) d1f =  sinh(S%d0)
+    IF (S%nderiv >= 2) d2f =  cosh(S%d0)
+    IF (S%nderiv >= 3) d3f =  sinh(S%d0)
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_COSH_dnCS
+  ELEMENTAL FUNCTION AD_get_ACOSH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ACOSH_dnCS'
+
+
+    d0f = acosh(S%d0)
+    IF (S%nderiv >= 1) d1f = ONE/sqrt(-ONE+S%d0**2)
+    IF (S%nderiv >= 2) d2f = -S%d0*d1f**3
+    IF (S%nderiv >= 3) d3f = (ONE+TWO*S%d0**2)*d1f**5
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ACOSH_dnCS
+  ELEMENTAL FUNCTION AD_get_SINH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_SINH_dnCS'
+
+    d0f =  sinh(S%d0)
+    IF (S%nderiv >= 1) d1f =  cosh(S%d0)
+    IF (S%nderiv >= 2) d2f =  sinh(S%d0)
+    IF (S%nderiv >= 3) d3f =  cosh(S%d0)
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_SINH_dnCS
+  ELEMENTAL FUNCTION AD_get_ASINH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ASINH_dnCS'
+
+
+    d0f =  asinh(S%d0)
+    IF (S%nderiv >= 1) d1f = ONE/sqrt(ONE+S%d0**2)
+    IF (S%nderiv >= 2) d2f = -S%d0*d1f**3
+    IF (S%nderiv >= 3) d3f = (-ONE+TWO*S%d0**2)*d1f**5
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ASINH_dnCS
+
+  ELEMENTAL FUNCTION AD_get_TANH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_TANH_dnCS'
+
+
+    d0f =  tanh(S%d0)
+    IF (S%nderiv >= 1) d1f =  ONE/cosh(S%d0)**2
+    IF (S%nderiv >= 2) d2f = -TWO*tanh(S%d0) * d1f
+    IF (S%nderiv >= 3) d3f = (-FOUR+TWO*cosh(TWO*S%d0)) * d1f**2
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_TANH_dnCS
+
+  ELEMENTAL FUNCTION AD_get_ATANH_dnCS(S) RESULT(Sres)
+    USE QDUtil_m
+
+    TYPE (dnCS_t)                       :: Sres
+    TYPE (dnCS_t),        intent(in)    :: S
+
+    integer :: err_dnCS_loc
+    complex(kind=Rkind) :: d0f,d1f,d2f,d3f
+    character (len=*), parameter :: name_sub='AD_get_ATANH_dnCS'
+
+
+    d0f =  atanh(S%d0)
+    IF (S%nderiv >= 1) d1f =  ONE/(ONE-S%d0**2)
+    IF (S%nderiv >= 2) d2f =  TWO*S%d0 * d1f**2
+    IF (S%nderiv >= 3) d3f =  (TWO+SIX*S%d0**2) * d1f**3
+
+    Sres = AD_get_F_dnCS(S,d0f,d1f,d2f,d3f)
+
+  END FUNCTION AD_get_ATANH_dnCS
+END MODULE ADdnSVM_dnCS_m

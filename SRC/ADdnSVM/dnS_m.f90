@@ -655,8 +655,8 @@ CONTAINS
 !!
 !! @param S                  TYPE (dnS_t):        derived type which deals with the derivatives of a scalar functions.
 !! @param d0,d1,d2,d3        real  (optional):    real value (d0) or table to initialize S.
-  SUBROUTINE AD_set_dnS(S,d0,d1,d2,d3)
-    USE QDUtil_m, ONLY : Rkind, out_unit
+  PURE SUBROUTINE AD_set_dnS(S,d0,d1,d2,d3)
+    USE QDUtil_m, ONLY : ZERO, Rkind
     IMPLICIT NONE
 
     real (kind=Rkind), optional,   intent(in)     :: d0
@@ -666,6 +666,7 @@ CONTAINS
 
     TYPE (dnS_t),                  intent(inout)  :: S
 
+    integer :: nVar
 
     character (len=*), parameter :: name_sub='AD_set_dnS'
 
@@ -677,34 +678,31 @@ CONTAINS
     IF (present(d1)) THEN
       S%d1     = d1
       S%nderiv = 1
-      IF (.NOT. present(d0)) THEN
-        write(out_unit,*) ' ERROR in ',name_sub
-        write(out_unit,*) ' d1 is present but not d0'
-        write(out_unit,*) ' CHECK the fortran!!'
-        STOP 'ERROR in AD_set_dnS'
-      END IF
+      nVar     = size(d1,dim=1)
     END IF
 
     IF (present(d2)) THEN
       S%d2     = d2
       S%nderiv = 2
-      IF (.NOT. present(d1)) THEN
-        write(out_unit,*) ' ERROR in ',name_sub
-        write(out_unit,*) ' d2 is present but not d1'
-        write(out_unit,*) ' CHECK the fortran!!'
-        STOP 'ERROR in AD_set_dnS'
-      END IF
+      nVar     = size(d2,dim=1)
     END IF
 
     IF (present(d3)) THEN
       S%d3     = d3
       S%nderiv = 3
-      IF (.NOT. present(d2)) THEN
-        write(out_unit,*) ' ERROR in ',name_sub
-        write(out_unit,*) ' d3 is present but not d2'
-        write(out_unit,*) ' CHECK the fortran!!'
-        STOP 'ERROR in AD_set_dnS'
-      END IF
+      nVar     = size(d3,dim=1)
+    END IF
+
+    IF (S%nderiv > 0 .AND. .NOT. present(d0)) S%d0 = ZERO
+
+    IF (S%nderiv > 1 .AND. .NOT. present(d1)) THEN
+      allocate(S%d1(nVar))
+      S%d1(:) = ZERO
+    END IF
+
+    IF (S%nderiv > 2 .AND. .NOT. present(d2)) THEN
+      allocate(S%d2(nVar,nVar))
+      S%d2(:,:) = ZERO
     END IF
 
   END SUBROUTINE AD_set_dnS
@@ -979,7 +977,7 @@ END FUNCTION AD_Grad_OF_dnS
 !!
 !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
 !! @param d1                 real  (result):        d1=S%d1, d1 is allocatable
-  FUNCTION AD_get_d1_FROM_dnS(S) RESULT(d1)
+  PURE FUNCTION AD_get_d1_FROM_dnS(S) RESULT(d1)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
@@ -1039,7 +1037,7 @@ END FUNCTION AD_Grad_OF_dnS
   !!
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d2                 real  (result):        d2=S%d2, d2 is allocatable
-  FUNCTION AD_get_d2_FROM_dnS(S) RESULT(d2)
+  PURE FUNCTION AD_get_d2_FROM_dnS(S) RESULT(d2)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 
@@ -1058,7 +1056,7 @@ END FUNCTION AD_Grad_OF_dnS
   !!
   !! @param S                  TYPE (dnS_t):           derived type which deals with the derivatives of a scalar functions.
   !! @param d3                 real  (result):        d3=S%d3, d3 is allocatable
-  FUNCTION AD_get_d3_FROM_dnS(S) RESULT(d3)
+  PURE FUNCTION AD_get_d3_FROM_dnS(S) RESULT(d3)
     USE QDUtil_m, ONLY : Rkind, out_unit
     IMPLICIT NONE
 

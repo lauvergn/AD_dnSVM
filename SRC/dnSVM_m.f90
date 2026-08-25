@@ -34,6 +34,7 @@
 !!
 MODULE ADdnSVM_m
   USE ADdnSVM_dnS_m
+  USE ADdnSVM_dnCS_m
   USE ADdnSVM_dnPoly_m
   USE ADdnSVM_dnFunc_m
   USE ADdnSVM_dnS_Op_m
